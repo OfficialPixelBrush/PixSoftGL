@@ -101,9 +101,11 @@ struct Mat4x4 {
 int vertexIndex = 0;
 int colorIndex = 0;
 
+bool testDepth = false;
 GLenum drawingMode = 0;
 GLenum projectionMode = 0;
 GLenum matrixMode = 0;
+Col3 currentColor = Col3{1,1,1};
 Mat4x4* currentMatrix;
 Mat4x4 modelMatrix;
 Mat4x4 projMatrix;
@@ -112,6 +114,18 @@ Vertex vertices[MAX_VERTICES];
 
 PixelValue frameBufferColor [RENDER_AREA_TOTAL];
 float frameBufferDepth [RENDER_AREA_TOTAL];
+
+Col3 lerp(Col3 a, Col3 b, float t) {
+    return Col3{
+        a.r + t * (b.r - a.r),
+        a.g + t * (b.g - a.g),
+        a.b + t * (b.b - a.b)
+    };
+}
+
+float lerp(float a, float b, float t) {
+    return a + t * (b - a);
+}
 
 void DrawPixel(PixelValue p) {
     std::cout << "\e[38;2;" << int(p.r) << ";" << int(p.g) << ";" << int(p.b) << "m" << "█";
@@ -154,15 +168,51 @@ Vec3 ProjectPosition(Vec3 pos) {
 void RenderPixel(Vec3 screenPos, Col3 color) {
     // NDC is from -1 to 1, which we'll map to 0 - RENDER_AREA_WIDTH
     int index = int(screenPos.x) + (int(screenPos.y) * RENDER_AREA_WIDTH);
-    if (index < 0) return;
-    if (index > RENDER_AREA_TOTAL) return;
+    if (index < 0 || index >= RENDER_AREA_TOTAL) return;
 
+    // If the new pixel is behind the old one, skip
+    if (testDepth && frameBufferDepth[index] < screenPos.z) {
+        return;
+    }
+
+    // Write new values
     frameBufferColor[index] = PixelValue{
         (unsigned char)(color.r*255),
         (unsigned char)(color.g*255),
         (unsigned char)(color.b*255)
     };
     frameBufferDepth[index] = screenPos.z;
+}
+
+void RenderLine(Vec3 posA, Col3 colA, Vec3 posB, Col3 colB) {
+    float x0 = posA.x, y0 = posA.y;
+    float x1 = posB.x, y1 = posB.y;
+    Col3 c0 = colA, c1 = colB;
+
+    bool steep = fabs(y1 - y0) > fabs(x1 - x0);
+    if (steep) {
+        std::swap(x0, y0);
+        std::swap(x1, y1);
+    }
+
+    if (x0 > x1) {
+        std::swap(x0, x1);
+        std::swap(y0, y1);
+        std::swap(c0, c1);
+    }
+
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float gradient = dx == 0 ? 0 : dy / dx;
+
+    for (float x = x0; x <= x1; x += 1.0f) {
+        float t = dx == 0 ? 0.0f : (x - x0) / dx;
+        float y = y0 + gradient * (x - x0);
+        Vec3 screenPos = steep ? Vec3{y, x, lerp(posA.z, posB.z, t)}
+                               : Vec3{x, y, lerp(posA.z, posB.z, t)};
+        Col3 color = lerp(c0, c1, t);
+        RenderPixel(screenPos, color);
+    }
 }
 
 Vec3 normalize(Vec3 v) {
@@ -173,23 +223,18 @@ Vec3 normalize(Vec3 v) {
 extern "C" {
     void glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
         vertices[vertexIndex++].pos = Vec3{x,y,z};
+        vertices[colorIndex++].col = currentColor;
     }
 
     void glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
-        vertices[colorIndex++].col = Col3{red,green,blue};
+        currentColor = Col3{red,green,blue};
     }
 
     void glClear(GLbitfield mask) {
         // Render last frame
-        for (int i = 0; i < vertexIndex; i++) {
-            Vec3 screenPos = ProjectPosition(vertices[i].pos);
-            RenderPixel(screenPos, vertices[i].col);
-        } 
         DrawToScreen();
 
         // Prepare for next frame
-        vertexIndex = 0;
-        colorIndex = 0;
         std::cout << "glClear ";
         // Clear color
         if (mask & GL_COLOR_BUFFER_BIT) {
@@ -202,7 +247,7 @@ extern "C" {
         if (mask & GL_DEPTH_BUFFER_BIT) {
             std::cout << "GL_DEPTH_BUFFER_BIT ";
             for (int i = 0; i < RENDER_AREA_TOTAL; i++) {
-                frameBufferDepth[i] = 0.0f;
+                frameBufferDepth[i] = INFINITY;
             }
         }
         std::cout << "\n";
@@ -237,6 +282,7 @@ extern "C" {
                 break;
             case GL_DEPTH_TEST:
                 std::cout << "GL_DEPTH_TEST";
+                testDepth = true;
                 break;
         }
         std::cout << "\n";
@@ -245,6 +291,8 @@ extern "C" {
     // Load new data
     void glBegin(GLenum mode) {
         drawingMode = mode;
+        vertexIndex = 0;
+        colorIndex = 0;
         std::cout << "glBegin ";
         switch(drawingMode) {
             case GL_QUADS:
@@ -258,7 +306,26 @@ extern "C" {
     void glEnd() {
         std::cout << "glEnd ";
         switch(drawingMode) {
+            case GL_POINTS:
+                for (int i = 0; i < vertexIndex; i++) {
+                    Vec3 screenPos = ProjectPosition(vertices[i].pos);
+                    RenderPixel(screenPos, vertices[i].col);
+                } 
             case GL_QUADS:
+                for (int i = 0; i < vertexIndex; i+=4) {
+                    Vec3 sp1 = ProjectPosition(vertices[i].pos);
+                    Vec3 sp2 = ProjectPosition(vertices[i+1].pos);
+                    Vec3 sp3 = ProjectPosition(vertices[i+2].pos);
+                    Vec3 sp4 = ProjectPosition(vertices[i+3].pos);
+                    RenderLine(sp1, vertices[i].col, sp2, vertices[i+1].col);
+                    RenderLine(sp2, vertices[i+1].col, sp3, vertices[i+2].col);
+                    RenderLine(sp3, vertices[i+2].col, sp4, vertices[i+3].col);
+                    RenderLine(sp4, vertices[i+3].col, sp1, vertices[i].col);
+
+                    // Diagonal
+                   // RenderLine(sp1, vertices[i].col, sp3, vertices[i+2].col);
+                    //RenderLine(sp2, vertices[i+1].col, sp4, vertices[i+3].col);
+                } 
                 break;
         }
         std::cout << "\n";
@@ -296,11 +363,10 @@ extern "C" {
         double s = sin(angle);
         double t = 1 - c;
 
-        // Rotation matrix (column-major)
         Mat4x4 R = {
-            Vec4{t*u.x*u.x + c,     t*u.x*u.y - s*u.z, t*u.x*u.z + s*u.y, 0},
-            Vec4{t*u.x*u.y + s*u.z, t*u.y*u.y + c,     t*u.y*u.z - s*u.x, 0},
-            Vec4{t*u.x*u.z - s*u.y, t*u.y*u.z + s*u.x, t*u.z*u.z + c,     0},
+            Vec4{t*u.x*u.x + c,     t*u.x*u.y + s*u.z, t*u.x*u.z - s*u.y, 0},
+            Vec4{t*u.x*u.y - s*u.z, t*u.y*u.y + c,     t*u.y*u.z + s*u.x, 0},
+            Vec4{t*u.x*u.z + s*u.y, t*u.y*u.z - s*u.x, t*u.z*u.z + c,     0},
             Vec4{0,                  0,                  0,               1}
         };
 
