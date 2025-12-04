@@ -313,7 +313,7 @@ int main() {
         std::printf("\n");
         if (!r.pass) ++fails;
     }
-    std::printf("%i/%i\n", results.size()-fails, results.size());
+    std::printf("%i/%i\n", int(results.size()-fails), int(results.size()));
 
     // hold window visible briefly so user can inspect (1s)
     glXSwapBuffers(dpy, win);

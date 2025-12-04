@@ -3,9 +3,8 @@
 #include <cmath>
 #include <iostream>
 
-#define RENDER_AREA_WIDTH 64
-#define RENDER_AREA_HEIGHT 24
-#define RENDER_AREA_TOTAL RENDER_AREA_WIDTH * RENDER_AREA_HEIGHT
+#define DEFAULT_RENDER_AREA_WIDTH 64
+#define DEFAULT_RENDER_AREA_HEIGHT 24
 
 #define MAX_VERTICES 4096
 
@@ -167,9 +166,14 @@ Mat4x4 projMatrix;
 // Vertex buffer
 Vertex vertices[MAX_VERTICES];
 
+// Viewport size
+int renderAreaWidth = DEFAULT_RENDER_AREA_WIDTH;
+int renderAreaHeight = DEFAULT_RENDER_AREA_HEIGHT;
+int renderAreaTotal = DEFAULT_RENDER_AREA_WIDTH * DEFAULT_RENDER_AREA_HEIGHT;
+
 // Screen framebuffer
-PixelValue frameBufferColor [RENDER_AREA_TOTAL];
-float frameBufferDepth [RENDER_AREA_TOTAL];
+PixelValue* frameBufferColor;
+float* frameBufferDepth;
 
 // Interpolate two colors linearly
 Col3 lerp(Col3 a, Col3 b, float t) {
@@ -193,9 +197,9 @@ void DrawPixel(PixelValue p) {
 // Render the framebuffer colors to the terminal
 void DrawToScreen() {
     std::cout << "\033[H";
-    for (int y = 0; y < RENDER_AREA_HEIGHT; y++) {
-        for (int x = 0; x < RENDER_AREA_WIDTH; x++) {
-            DrawPixel(frameBufferColor[x + y * RENDER_AREA_WIDTH]);
+    for (int y = 0; y < renderAreaHeight; y++) {
+        for (int x = 0; x < renderAreaWidth; x++) {
+            DrawPixel(frameBufferColor[x + y * renderAreaWidth]);
         }
         std::cout << "\n";
     }
@@ -225,8 +229,8 @@ Vec3 ProjectPosition(Vec3 pos) {
             Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
 
             return Vec3{
-                (ndc.x + 1.0f) * 0.5f * RENDER_AREA_WIDTH,
-                (1.0f - (ndc.y + 1.0f) * 0.5f) * RENDER_AREA_HEIGHT,
+                (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
+                (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaWidth,
                 eyeDist           // store eye-space distance for fog calculations
             };
         }
@@ -256,9 +260,9 @@ PixelValue Col3ToPixelValue(Col3 color) {
 
 // Render Pixel to framebuffer
 void RenderPixel(Vec3 screenPos, Col3 color) {
-    // NDC is from -1 to 1, which we'll map to 0 - RENDER_AREA_WIDTH
-    int index = int(screenPos.x) + (int(screenPos.y) * RENDER_AREA_WIDTH);
-    if (index < 0 || index >= RENDER_AREA_TOTAL) return;
+    // NDC is from -1 to 1, which we'll map to 0 - renderAreaWidth
+    int index = int(screenPos.x) + (int(screenPos.y) * renderAreaWidth);
+    if (index < 0 || index >= renderAreaTotal) return;
 
     // If the new pixel is behind the old one, skip
     if (depthTestActive && screenPos.z >= frameBufferDepth[index]) {
@@ -376,8 +380,8 @@ Col3 BarycentricColor(Triangle tri, Vec3& p) {
 
 // Render triangle to framebuffer
 void RenderTriangle(Triangle tri) {
-    for (int y = 0; y < RENDER_AREA_HEIGHT; y++) {
-        for (int x = 0; x < RENDER_AREA_WIDTH; x++) {
+    for (int y = 0; y < renderAreaHeight; y++) {
+        for (int x = 0; x < renderAreaWidth; x++) {
             Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};
             if (PointInTriangle(tri, point)) {
                 Col3 color = BarycentricColor(tri, point);
@@ -396,6 +400,15 @@ extern "C" {
         vertexIndex++;
     }
 
+    void glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
+        renderAreaWidth = width;
+        renderAreaHeight = height;
+        renderAreaTotal = renderAreaWidth * renderAreaHeight;
+        // Resize buffers
+        frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
+        frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
+    }
+
     // Set float color
     void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
         clearColor = Col3{red,green,blue};
@@ -406,6 +419,7 @@ extern "C" {
         currentColor = Col3{red,green,blue};
     }
 
+    // Return OpenGL info
     const GLubyte* glGetString(GLenum name) {
         switch(name) {
             case GL_VERSION:
@@ -430,14 +444,14 @@ extern "C" {
         // Clear color
         if (mask & GL_COLOR_BUFFER_BIT) {
             std::cout << "GL_COLOR_BUFFER_BIT ";
-            for (int i = 0; i < RENDER_AREA_TOTAL; i++) {
+            for (int i = 0; i < renderAreaTotal; i++) {
                 frameBufferColor[i] = Col3ToPixelValue(clearColor);
             }
         }
         // Clear depth
         if (mask & GL_DEPTH_BUFFER_BIT) {
             std::cout << "GL_DEPTH_BUFFER_BIT ";
-            for (int i = 0; i < RENDER_AREA_TOTAL; i++) {
+            for (int i = 0; i < renderAreaTotal; i++) {
                 frameBufferDepth[i] = INFINITY;
             }
         }
@@ -676,7 +690,7 @@ extern "C" {
         // Assume format is always unsigned Byte
         for (int iy = y; iy < y+height; iy++) {
             for (int ix = x; ix < x+width; ix++) {
-                PixelValue c = frameBufferColor[ix + iy * RENDER_AREA_WIDTH];
+                PixelValue c = frameBufferColor[ix + iy * renderAreaWidth];
                 uint8_t* pix = static_cast<uint8_t*>(pixels);
                 pix[0] = c.r;
                 pix[1] = c.g;
