@@ -114,12 +114,7 @@ PixelValue frameBufferColor [RENDER_AREA_TOTAL];
 float frameBufferDepth [RENDER_AREA_TOTAL];
 
 void DrawPixel(PixelValue p) {
-    unsigned char c = ((p.r + p.b + p.g) / 3);
-    if (c > 128) {
-        std::cout << "#";
-    } else {
-        std::cout << ".";
-    }
+    std::cout << "\e[38;2;" << int(p.r) << ";" << int(p.g) << ";" << int(p.b) << "m" << "█";
 }
 
 void DrawToScreen() {
@@ -156,12 +151,17 @@ Vec3 ProjectPosition(Vec3 pos) {
     return Vec3{0,0,0};
 }
 
-void RenderPixel(Vec3 screenPos) {
+void RenderPixel(Vec3 screenPos, Col3 color) {
     // NDC is from -1 to 1, which we'll map to 0 - RENDER_AREA_WIDTH
     int index = int(screenPos.x) + (int(screenPos.y) * RENDER_AREA_WIDTH);
     if (index < 0) return;
     if (index > RENDER_AREA_TOTAL) return;
-    frameBufferColor[index] = PixelValue{255,255,255};
+
+    frameBufferColor[index] = PixelValue{
+        (unsigned char)(color.r*255),
+        (unsigned char)(color.g*255),
+        (unsigned char)(color.b*255)
+    };
     frameBufferDepth[index] = screenPos.z;
 }
 
@@ -183,7 +183,7 @@ extern "C" {
         // Render last frame
         for (int i = 0; i < vertexIndex; i++) {
             Vec3 screenPos = ProjectPosition(vertices[i].pos);
-            RenderPixel(screenPos);
+            RenderPixel(screenPos, vertices[i].col);
         } 
         DrawToScreen();
 
