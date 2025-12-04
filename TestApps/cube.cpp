@@ -9,7 +9,11 @@ GLXContext ctx;
 
 float angle = 0.0f;
 
+#define WINDOW_WIDTH 320
+#define WINDOW_HEIGHT 240
+
 void init() {
+    glViewport(0,0,WINDOW_WIDTH,WINDOW_HEIGHT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_FOG);
 
@@ -84,7 +88,7 @@ int main() {
     swa.colormap = cmap;
     swa.event_mask = ExposureMask | KeyPressMask;
 
-    win = XCreateWindow(dpy, RootWindow(dpy, vi->screen), 0, 0, 800, 600, 0, vi->depth,
+    win = XCreateWindow(dpy, RootWindow(dpy, vi->screen), 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, vi->depth,
                         InputOutput, vi->visual, CWColormap | CWEventMask, &swa);
     XMapWindow(dpy, win);
     XStoreName(dpy, win, "OpenGL 1.1 Cube with Fog");

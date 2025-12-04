@@ -1,6 +1,6 @@
 # Driver
-g++ -fPIC -shared main.cpp -o libGL.so
+g++ -fPIC -shared src/main.cpp -lSDL3 -o libGL.so -O3
 
 # Test Software
-#g++ TestApps/cube.cpp -lX11 -lGL -o cube
-g++ -std=c++17 TestApps/test.cpp -o test -lX11 -lGL
+g++ TestApps/cube.cpp -lX11 -lGL -o cube -g
+g++ -std=c++17 TestApps/test.cpp -o test -lX11 -lGL -g
