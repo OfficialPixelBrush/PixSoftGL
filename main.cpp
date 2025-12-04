@@ -9,6 +9,11 @@
 
 #define MAX_VERTICES 4096
 
+#define PIXSOFTGL_VERSION "1.1"
+#define PIXSOFTGL_EXTENSIONS ""
+#define PIXSOFTGL_VENDOR "PixelBrushArt"
+#define PIXSOFTGL_RENDERER "PixSoftGL"
+
 // Screen RGB Pixels
 struct PixelValue {
     unsigned char r,g,b;
@@ -135,6 +140,7 @@ bool depthTestActive = false;
 bool fogActive = false;
 bool colorMaterialActive = false;
 
+// Fog variables
 int fogMode = 0;
 Col4 fogColor = Col4{0,0,0,0};
 float fogStart = 0.0;
@@ -151,6 +157,7 @@ GLenum matrixMode = 0;
 
 // Currently active color
 Col3 currentColor = Col3{1,1,1};
+Col3 clearColor = Col3{0,0,0};
 
 // Matricies
 Mat4x4* currentMatrix;
@@ -236,6 +243,17 @@ Triangle ProjectTriangle(Triangle tri) {
     };
 }
 
+PixelValue Col3ToPixelValue(Col3 color) {
+    color.r = std::fmax(0.0f, std::fmin(1.0f, color.r));
+    color.g = std::fmax(0.0f, std::fmin(1.0f, color.g));
+    color.b = std::fmax(0.0f, std::fmin(1.0f, color.b));
+    return PixelValue{
+        (unsigned char)(color.r*255),
+        (unsigned char)(color.g*255),
+        (unsigned char)(color.b*255)
+    };
+}
+
 // Render Pixel to framebuffer
 void RenderPixel(Vec3 screenPos, Col3 color) {
     // NDC is from -1 to 1, which we'll map to 0 - RENDER_AREA_WIDTH
@@ -263,17 +281,8 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
         }
     }
 
-    // Clamp
-    color.r = std::fmax(0.0f, std::fmin(1.0f, color.r));
-    color.g = std::fmax(0.0f, std::fmin(1.0f, color.g));
-    color.b = std::fmax(0.0f, std::fmin(1.0f, color.b));
-
     // Write new values
-    frameBufferColor[index] = PixelValue{
-        (unsigned char)(color.r*255),
-        (unsigned char)(color.g*255),
-        (unsigned char)(color.b*255)
-    };
+    frameBufferColor[index] = Col3ToPixelValue(color);
     frameBufferDepth[index] = screenPos.z;
 }
 
@@ -380,16 +389,38 @@ void RenderTriangle(Triangle tri) {
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
+    // Add float vertex
     void glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
         vertices[vertexIndex].pos = Vec3{x,y,z};
         vertices[vertexIndex].col = currentColor;
         vertexIndex++;
     }
 
+    // Set float color
+    void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+        clearColor = Col3{red,green,blue};
+    }
+
+    // Set float color
     void glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
         currentColor = Col3{red,green,blue};
     }
 
+    const GLubyte* glGetString(GLenum name) {
+        switch(name) {
+            case GL_VERSION:
+                return (const GLubyte*)PIXSOFTGL_VERSION;
+            case GL_VENDOR:
+                return (const GLubyte*)PIXSOFTGL_VENDOR;
+            case GL_RENDERER:
+                return (const GLubyte*)PIXSOFTGL_RENDERER;
+            case GL_EXTENSIONS:
+                return nullptr;
+        }
+        return nullptr;
+    }
+
+    // Clear framebuffer(s)
     void glClear(GLbitfield mask) {
         // Render last frame
         DrawToScreen();
@@ -400,7 +431,7 @@ extern "C" {
         if (mask & GL_COLOR_BUFFER_BIT) {
             std::cout << "GL_COLOR_BUFFER_BIT ";
             for (int i = 0; i < RENDER_AREA_TOTAL; i++) {
-                frameBufferColor[i] = PixelValue{0,0,0};
+                frameBufferColor[i] = Col3ToPixelValue(clearColor);
             }
         }
         // Clear depth
@@ -413,6 +444,7 @@ extern "C" {
         std::cout << "\n";
     }
 
+    // Set Matrix mode
     void glMatrixMode(GLenum mode) {
         // Prepare next matrix Mode
         std::cout << "glMatrixMode ";
@@ -431,6 +463,7 @@ extern "C" {
         std::cout << "\n";
     }
 
+    // Enable property
     void glEnable(GLenum cap) {
         std::cout << "glEnable ";
         switch(cap) {
@@ -450,6 +483,7 @@ extern "C" {
         std::cout << "\n";
     }
 
+    // Disable property
     void glDisable(GLenum cap) {
         std::cout << "glDisable ";
         switch(cap) {
@@ -492,6 +526,28 @@ extern "C" {
                     RenderPixel(screenPos, vertices[i].col);
                 }
                 break;
+            case GL_TRIANGLE_FAN:
+                for (int i = 1; i < vertexIndex; i+=2) {
+                    Triangle screenTri = ProjectTriangle(
+                        Triangle{
+                            vertices[0], 
+                            vertices[i], 
+                            vertices[i+1]
+                        }
+                    );
+                    RenderTriangle(screenTri);
+                }
+            case GL_TRIANGLES:
+                for (int i = 0; i < vertexIndex; i+=3) {
+                    Triangle screenTri = ProjectTriangle(
+                        Triangle{
+                            vertices[i], 
+                            vertices[i+1], 
+                            vertices[i+2]
+                        }
+                    );
+                    RenderTriangle(screenTri);
+                }
             case GL_QUADS:
                 for (int i = 0; i < vertexIndex; i+=4) {
                     Triangle screenTriA = ProjectTriangle(
@@ -516,6 +572,7 @@ extern "C" {
         std::cout << "\n";
     }
 
+    // Load identity matrix
     void glLoadIdentity() {
         std::cout << "glLoadIdentity ";
         *currentMatrix = Mat4x4 {
@@ -527,6 +584,7 @@ extern "C" {
         std::cout << "\n";
     }
 
+    // Float translate
     void glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
         Mat4x4 T = {
             Vec4{1, 0, 0, 0},
@@ -538,6 +596,7 @@ extern "C" {
         *currentMatrix = (*currentMatrix) * T; // multiply, not add
     }
 
+    // Float Rotate
     void glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
         // Convert to radians
         double angle = angleDeg * M_PI / 180.0;
@@ -558,6 +617,7 @@ extern "C" {
         *currentMatrix = (*currentMatrix) * R; // multiply, not add
     }
 
+    // Float scale
     void glScalef(GLfloat x, GLfloat y, GLfloat z) {
         Mat4x4 S = {
             Vec4{double(x), 0, 0, 0},
@@ -569,6 +629,7 @@ extern "C" {
         *currentMatrix = (*currentMatrix) * S; // multiply, not add
     }
 
+    // Frustum Creation
     void glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
         *currentMatrix = Mat4x4{
             Vec4{ (2*n)/(r-l), 0, 0, 0 },
@@ -578,6 +639,7 @@ extern "C" {
         };
     }
 
+    // Set fog integer
     void glFogi(GLenum pname, GLint param) {
         switch(pname) {
             case GL_FOG_MODE:
@@ -586,6 +648,7 @@ extern "C" {
         }
     }
 
+    // Set fog float values
     void glFogfv(GLenum pname, const GLfloat *params) {
         switch(pname) {
             case GL_FOG_COLOR:
@@ -596,6 +659,7 @@ extern "C" {
         }
     }
 
+    // Set fog float
     void glFogf(GLenum pname, GLfloat param) {
         switch (pname) {
             case GL_FOG_START:
@@ -604,6 +668,21 @@ extern "C" {
             case GL_FOG_END:
                 fogEnd = param;
                 break;        
+        }
+    }
+
+    void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels) {
+        // Assume format is always RGBA
+        // Assume format is always unsigned Byte
+        for (int iy = y; iy < y+height; iy++) {
+            for (int ix = x; ix < x+width; ix++) {
+                PixelValue c = frameBufferColor[ix + iy * RENDER_AREA_WIDTH];
+                uint8_t* pix = static_cast<uint8_t*>(pixels);
+                pix[0] = c.r;
+                pix[1] = c.g;
+                pix[2] = c.b;
+                pix[3] = 255;
+            }
         }
     }
 }
