@@ -1,0 +1,1 @@
+LD_PRELOAD=./libGL.so ./cube
