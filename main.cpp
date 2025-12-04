@@ -138,6 +138,9 @@ int vertexIndex = 0;
 bool depthTestActive = false;
 bool fogActive = false;
 bool colorMaterialActive = false;
+bool texture2dActive = false;
+bool blendActive = false;
+bool lightingActive = false;
 
 // Fog variables
 int fogMode = 0;
@@ -393,13 +396,21 @@ void RenderTriangle(Triangle tri) {
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
-    // Add float vertex
+    // Add float vertex (2)
+    void glVertex2f(GLfloat x, GLfloat y) {
+        vertices[vertexIndex].pos = Vec3{x,y,0};
+        vertices[vertexIndex].col = currentColor;
+        vertexIndex++;
+    }
+
+    // Add float vertex (3)
     void glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
         vertices[vertexIndex].pos = Vec3{x,y,z};
         vertices[vertexIndex].col = currentColor;
         vertexIndex++;
     }
 
+    // Adjust OpenGL Viewport
     void glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
         renderAreaWidth = width;
         renderAreaHeight = height;
@@ -493,6 +504,18 @@ extern "C" {
                 std::cout << "GL_DEPTH_TEST";
                 depthTestActive = true;
                 break;
+            case GL_TEXTURE_2D:
+                std::cout << "GL_TEXTURE_2D";
+                texture2dActive = true;
+                break;
+            case GL_LIGHTING:
+                std::cout << "GL_LIGHTING";
+                lightingActive = true;
+                break;
+            case GL_BLEND:
+                std::cout << "GL_BLEND";
+                blendActive = true;
+                break;
         }
         std::cout << "\n";
     }
@@ -512,6 +535,18 @@ extern "C" {
             case GL_DEPTH_TEST:
                 std::cout << "GL_DEPTH_TEST";
                 depthTestActive = false;
+                break;
+            case GL_TEXTURE_2D:
+                std::cout << "GL_TEXTURE_2D";
+                texture2dActive = false;
+                break;
+            case GL_LIGHTING:
+                std::cout << "GL_LIGHTING";
+                lightingActive = false;
+                break;
+            case GL_BLEND:
+                std::cout << "GL_BLEND";
+                blendActive = false;
                 break;
         }
         std::cout << "\n";
@@ -643,7 +678,7 @@ extern "C" {
         *currentMatrix = (*currentMatrix) * S; // multiply, not add
     }
 
-    // Frustum Creation
+    // Perspective Projection Matrix Creation
     void glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
         *currentMatrix = Mat4x4{
             Vec4{ (2*n)/(r-l), 0, 0, 0 },
@@ -651,6 +686,16 @@ extern "C" {
             Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1 },
             Vec4{ 0, 0, -(2*f*n)/(f-n), 0 }
         };
+    }
+
+    // Orthographic Projection Matrix Creation
+    void glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
+            *currentMatrix = Mat4x4{
+                Vec4{ 2/(r-l),0,0,0},
+                Vec4{0,2/(t-b),0,0},
+                Vec4{0,0,-(2/(f-n)),0},
+                Vec4{-((r+l)/(r-l)), -((t+b)/(t-b)), -((f+n)/(f-n)), 1}
+            };
     }
 
     // Set fog integer
