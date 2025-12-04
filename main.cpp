@@ -1,4 +1,5 @@
 #include <GL/gl.h>
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -8,14 +9,29 @@
 
 #define MAX_VERTICES 4096
 
+// Screen RGB Pixels
 struct PixelValue {
     unsigned char r,g,b;
 };
 
+// 3D Vector
 struct Vec3 {
     double x,y,z;
+
+    Vec3 operator+(const Vec3& o) const {
+        return Vec3{x + o.x, y + o.y, z + o.z};
+    }
+
+    Vec3 operator-(const Vec3& o) const {
+        return Vec3{x - o.x, y - o.y, z - o.z};
+    }
+
+    Vec3 operator*(const Vec3& o) const {
+        return Vec3{x * o.x, y * o.y, z * o.z};
+    }
 };
 
+// 4D Vector
 struct Vec4 {
     double x,y,z,w;
 
@@ -45,15 +61,28 @@ struct Vec4 {
 
 };
 
+// Floating-point r,g,b color
 struct Col3 {
     float r,g,b;
 };
 
+// Floating-point r,g,b,a color
+struct Col4 {
+    float r,g,b,a;
+};
+
+// Vertex
 struct Vertex {
     Vec3 pos;
     Col3 col;
 };
 
+// Triangle
+struct Triangle {
+    Vertex a,b,c;
+};
+
+// 4x4 Matrix
 struct Mat4x4 {
     Vec4 a,b,c,d;
 
@@ -98,23 +127,44 @@ struct Mat4x4 {
 
 };
 
+// The current vertex index
 int vertexIndex = 0;
-int colorIndex = 0;
 
-bool testDepth = false;
+// If depth should be tested
+bool depthTestActive = false;
+bool fogActive = false;
+bool colorMaterialActive = false;
+
+int fogMode = 0;
+Col4 fogColor = Col4{0,0,0,0};
+float fogStart = 0.0;
+float fogEnd = 0.0;
+
+// The current object rendering mode
 GLenum drawingMode = 0;
+
+// The current projection mode
 GLenum projectionMode = 0;
+
+// The current matrix mode
 GLenum matrixMode = 0;
+
+// Currently active color
 Col3 currentColor = Col3{1,1,1};
+
+// Matricies
 Mat4x4* currentMatrix;
 Mat4x4 modelMatrix;
 Mat4x4 projMatrix;
 
+// Vertex buffer
 Vertex vertices[MAX_VERTICES];
 
+// Screen framebuffer
 PixelValue frameBufferColor [RENDER_AREA_TOTAL];
 float frameBufferDepth [RENDER_AREA_TOTAL];
 
+// Interpolate two colors linearly
 Col3 lerp(Col3 a, Col3 b, float t) {
     return Col3{
         a.r + t * (b.r - a.r),
@@ -123,14 +173,17 @@ Col3 lerp(Col3 a, Col3 b, float t) {
     };
 }
 
+// Interpolate two floats linearly
 float lerp(float a, float b, float t) {
     return a + t * (b - a);
 }
 
+// Draw a Pixel to the terminal
 void DrawPixel(PixelValue p) {
     std::cout << "\e[38;2;" << int(p.r) << ";" << int(p.g) << ";" << int(p.b) << "m" << "█";
 }
 
+// Render the framebuffer colors to the terminal
 void DrawToScreen() {
     std::cout << "\033[H";
     for (int y = 0; y < RENDER_AREA_HEIGHT; y++) {
@@ -141,6 +194,7 @@ void DrawToScreen() {
     }
 }
 
+// Convert a Vec3 to a Mat4x4
 Mat4x4 Vec3ToMat4x4(Vec3 pos) {
     return Mat4x4 {
         Vec4 { 1, 0 ,0,pos.x },
@@ -150,30 +204,69 @@ Mat4x4 Vec3ToMat4x4(Vec3 pos) {
     };
 }
 
+// Project world-space position to screen, return eye-space distance in z
 Vec3 ProjectPosition(Vec3 pos) {
     switch(projectionMode) {
-        case GL_PROJECTION:
-            Vec4 clip = projMatrix * modelMatrix * Vec4{pos.x,pos.y,pos.z,1};
+        case GL_PROJECTION: {
+            // transform to eye (modelview) space first
+            Vec4 eye = modelMatrix * Vec4{pos.x, pos.y, pos.z, 1.0};
+            // eye.z is negative in front of the camera in typical OpenGL; use -eye.z as positive distance
+            float eyeDist = float(-eye.z);
+
+            // then project
+            Vec4 clip = projMatrix * eye;
             Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
-            // Screen coordinates
+
             return Vec3{
-                (ndc.x + 1) * 0.5f * RENDER_AREA_WIDTH,
-                (1 - (ndc.y + 1) * 0.5f) * RENDER_AREA_HEIGHT,
-                (ndc.z + 1) * 0.5f
+                (ndc.x + 1.0f) * 0.5f * RENDER_AREA_WIDTH,
+                (1.0f - (ndc.y + 1.0f) * 0.5f) * RENDER_AREA_HEIGHT,
+                eyeDist           // store eye-space distance for fog calculations
             };
+        }
     }
     return Vec3{0,0,0};
 }
 
+// Project triangle to screen
+Triangle ProjectTriangle(Triangle tri) {
+    return Triangle{
+        Vertex { ProjectPosition(tri.a.pos), tri.a.col },
+        Vertex { ProjectPosition(tri.b.pos), tri.b.col },
+        Vertex { ProjectPosition(tri.c.pos), tri.c.col },
+    };
+}
+
+// Render Pixel to framebuffer
 void RenderPixel(Vec3 screenPos, Col3 color) {
     // NDC is from -1 to 1, which we'll map to 0 - RENDER_AREA_WIDTH
     int index = int(screenPos.x) + (int(screenPos.y) * RENDER_AREA_WIDTH);
     if (index < 0 || index >= RENDER_AREA_TOTAL) return;
 
     // If the new pixel is behind the old one, skip
-    if (testDepth && frameBufferDepth[index] < screenPos.z) {
+    if (depthTestActive && screenPos.z >= frameBufferDepth[index]) {
         return;
     }
+
+    if (fogActive && screenPos.z > fogStart) {
+        Col3 fogCol = Col3{fogColor.r, fogColor.g, fogColor.b};
+        switch(fogMode) {
+            case GL_LINEAR:
+                float fogFactor = (screenPos.z - fogStart) / (fogEnd - fogStart);
+                fogFactor = std::clamp(fogFactor, 0.0f, 1.0f);
+
+                color = Col3{
+                    color.r * (1.0f - fogFactor) + fogColor.r * fogFactor,
+                    color.g * (1.0f - fogFactor) + fogColor.g * fogFactor,
+                    color.b * (1.0f - fogFactor) + fogColor.b * fogFactor
+                };
+                break;
+        }
+    }
+
+    // Clamp
+    color.r = std::fmax(0.0f, std::fmin(1.0f, color.r));
+    color.g = std::fmax(0.0f, std::fmin(1.0f, color.g));
+    color.b = std::fmax(0.0f, std::fmin(1.0f, color.b));
 
     // Write new values
     frameBufferColor[index] = PixelValue{
@@ -184,6 +277,7 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
     frameBufferDepth[index] = screenPos.z;
 }
 
+// Render Line to Framebuffer
 void RenderLine(Vec3 posA, Col3 colA, Vec3 posB, Col3 colB) {
     float x0 = posA.x, y0 = posA.y;
     float x1 = posB.x, y1 = posB.y;
@@ -215,15 +309,81 @@ void RenderLine(Vec3 posA, Col3 colA, Vec3 posB, Col3 colB) {
     }
 }
 
-Vec3 normalize(Vec3 v) {
+// Normalize vector
+Vec3 Normalize(Vec3 v) {
     float mag = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
     return Vec3{v.x/mag, v.y/mag, v.z/mag};
 };
 
+// 2D Dot Product
+float Dot2D(Vec3 a, Vec3 b) {
+    return a.x*b.x + a.y*b.y;
+}
+
+// Rotate vector 90°
+Vec3 Perpendicular2D(Vec3 vec) {
+    return Vec3{-vec.y, vec.x, 0};
+}
+
+// Check if point is on right side of vector
+bool PointOnRightSideOfLine(Vec3 a, Vec3 b, Vec3 p) {
+    Vec3 ap = p - a;
+    Vec3 ab = b - a;
+    Vec3 abPerp = Perpendicular2D(ab);
+    return Dot2D(ap, abPerp) >= 0.0;
+}
+
+// Check if point is inside of triangle
+bool PointInTriangle(Triangle tri, Vec3 p) {
+    bool sideAB = PointOnRightSideOfLine(tri.a.pos, tri.b.pos, p);
+    bool sideBC = PointOnRightSideOfLine(tri.b.pos, tri.c.pos, p);
+    bool sideCA = PointOnRightSideOfLine(tri.c.pos, tri.a.pos, p);
+    return sideAB == sideBC && sideBC == sideCA;
+}
+
+// Simple barycentric color interpolation
+Col3 BarycentricColor(Triangle tri, Vec3& p) {
+    Vec3 a = tri.a.pos;
+    Vec3 b = tri.b.pos;
+    Vec3 c = tri.c.pos;
+
+    float det = (b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y);
+    float w1 = ((b.y - c.y)*(p.x - c.x) + (c.x - b.x)*(p.y - c.y)) / det;
+    float w2 = ((c.y - a.y)*(p.x - c.x) + (a.x - c.x)*(p.y - c.y)) / det;
+    float w3 = 1.0f - w1 - w2;
+    w1 = std::clamp(w1, 0.0f, 1.0f);
+    w2 = std::clamp(w2, 0.0f, 1.0f);
+    w3 = std::clamp(w3, 0.0f, 1.0f);
+
+    // Calulate depth too
+    p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
+
+    return Col3{
+        w1*tri.a.col.r + w2*tri.b.col.r + w3*tri.c.col.r,
+        w1*tri.a.col.g + w2*tri.b.col.g + w3*tri.c.col.g,
+        w1*tri.a.col.b + w2*tri.b.col.b + w3*tri.c.col.b
+    };
+}
+
+// Render triangle to framebuffer
+void RenderTriangle(Triangle tri) {
+    for (int y = 0; y < RENDER_AREA_HEIGHT; y++) {
+        for (int x = 0; x < RENDER_AREA_WIDTH; x++) {
+            Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};
+            if (PointInTriangle(tri, point)) {
+                Col3 color = BarycentricColor(tri, point);
+                RenderPixel(point, color);
+            }
+        }
+    }
+}
+
+// Actual OpenGL 1.1 Library functions!
 extern "C" {
     void glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
-        vertices[vertexIndex++].pos = Vec3{x,y,z};
-        vertices[colorIndex++].col = currentColor;
+        vertices[vertexIndex].pos = Vec3{x,y,z};
+        vertices[vertexIndex].col = currentColor;
+        vertexIndex++;
     }
 
     void glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
@@ -276,13 +436,34 @@ extern "C" {
         switch(cap) {
             case GL_COLOR_MATERIAL:
                 std::cout << "GL_COLOR_MATERIAL";
+                colorMaterialActive = true;
                 break;
             case GL_FOG:
                 std::cout << "GL_FOG";
+                fogActive = true;
                 break;
             case GL_DEPTH_TEST:
                 std::cout << "GL_DEPTH_TEST";
-                testDepth = true;
+                depthTestActive = true;
+                break;
+        }
+        std::cout << "\n";
+    }
+
+    void glDisable(GLenum cap) {
+        std::cout << "glDisable ";
+        switch(cap) {
+            case GL_COLOR_MATERIAL:
+                std::cout << "GL_COLOR_MATERIAL";
+                colorMaterialActive = false;
+                break;
+            case GL_FOG:
+                std::cout << "GL_FOG";
+                fogActive = false;
+                break;
+            case GL_DEPTH_TEST:
+                std::cout << "GL_DEPTH_TEST";
+                depthTestActive = false;
                 break;
         }
         std::cout << "\n";
@@ -292,7 +473,6 @@ extern "C" {
     void glBegin(GLenum mode) {
         drawingMode = mode;
         vertexIndex = 0;
-        colorIndex = 0;
         std::cout << "glBegin ";
         switch(drawingMode) {
             case GL_QUADS:
@@ -310,21 +490,26 @@ extern "C" {
                 for (int i = 0; i < vertexIndex; i++) {
                     Vec3 screenPos = ProjectPosition(vertices[i].pos);
                     RenderPixel(screenPos, vertices[i].col);
-                } 
+                }
+                break;
             case GL_QUADS:
                 for (int i = 0; i < vertexIndex; i+=4) {
-                    Vec3 sp1 = ProjectPosition(vertices[i].pos);
-                    Vec3 sp2 = ProjectPosition(vertices[i+1].pos);
-                    Vec3 sp3 = ProjectPosition(vertices[i+2].pos);
-                    Vec3 sp4 = ProjectPosition(vertices[i+3].pos);
-                    RenderLine(sp1, vertices[i].col, sp2, vertices[i+1].col);
-                    RenderLine(sp2, vertices[i+1].col, sp3, vertices[i+2].col);
-                    RenderLine(sp3, vertices[i+2].col, sp4, vertices[i+3].col);
-                    RenderLine(sp4, vertices[i+3].col, sp1, vertices[i].col);
-
-                    // Diagonal
-                   // RenderLine(sp1, vertices[i].col, sp3, vertices[i+2].col);
-                    //RenderLine(sp2, vertices[i+1].col, sp4, vertices[i+3].col);
+                    Triangle screenTriA = ProjectTriangle(
+                        Triangle{
+                            vertices[i], 
+                            vertices[i+1], 
+                            vertices[i+2]
+                        }
+                    );
+                    Triangle screenTriB = ProjectTriangle(
+                        Triangle{
+                            vertices[i],
+                            vertices[i+2], 
+                            vertices[i+3]
+                        }
+                    );
+                    RenderTriangle(screenTriA);
+                    RenderTriangle(screenTriB);
                 } 
                 break;
         }
@@ -358,7 +543,7 @@ extern "C" {
         double angle = angleDeg * M_PI / 180.0;
 
         // Normalize axis
-        Vec3 u = normalize(Vec3{x, y, z});
+        Vec3 u = Normalize(Vec3{x, y, z});
         double c = cos(angle);
         double s = sin(angle);
         double t = 1 - c;
@@ -391,5 +576,34 @@ extern "C" {
             Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1 },
             Vec4{ 0, 0, -(2*f*n)/(f-n), 0 }
         };
+    }
+
+    void glFogi(GLenum pname, GLint param) {
+        switch(pname) {
+            case GL_FOG_MODE:
+                fogMode = param;
+                break;
+        }
+    }
+
+    void glFogfv(GLenum pname, const GLfloat *params) {
+        switch(pname) {
+            case GL_FOG_COLOR:
+                fogColor = Col4{
+                    params[0], params[1], params[2], params[3]
+                };
+                break;
+        }
+    }
+
+    void glFogf(GLenum pname, GLfloat param) {
+        switch (pname) {
+            case GL_FOG_START:
+                fogStart = param;
+                break;
+            case GL_FOG_END:
+                fogEnd = param;
+                break;        
+        }
     }
 }
