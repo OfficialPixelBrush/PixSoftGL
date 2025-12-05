@@ -704,14 +704,16 @@ extern "C" {
         if (!pixels) return;
         // Assume format is always RGBA
         // Assume format is always unsigned Byte
-        for (int iy = y; iy < y+height; iy++) {
+        for (int iy = y; iy < y + height; iy++) {
             for (int ix = x; ix < x+width; ix++) {
-                PixelValue c = frameBufferColor[ix + iy * renderAreaWidth];
+                int srcY = (renderAreaHeight - 1 - iy);
+                PixelValue c = frameBufferColor[ix + srcY * renderAreaWidth];
                 uint8_t* pix = static_cast<uint8_t*>(pixels);
                 pix[0] = c.r;
                 pix[1] = c.g;
                 pix[2] = c.b;
                 pix[3] = 255;
+                pix += 4;
             }
         }
         PrintInfo("\n");
