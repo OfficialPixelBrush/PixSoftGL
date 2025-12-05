@@ -17,3 +17,7 @@ Application -> `libGL` (PixSoftGL) -> SDL3
 
 ## Planned architecture
 Application -> `libGL` (PixSoftGL) -> ESP32 ("GPU") -> Screen (or SDL3 listening for a reply)
+
+## Resources
+- [Coding Adventure: Software Rasterizer by Sebastian Lague](https://www.youtube.com/watch?v=yyJ-hdISgnw)
+- [The OpenGL Graphics System: A Specificaton (Version 1.1)](https://registry.khronos.org/OpenGL/specs/gl/glspec11.pdf)
