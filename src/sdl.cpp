@@ -36,8 +36,8 @@ void ReCreateWindow() {
         surf = SDL_GetWindowSurface(win); // get the window surface
         return;
     }
-    SDL_SetWindowSize(win, renderAreaWidth, renderAreaHeight);
-    surf = SDL_GetWindowSurface(win); // get the window surface
+    //SDL_SetWindowSize(win, renderAreaWidth, renderAreaHeight);
+    //surf = SDL_GetWindowSurface(win); // get the window surface
 }
 
 // Write a mapped pixel value into a (locked) surface at x,y.

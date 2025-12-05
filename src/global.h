@@ -18,6 +18,7 @@ extern bool blendActive;
 extern bool lightingActive;
 extern bool cullFaceActive;
 extern bool normalizeActive;
+extern bool scissorTestActive;
 
 // Lights
 extern bool lightActive[MAX_LIGHTS];
@@ -54,10 +55,17 @@ extern Mat4x4* lastAccessedMatrix;
 // Vertex buffer
 extern Vertex vertices[MAX_VERTICES];
 
-// Viewport size
+// Render-surface size
 extern int renderAreaWidth;
 extern int renderAreaHeight;
 extern int renderAreaTotal;
+
+// Viewport size
+extern int viewportOffsetX;
+extern int viewportOffsetY;
+extern int viewportAreaWidth;
+extern int viewportAreaHeight;
+extern int viewportAreaTotal;
 
 // Screen framebuffer
 extern PixelValue* frameBufferColor;

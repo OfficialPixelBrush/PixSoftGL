@@ -47,20 +47,25 @@ extern "C" {
             }
             real_gl(x,y,width,height);
         }
-        renderAreaWidth = width;
-        renderAreaHeight = height;
-        renderAreaTotal = renderAreaWidth * renderAreaHeight;
-        free(frameBufferColor);
-        free(frameBufferDepth);
-        // Resize buffers
-        frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
-        frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
-        if (!frameBufferColor || !frameBufferDepth) {
-            std::cerr << "Failed to allocate framebuffer!\n";
-            exit(1);
+        viewportOffsetX = x;
+        viewportOffsetY = y;
+        viewportAreaWidth = width;
+        viewportAreaHeight = height;
+        viewportAreaTotal = viewportAreaWidth * viewportAreaHeight;
+        
+        // Create buffers
+        if (!frameBufferColor) {
+            renderAreaWidth = viewportAreaWidth;
+            renderAreaHeight = viewportAreaHeight;
+            renderAreaTotal = viewportAreaTotal;
+            frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
+        }
+        if (!frameBufferDepth) {
+            frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
         }
 
         ReCreateWindow();
+        ClearFramebuffers(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         PrintInfo("\n");
     }
@@ -156,7 +161,7 @@ extern "C" {
             real_gl = (void (*)(GLuint,GLenum)) dlsym(RTLD_NEXT, "glNewList");
         }
         real_gl(list,mode);
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     void glEndList() {
@@ -166,7 +171,7 @@ extern "C" {
             real_gl = (void (*)()) dlsym(RTLD_NEXT, "glEndList");
         }
         real_gl();
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     // Clear framebuffer(s)
@@ -184,21 +189,8 @@ extern "C" {
         UpdateScreen();
 
         // Prepare for next frame
-        // Clear color
-        if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
-            PrintInfo("GL_COLOR_BUFFER_BIT ");
-            for (int i = 0; i < renderAreaTotal; i++) {
-                frameBufferColor[i] = Col3ToPixelValue(clearColor);
-            }
-        }
-        // Clear depth
-        if ((mask & GL_DEPTH_BUFFER_BIT) && frameBufferDepth) {
-            PrintInfo("GL_DEPTH_BUFFER_BIT ");
-            for (int i = 0; i < renderAreaTotal; i++) {
-                frameBufferDepth[i] = INFINITY;
-            }
-        }
-        PrintInfo("\n");;
+        ClearFramebuffers(mask);
+        PrintInfo("\n");
     }
 
     // Set Matrix mode
@@ -225,7 +217,7 @@ extern "C" {
                 lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     // Enable property
@@ -276,13 +268,17 @@ extern "C" {
                 PrintInfo("GL_NORMALIZE");
                 normalizeActive = true;
                 break;
+            case GL_SCISSOR_TEST:
+                PrintInfo("GL_SCISSOR_TEST");
+                scissorTestActive = true;
+                break;
             default:
                 std::cout << std::hex;
                 PrintInfo(cap);
                 std::cout << std::dec;
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     // Disable property
@@ -333,13 +329,17 @@ extern "C" {
                 PrintInfo("GL_NORMALIZE");
                 normalizeActive = false;
                 break;
+            case GL_SCISSOR_TEST:
+                PrintInfo("GL_SCISSOR_TEST");
+                scissorTestActive = false;
+                break;
             default:
                 std::cout << std::hex;
                 PrintInfo(cap);
                 std::cout << std::dec;
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     // Load new data
@@ -387,7 +387,22 @@ extern "C" {
                 PrintInfo("GL_POLYGON ");
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
+    }
+
+    // Waits until all changes in GL state, connection state
+    // or framebuffer access are finished
+    void glFinish() {
+        PrintInfo("glFinish ");
+        UpdateScreen();
+        PrintInfo("\n");
+    }
+
+    // Renders whatever is in the framebuffer instantly
+    void glFlush() {
+        PrintInfo("glFlush ");
+        UpdateScreen();
+        PrintInfo("\n");
     }
 
     // We're done, now draw whatever we sent to the fb
@@ -473,7 +488,7 @@ extern "C" {
                 } 
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     // Load identity matrix
@@ -716,7 +731,7 @@ extern "C" {
                 lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     void glPopMatrix() {
@@ -738,7 +753,7 @@ extern "C" {
                 lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     void glGetIntegerv(GLenum pname, GLint *params) {
@@ -769,6 +784,6 @@ extern "C" {
                 }
                 break;
         }
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 }

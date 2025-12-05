@@ -13,6 +13,7 @@ bool blendActive = false;
 bool lightingActive = false;
 bool cullFaceActive = false;
 bool normalizeActive = false;
+bool scissorTestActive = false;
 
 // Lights
 bool lightActive[MAX_LIGHTS];
@@ -49,10 +50,17 @@ Mat4x4* lastAccessedMatrix = &modelMatricies[0];
 // Vertex buffer
 Vertex vertices[MAX_VERTICES];
 
-// Viewport size
+// Render-surface size
 int renderAreaWidth = DEFAULT_RENDER_AREA_WIDTH;
 int renderAreaHeight = DEFAULT_RENDER_AREA_HEIGHT;
-int renderAreaTotal = DEFAULT_RENDER_AREA_WIDTH * DEFAULT_RENDER_AREA_HEIGHT;
+int renderAreaTotal = renderAreaWidth*renderAreaHeight;
+
+// Viewport size
+int viewportOffsetX = 0;
+int viewportOffsetY = 0;
+int viewportAreaWidth = renderAreaWidth;
+int viewportAreaHeight = renderAreaHeight;
+int viewportAreaTotal = viewportAreaWidth*viewportAreaHeight;
 
 // Screen framebuffer
 PixelValue* frameBufferColor;

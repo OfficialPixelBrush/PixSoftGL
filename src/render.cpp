@@ -1,11 +1,38 @@
 #include "render.h"
 #include "maths.h"
 #include <cmath>
+#include "sdl.h"
+
+void ClearFramebuffers(GLenum mask) {
+    // Clear color
+    if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
+        PrintInfo("GL_COLOR_BUFFER_BIT ");
+        for (int i = 0; i < renderAreaTotal; i++) {
+            frameBufferColor[i] = Col3ToPixelValue(clearColor);
+        }
+    }
+    // Clear depth
+    if ((mask & GL_DEPTH_BUFFER_BIT) && frameBufferDepth) {
+        PrintInfo("GL_DEPTH_BUFFER_BIT ");
+        for (int i = 0; i < renderAreaTotal; i++) {
+            frameBufferDepth[i] = INFINITY;
+        }
+    }
+}
 
 // Render Pixel to framebuffer
 void RenderPixel(Vec3 screenPos, Col3 color) {
-    // NDC is from -1 to 1, which we'll map to 0 - renderAreaWidth
-    int index = int(screenPos.x) + (int(screenPos.y) * renderAreaWidth);
+    int screenX = int(screenPos.x) + viewportOffsetX;
+    int screenY = int(screenPos.y) + viewportOffsetY;
+
+    // Scissor test
+    if (scissorTestActive) {
+        if (screenX > viewportAreaWidth + viewportOffsetX || screenX < viewportOffsetX) return;
+        if (screenY > viewportAreaHeight + viewportOffsetY || screenY < viewportOffsetY) return;
+    }
+
+    // Figure out index for pixel
+    int index = screenX + (screenY * renderAreaWidth);
     if (index < 0 || index >= renderAreaTotal) return;
 
     // If the new pixel is behind the old one, skip
@@ -13,6 +40,7 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
         return;
     }
 
+    // Apply fog (if active)
     if (fogActive && screenPos.z > fogStart) {
         Col3 fogCol = Col3{fogColor.r, fogColor.g, fogColor.b};
         switch(fogMode) {
@@ -29,7 +57,7 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
         }
     }
 
-    // Write new values
+    // Write new values to buffers
     if (!frameBufferColor) return;
     frameBufferColor[index] = Col3ToPixelValue(color);
     frameBufferDepth[index] = screenPos.z;
