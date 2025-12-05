@@ -7,7 +7,7 @@
 extern "C" {
     // Add float vertex (2)
     void glVertex2f(GLfloat x, GLfloat y) {
-        PrintInfo("glVertex2f");
+        //PrintInfo("glVertex2f");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -18,12 +18,12 @@ extern "C" {
         vertices[vertexIndex].pos = Vec3{x,y,0};
         vertices[vertexIndex].col = currentColor;
         vertexIndex++;
-        PrintInfo("\n");
+        //PrintInfo("\n");
     }
 
     // Add float vertex (3)
     void glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
-        PrintInfo("glVertex3f");
+        //PrintInfo("glVertex3f");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -34,7 +34,7 @@ extern "C" {
         vertices[vertexIndex].pos = Vec3{x,y,z};
         vertices[vertexIndex].col = currentColor;
         vertexIndex++;
-        PrintInfo("\n");
+        //PrintInfo("\n");
     }
 
     // Adjust OpenGL Viewport

@@ -283,13 +283,27 @@ int main() {
     // swap/draw after every test so drivers update backbuffer -> front
     glXSwapBuffers(dpy, win);
 
+    std::printf("\n### test_clear_and_readback ###\n");
     results.push_back(test_clear_and_readback()); glXSwapBuffers(dpy, win);
+    usleep(1000000);
+    std::printf("\n### test_immediate_triangle ###\n");
     results.push_back(test_immediate_triangle());   glXSwapBuffers(dpy, win);
+    usleep(1000000);
+    std::printf("\n### test_viewport_scissor ###\n");
     results.push_back(test_viewport_scissor());     glXSwapBuffers(dpy, win);
+    usleep(1000000);
+    std::printf("\n### test_modelview_translate ###\n");
     results.push_back(test_modelview_translate());  glXSwapBuffers(dpy, win);
+    usleep(1000000);
+    std::printf("\n### test_display_list ###\n");
     results.push_back(test_display_list());         glXSwapBuffers(dpy, win);
+    usleep(1000000);
+    std::printf("\n### test_texture_2x2 ###\n");
     results.push_back(test_texture_2x2());          glXSwapBuffers(dpy, win);
+    usleep(1000000);
+    std::printf("\n### test_blending ###\n");
     results.push_back(test_blending());             glXSwapBuffers(dpy, win);
+    usleep(1000000);
 
     
     // Vendor Info

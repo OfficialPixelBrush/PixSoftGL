@@ -6,7 +6,7 @@ SDL_Window *win;
 SDL_Surface *surf;
 bool running = true;
 
-bool printInfo = false;
+bool printInfo = true;
 
 void PrintInfo(int s) {
     if (!printInfo) return;
@@ -30,17 +30,14 @@ void SDL_KeepAliveAndUpdate() {
 }
 
 void ReCreateWindow() {
-    /*
-    if (win) {
-        SDL_DestroyWindow(win);
-    }
-    */
-    //SDL_Quit();
-    if (!win || !surf) {
+    if (!win) {
         SDL_Init(SDL_INIT_VIDEO);
         win = SDL_CreateWindow("PixSoftGL", renderAreaWidth, renderAreaHeight, 0);
         surf = SDL_GetWindowSurface(win); // get the window surface
+        return;
     }
+    SDL_SetWindowSize(win, renderAreaWidth, renderAreaHeight);
+    surf = SDL_GetWindowSurface(win); // get the window surface
 }
 
 // Write a mapped pixel value into a (locked) surface at x,y.

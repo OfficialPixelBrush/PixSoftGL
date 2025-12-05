@@ -5,60 +5,60 @@
 #include "include/defines.h"
 #include <GL/gl.h>
 
-static bool forwardToSystemGl = true;
+extern bool forwardToSystemGl;
 
-static int vertexIndex = 0;
+extern int vertexIndex;
 
 // If depth should be tested
-static bool depthTestActive = false;
-static bool fogActive = false;
-static bool colorMaterialActive = false;
-static bool texture2dActive = false;
-static bool blendActive = false;
-static bool lightingActive = false;
-static bool cullFaceActive = false;
-static bool normalizeActive = false;
+extern bool depthTestActive;
+extern bool fogActive;
+extern bool colorMaterialActive;
+extern bool texture2dActive;
+extern bool blendActive;
+extern bool lightingActive;
+extern bool cullFaceActive;
+extern bool normalizeActive;
 
 // Lights
-static bool lightActive[MAX_LIGHTS];
-static Light lights[MAX_LIGHTS];
+extern bool lightActive[MAX_LIGHTS];
+extern Light lights[MAX_LIGHTS];
 
 // Fog variables
-static int fogMode = 0;
-static Col4 fogColor = Col4{0,0,0,0};
-static float fogStart = 0.0;
-static float fogEnd = 0.0;
+extern int fogMode;
+extern Col4 fogColor;
+extern float fogStart;
+extern float fogEnd;
 
 // The current object rendering mode
-static GLenum drawingMode = GL_POINTS;
+extern GLenum drawingMode;
 
 // The current projection mode
-static GLenum projectionMode = 0;
+extern GLenum projectionMode;
 
 // The current matrix mode
-static GLenum matrixMode = GL_MODELVIEW;
+extern GLenum matrixMode;
 
 // Currently active color
-static Col3 currentColor = Col3{1,1,1};
-static Col3 clearColor = Col3{0,0,0};
+extern Col3 currentColor;
+extern Col3 clearColor;
 
 // Matricies
-static int projMatrixPtr = 0;
-static int modelMatrixPtr = 0;
-static int texMatrixPtr = 0;
-static Mat4x4 projMatricies[MAX_PROJECTION_MATRICIES];
-static Mat4x4 modelMatricies[MAX_MODEL_MATRICIES];
-static Mat4x4 texMatricies[MAX_TEXTURE_MATRICIES];
-static Mat4x4* lastAccessedMatrix = &modelMatricies[0];
+extern int projMatrixPtr;
+extern int modelMatrixPtr;
+extern int texMatrixPtr;
+extern Mat4x4 projMatricies[MAX_PROJECTION_MATRICIES];
+extern Mat4x4 modelMatricies[MAX_MODEL_MATRICIES];
+extern Mat4x4 texMatricies[MAX_TEXTURE_MATRICIES];
+extern Mat4x4* lastAccessedMatrix;
 
 // Vertex buffer
-static Vertex vertices[MAX_VERTICES];
+extern Vertex vertices[MAX_VERTICES];
 
 // Viewport size
-static int renderAreaWidth = DEFAULT_RENDER_AREA_WIDTH;
-static int renderAreaHeight = DEFAULT_RENDER_AREA_HEIGHT;
-static int renderAreaTotal = DEFAULT_RENDER_AREA_WIDTH * DEFAULT_RENDER_AREA_HEIGHT;
+extern int renderAreaWidth;
+extern int renderAreaHeight;
+extern int renderAreaTotal;
 
 // Screen framebuffer
-static PixelValue* frameBufferColor;
-static float* frameBufferDepth;
+extern PixelValue* frameBufferColor;
+extern float* frameBufferDepth;
