@@ -86,7 +86,7 @@ extern "C" {
 
     // Set float color
     void glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
-        PrintInfo("glColor3f");
+        //PrintInfo("glColor3f");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -95,7 +95,7 @@ extern "C" {
             real_gl(red,green,blue);
         }
         currentColor = Col3{red,green,blue};
-        PrintInfo("\n");
+        //PrintInfo("\n");
     }
 
     // Return OpenGL info
@@ -218,6 +218,18 @@ extern "C" {
                 break;
         }
         PrintInfo("\n");
+    }
+
+    // Choose face winding order
+    void glFrontFace(GLenum mode) {
+        switch (mode) {
+            case GL_CCW:
+                counterClockWiseWindingActive = true;
+                break;
+            case GL_CW:
+                counterClockWiseWindingActive = false;
+                break;
+        }
     }
 
     // Enable property

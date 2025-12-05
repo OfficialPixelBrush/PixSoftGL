@@ -14,6 +14,7 @@ bool lightingActive = false;
 bool cullFaceActive = false;
 bool normalizeActive = false;
 bool scissorTestActive = false;
+bool counterClockWiseWindingActive = false;
 
 // Lights
 bool lightActive[MAX_LIGHTS];

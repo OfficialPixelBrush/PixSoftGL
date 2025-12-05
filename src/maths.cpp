@@ -101,9 +101,18 @@ bool PointInTriangle(Triangle tri, Vec3 p) {
     float areaABP = SignedTriangleArea(tri.a.pos, tri.b.pos, p);
     float areaBCP = SignedTriangleArea(tri.b.pos, tri.c.pos, p);
     float areaCAP = SignedTriangleArea(tri.c.pos, tri.a.pos, p);
-    bool inTri = areaABP >= 0 && areaBCP >= 0 && areaCAP >= 0;
 
-    float totalArea = (areaABP + areaBCP + areaCAP);
+    bool frontFace = areaABP >= 0 && areaBCP >= 0 && areaCAP >= 0;
+    bool backFace = areaABP <= 0 && areaBCP <= 0 && areaCAP <= 0;
+
+    if (counterClockWiseWindingActive)
+        std::swap(frontFace, backFace);
+    
+    // When culling is OFF, accept both sides
+    // When culling is ON, only accept front faces
+    bool inTri = cullFaceActive ? frontFace : (frontFace || backFace);
+    
+    float totalArea = std::abs(areaABP + areaBCP + areaCAP);
 
     return inTri && totalArea > 0;
 }

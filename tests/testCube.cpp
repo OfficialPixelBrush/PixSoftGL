@@ -16,6 +16,8 @@ void init() {
     glViewport(0,0,WINDOW_WIDTH,WINDOW_HEIGHT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_FOG);
+    //glEnable(GL_CULL_FACE);
+    //glFrontFace(GL_CW);
 
     GLfloat fogColor[4] = {0.5f, 0.5f, 0.5f, 1.0f};
     glFogi(GL_FOG_MODE, GL_LINEAR);

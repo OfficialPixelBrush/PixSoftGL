@@ -17,6 +17,7 @@ extern bool texture2dActive;
 extern bool blendActive;
 extern bool lightingActive;
 extern bool cullFaceActive;
+extern bool counterClockWiseWindingActive;
 extern bool normalizeActive;
 extern bool scissorTestActive;
 
