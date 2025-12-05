@@ -423,13 +423,20 @@ extern "C" {
                     RenderPixel(screenPos, vertices[i].col);
                 }
                 break;
+            case GL_LINES:
+                for (int i = 0; i < vertexIndex; i+=2) {
+                    Vec3 screenPosA = ProjectPosition(vertices[i].pos);
+                    Vec3 screenPosB = ProjectPosition(vertices[i+2].pos);
+                    RenderLine(screenPosA, vertices[i].col, screenPosB, vertices[i+2].col);
+                }
+                break;
             case GL_TRIANGLE_FAN:
                 for (int i = 1; i < vertexIndex; i+=2) {
                     Triangle screenTri = ProjectTriangle(
                         Triangle{
-                            vertices[0], 
+                            vertices[i+1],
                             vertices[i], 
-                            vertices[i+1]
+                            vertices[0], 
                         }
                     );
                     RenderTriangle(screenTri);
@@ -439,9 +446,9 @@ extern "C" {
                 for (int i = 0; i < vertexIndex; i+=3) {
                     Triangle screenTri = ProjectTriangle(
                         Triangle{
-                            vertices[i], 
+                            vertices[i+2],
                             vertices[i+1], 
-                            vertices[i+2]
+                            vertices[i], 
                         }
                     );
                     RenderTriangle(screenTri);
@@ -451,16 +458,16 @@ extern "C" {
                 for (int i = 0; i < vertexIndex; i+=4) {
                     Triangle screenTriA = ProjectTriangle(
                         Triangle{
-                            vertices[i], 
+                            vertices[i+2],
                             vertices[i+1], 
-                            vertices[i+2]
+                            vertices[i], 
                         }
                     );
                     Triangle screenTriB = ProjectTriangle(
                         Triangle{
-                            vertices[i],
+                            vertices[i+3],
                             vertices[i+2], 
-                            vertices[i+3]
+                            vertices[i],
                         }
                     );
                     RenderTriangle(screenTriA);
@@ -471,16 +478,16 @@ extern "C" {
                 for (int i = 2; i + 1 < vertexIndex; i+=2) {
                     Triangle screenTriA = ProjectTriangle(
                         Triangle{
-                            vertices[i-2], 
+                            vertices[i],
                             vertices[i-1], 
-                            vertices[i]
+                            vertices[i-2], 
                         }
                     );
                     Triangle screenTriB = ProjectTriangle(
                         Triangle{
-                            vertices[i],
+                            vertices[i-2],
                             vertices[i+1], 
-                            vertices[i-2]
+                            vertices[i],
                         }
                     );
                     RenderTriangle(screenTriA);

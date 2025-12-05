@@ -79,25 +79,33 @@ float Dot2D(Vec3 a, Vec3 b) {
     return a.x*b.x + a.y*b.y;
 }
 
+// 2D Cross Product
+float Cross2D(Vec3 a, Vec3 b) {
+    return a.x*b.x - a.y*b.y;
+}
+
 // Rotate vector 90°
 Vec3 Perpendicular2D(Vec3 vec) {
     return Vec3{-vec.y, vec.x, 0};
 }
 
 // Check if point is on right side of vector
-bool PointOnRightSideOfLine(Vec3 a, Vec3 b, Vec3 p) {
+float SignedTriangleArea(Vec3 a, Vec3 b, Vec3 p) {
     Vec3 ap = p - a;
-    Vec3 ab = b - a;
-    Vec3 abPerp = Perpendicular2D(ab);
-    return Dot2D(ap, abPerp) >= 0.0;
+    Vec3 abPerp = Perpendicular2D(b - a);
+    return Dot2D(ap, abPerp) / 2.0;
 }
 
 // Check if point is inside of triangle
 bool PointInTriangle(Triangle tri, Vec3 p) {
-    bool sideAB = PointOnRightSideOfLine(tri.a.pos, tri.b.pos, p);
-    bool sideBC = PointOnRightSideOfLine(tri.b.pos, tri.c.pos, p);
-    bool sideCA = PointOnRightSideOfLine(tri.c.pos, tri.a.pos, p);
-    return sideAB == sideBC && sideBC == sideCA;
+    float areaABP = SignedTriangleArea(tri.a.pos, tri.b.pos, p);
+    float areaBCP = SignedTriangleArea(tri.b.pos, tri.c.pos, p);
+    float areaCAP = SignedTriangleArea(tri.c.pos, tri.a.pos, p);
+    bool inTri = areaABP >= 0 && areaBCP >= 0 && areaCAP >= 0;
+
+    float totalArea = (areaABP + areaBCP + areaCAP);
+
+    return inTri && totalArea > 0;
 }
 
 // Simple barycentric color interpolation
