@@ -1,384 +1,13 @@
-#include <GL/gl.h>
-#include <SDL3/SDL_init.h>
-#include <algorithm>
-#include <cmath>
-#include <iostream>
-#include <SDL3/SDL.h>
-#include <dlfcn.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string>
-
-#include "defines.h"
-#include "datatypes.h"
-
-bool printInfo = false;
-bool forwardToSystemGl = true;
-
-void PrintInfo(int s) {
-    if (!printInfo) return;
-    std::cout << s;
-}
-
-void PrintInfo(const std::string& s) {
-    if (!printInfo) return;
-    std::cout << s;
-}
-
-// The current vertex index
-int vertexIndex = 0;
-
-// If depth should be tested
-bool depthTestActive = false;
-bool fogActive = false;
-bool colorMaterialActive = false;
-bool texture2dActive = false;
-bool blendActive = false;
-bool lightingActive = false;
-bool cullFaceActive = false;
-bool normalizeActive = false;
-
-// Lights
-bool lightActive[MAX_LIGHTS];
-Light lights[MAX_LIGHTS];
-
-// Fog variables
-int fogMode = 0;
-Col4 fogColor = Col4{0,0,0,0};
-float fogStart = 0.0;
-float fogEnd = 0.0;
-
-// The current object rendering mode
-GLenum drawingMode = GL_POINTS;
-
-// The current projection mode
-GLenum projectionMode = 0;
-
-// The current matrix mode
-GLenum matrixMode = GL_MODELVIEW;
-
-// Currently active color
-Col3 currentColor = Col3{1,1,1};
-Col3 clearColor = Col3{0,0,0};
-
-// Matricies
-Mat4x4* lastAccessedMatrix = nullptr;
-int projMatrixPtr = 0;
-int modelMatrixPtr = 0;
-int texMatrixPtr = 0;
-Mat4x4 projMatricies[MAX_PROJECTION_MATRICIES];
-Mat4x4 modelMatricies[MAX_MODEL_MATRICIES];
-Mat4x4 texMatricies[MAX_TEXTURE_MATRICIES];
-
-// Vertex buffer
-Vertex vertices[MAX_VERTICES];
-
-// Viewport size
-int renderAreaWidth = DEFAULT_RENDER_AREA_WIDTH;
-int renderAreaHeight = DEFAULT_RENDER_AREA_HEIGHT;
-int renderAreaTotal = DEFAULT_RENDER_AREA_WIDTH * DEFAULT_RENDER_AREA_HEIGHT;
-
-// Screen framebuffer
-PixelValue* frameBufferColor;
-float* frameBufferDepth;
-
-// SDL Stuff
-SDL_Window *win;
-SDL_Surface *surf;
-bool running = true;
-
-// Write a mapped pixel value into a (locked) surface at x,y.
-// surface must be valid and locked if SDL_MUSTLOCK(surface) is true.
-static void put_pixel_locked(SDL_Surface *surface, int x, int y, Uint32 pixel)
-{
-    if (!surface) return;
-    if (x < 0 || y < 0 || x >= surface->w || y >= surface->h) return;
-
-    auto details = SDL_GetPixelFormatDetails(surface->format);
-    int bpp = details->bytes_per_pixel;
-    uint8_t *row = (uint8_t*)surface->pixels + y * surface->pitch;
-    uint8_t *p = row + x * bpp;
-
-    switch (bpp) {
-        case 1:
-            *p = (uint8_t)pixel;
-            break;
-        case 2:
-            *(uint16_t*)p = (uint16_t)pixel;
-            break;
-        case 3:
-            if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-                p[0] = (pixel >> 16) & 0xFF;
-                p[1] = (pixel >> 8) & 0xFF;
-                p[2] = pixel & 0xFF;
-            } else {
-                p[0] = pixel & 0xFF;
-                p[1] = (pixel >> 8) & 0xFF;
-                p[2] = (pixel >> 16) & 0xFF;
-            }
-            break;
-        case 4:
-            *(uint32_t*)p = pixel;
-            break;
-    }
-}
-
-// Safe wrapper: maps RGBA to surface format, locks/unlocks if needed, then writes.
-void put_pixel(SDL_Surface *surface, int x, int y,
-               Uint8 r, Uint8 g, Uint8 b, Uint8 a)
-{
-    if (!surface) return;
-
-    // Map color for this surface format
-    Uint32 mapped = SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, r, g, b, a);
-
-    bool locked = false;
-    if (SDL_MUSTLOCK(surface)) {
-        if (SDL_LockSurface(surface) != 0) return; // failed to lock
-        locked = true;
-    }
-
-    put_pixel_locked(surface, x, y, mapped);
-
-    if (locked) SDL_UnlockSurface(surface);
-}
-
-// Interpolate two colors linearly
-Col3 lerp(Col3 a, Col3 b, float t) {
-    return Col3{
-        a.r + t * (b.r - a.r),
-        a.g + t * (b.g - a.g),
-        a.b + t * (b.b - a.b)
-    };
-}
-
-// Interpolate two floats linearly
-float lerp(float a, float b, float t) {
-    return a + t * (b - a);
-}
-
-// Draw a Pixel to the terminal
-void DrawPixel(PixelValue p, int x, int y) {
-    //PrintInfo("\e[38;2;" << int(p.r) << ");" << int(p.g) << ");" << int(p.b) << "m" << "█");
-    put_pixel(surf, x, y, p.r,p.g,p.b,255);
-}
-
-// Draw the framebuffer colors to the SDL Window
-void UpdateScreen() {
-    if (!frameBufferColor) return;
-    //PrintInfo("\033[H");
-    for (int y = 0; y < renderAreaHeight; y++) {
-        for (int x = 0; x < renderAreaWidth; x++) {
-            DrawPixel(frameBufferColor[x + y * renderAreaWidth], x, y);
-        }
-        //PrintInfo("\n");;
-    }
-    // Poll to make not crash
-    SDL_Event e;
-    while (SDL_PollEvent(&e)) {  // poll all events
-        if (e.type == SDL_EVENT_QUIT) { // window X pressed
-            SDL_Quit();
-            exit(0);                 // exit your program
-        }
-    }
-    SDL_UpdateWindowSurface(win);
-}
-
-// Convert a Vec3 to a Mat4x4
-Mat4x4 Vec3ToMat4x4(Vec3 pos) {
-    return Mat4x4 {
-        Vec4 { 1, 0 ,0,pos.x },
-        Vec4 { 0, 1 ,0,pos.y },
-        Vec4 { 0, 0 ,1,pos.z },
-        Vec4 { 0, 0 ,0,1 }
-    };
-}
-
-// Project world-space position to screen, return eye-space distance in z
-Vec3 ProjectPosition(Vec3 pos) {
-    switch(projectionMode) {
-        case GL_PROJECTION: {
-            // transform to eye (modelview) space first
-            Vec4 eye = modelMatricies[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
-            // eye.z is negative in front of the camera in typical OpenGL; use -eye.z as positive distance
-            float eyeDist = float(-eye.z);
-
-            // then project
-            Vec4 clip = projMatricies[projMatrixPtr] * eye;
-            Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
-
-            return Vec3{
-                (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
-                (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaHeight,
-                eyeDist           // store eye-space distance for fog calculations
-            };
-        }
-    }
-    return Vec3{0,0,0};
-}
-
-// Project triangle to screen
-Triangle ProjectTriangle(Triangle tri) {
-    return Triangle{
-        Vertex { ProjectPosition(tri.a.pos), tri.a.col },
-        Vertex { ProjectPosition(tri.b.pos), tri.b.col },
-        Vertex { ProjectPosition(tri.c.pos), tri.c.col },
-    };
-}
-
-PixelValue Col3ToPixelValue(Col3 color) {
-    color.r = std::fmax(0.0f, std::fmin(1.0f, color.r));
-    color.g = std::fmax(0.0f, std::fmin(1.0f, color.g));
-    color.b = std::fmax(0.0f, std::fmin(1.0f, color.b));
-    return PixelValue{
-        (unsigned char)(color.r*255),
-        (unsigned char)(color.g*255),
-        (unsigned char)(color.b*255)
-    };
-}
-
-// Render Pixel to framebuffer
-void RenderPixel(Vec3 screenPos, Col3 color) {
-    // NDC is from -1 to 1, which we'll map to 0 - renderAreaWidth
-    int index = int(screenPos.x) + (int(screenPos.y) * renderAreaWidth);
-    if (index < 0 || index >= renderAreaTotal) return;
-
-    // If the new pixel is behind the old one, skip
-    if (depthTestActive && frameBufferDepth && screenPos.z >= frameBufferDepth[index]) {
-        return;
-    }
-
-    if (fogActive && screenPos.z > fogStart) {
-        Col3 fogCol = Col3{fogColor.r, fogColor.g, fogColor.b};
-        switch(fogMode) {
-            case GL_LINEAR:
-                float fogFactor = (screenPos.z - fogStart) / (fogEnd - fogStart);
-                fogFactor = std::clamp(fogFactor, 0.0f, 1.0f);
-
-                color = Col3{
-                    color.r * (1.0f - fogFactor) + fogColor.r * fogFactor,
-                    color.g * (1.0f - fogFactor) + fogColor.g * fogFactor,
-                    color.b * (1.0f - fogFactor) + fogColor.b * fogFactor
-                };
-                break;
-        }
-    }
-
-    // Write new values
-    if (!frameBufferColor) return;
-    frameBufferColor[index] = Col3ToPixelValue(color);
-    frameBufferDepth[index] = screenPos.z;
-
-    PixelValue p = Col3ToPixelValue(color);
-    DrawPixel(p,int(screenPos.x),int(screenPos.y));
-}
-
-// Render Line to Framebuffer
-void RenderLine(Vec3 posA, Col3 colA, Vec3 posB, Col3 colB) {
-    float x0 = posA.x, y0 = posA.y;
-    float x1 = posB.x, y1 = posB.y;
-    Col3 c0 = colA, c1 = colB;
-
-    bool steep = fabs(y1 - y0) > fabs(x1 - x0);
-    if (steep) {
-        std::swap(x0, y0);
-        std::swap(x1, y1);
-    }
-
-    if (x0 > x1) {
-        std::swap(x0, x1);
-        std::swap(y0, y1);
-        std::swap(c0, c1);
-    }
-
-    float dx = x1 - x0;
-    float dy = y1 - y0;
-    float gradient = dx == 0 ? 0 : dy / dx;
-
-    for (float x = x0; x <= x1; x += 1.0f) {
-        float t = dx == 0 ? 0.0f : (x - x0) / dx;
-        float y = y0 + gradient * (x - x0);
-        Vec3 screenPos = steep ? Vec3{y, x, lerp(posA.z, posB.z, t)}
-                               : Vec3{x, y, lerp(posA.z, posB.z, t)};
-        Col3 color = lerp(c0, c1, t);
-        RenderPixel(screenPos, color);
-    }
-}
-
-// Normalize vector
-Vec3 Normalize(Vec3 v) {
-    float mag = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-    if (mag == 0.0f) return Vec3{0,0,0};
-    return Vec3{v.x/mag, v.y/mag, v.z/mag};
-};
-
-// 2D Dot Product
-float Dot2D(Vec3 a, Vec3 b) {
-    return a.x*b.x + a.y*b.y;
-}
-
-// Rotate vector 90°
-Vec3 Perpendicular2D(Vec3 vec) {
-    return Vec3{-vec.y, vec.x, 0};
-}
-
-// Check if point is on right side of vector
-bool PointOnRightSideOfLine(Vec3 a, Vec3 b, Vec3 p) {
-    Vec3 ap = p - a;
-    Vec3 ab = b - a;
-    Vec3 abPerp = Perpendicular2D(ab);
-    return Dot2D(ap, abPerp) >= 0.0;
-}
-
-// Check if point is inside of triangle
-bool PointInTriangle(Triangle tri, Vec3 p) {
-    bool sideAB = PointOnRightSideOfLine(tri.a.pos, tri.b.pos, p);
-    bool sideBC = PointOnRightSideOfLine(tri.b.pos, tri.c.pos, p);
-    bool sideCA = PointOnRightSideOfLine(tri.c.pos, tri.a.pos, p);
-    return sideAB == sideBC && sideBC == sideCA;
-}
-
-// Simple barycentric color interpolation
-Col3 BarycentricColor(Triangle tri, Vec3& p) {
-    Vec3 a = tri.a.pos;
-    Vec3 b = tri.b.pos;
-    Vec3 c = tri.c.pos;
-
-    float det = (b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y);
-    float w1 = ((b.y - c.y)*(p.x - c.x) + (c.x - b.x)*(p.y - c.y)) / det;
-    float w2 = ((c.y - a.y)*(p.x - c.x) + (a.x - c.x)*(p.y - c.y)) / det;
-    float w3 = 1.0f - w1 - w2;
-    w1 = std::clamp(w1, 0.0f, 1.0f);
-    w2 = std::clamp(w2, 0.0f, 1.0f);
-    w3 = std::clamp(w3, 0.0f, 1.0f);
-
-    // Calulate depth too
-    p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
-
-    return Col3{
-        w1*tri.a.col.r + w2*tri.b.col.r + w3*tri.c.col.r,
-        w1*tri.a.col.g + w2*tri.b.col.g + w3*tri.c.col.g,
-        w1*tri.a.col.b + w2*tri.b.col.b + w3*tri.c.col.b
-    };
-}
-
-// Render triangle to framebuffer
-void RenderTriangle(Triangle tri) {
-    for (int y = 0; y < renderAreaHeight; y++) {
-        for (int x = 0; x < renderAreaWidth; x++) {
-            Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};
-            if (PointInTriangle(tri, point)) {
-                Col3 color = BarycentricColor(tri, point);
-                RenderPixel(point, color);
-            }
-        }
-    }
-}
+#include "global.h"
+#include "render.h"
+#include "sdl.h"
+#include "maths.h"
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
     // Add float vertex (2)
     void glVertex2f(GLfloat x, GLfloat y) {
+        PrintInfo("glVertex2f");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -389,10 +18,12 @@ extern "C" {
         vertices[vertexIndex].pos = Vec3{x,y,0};
         vertices[vertexIndex].col = currentColor;
         vertexIndex++;
+        PrintInfo("\n");
     }
 
     // Add float vertex (3)
     void glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
+        PrintInfo("glVertex3f");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -403,10 +34,12 @@ extern "C" {
         vertices[vertexIndex].pos = Vec3{x,y,z};
         vertices[vertexIndex].col = currentColor;
         vertexIndex++;
+        PrintInfo("\n");
     }
 
     // Adjust OpenGL Viewport
     void glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
+        PrintInfo("glViewport");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLint,GLint,GLsizei,GLsizei) = NULL;
             if (!real_gl) {
@@ -422,19 +55,19 @@ extern "C" {
         // Resize buffers
         frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
         frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
-
-        if (!win || !surf) {
-            SDL_Init(SDL_INIT_VIDEO);
-            win = SDL_CreateWindow("PixSoftGL", renderAreaWidth, renderAreaHeight, 0);
-            surf = SDL_GetWindowSurface(win); // get the window surface
+        if (!frameBufferColor || !frameBufferDepth) {
+            std::cerr << "Failed to allocate framebuffer!\n";
+            exit(1);
         }
+
+        ReCreateWindow();
         
-        //SDL_DestroyWindow(win);
-        //SDL_Quit();
+        PrintInfo("\n");
     }
 
     // Set float color
     void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+        PrintInfo("glClearColor");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -443,10 +76,12 @@ extern "C" {
             real_gl(red,green,blue,alpha);
         }
         clearColor = Col3{red,green,blue};
+        PrintInfo("\n");
     }
 
     // Set float color
     void glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
+        PrintInfo("glColor3f");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -455,10 +90,12 @@ extern "C" {
             real_gl(red,green,blue);
         }
         currentColor = Col3{red,green,blue};
+        PrintInfo("\n");
     }
 
     // Return OpenGL info
     const GLubyte* glGetString(GLenum name) {
+        PrintInfo("glGetString");
         if (forwardToSystemGl) {
             static const GLubyte* (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
@@ -474,13 +111,15 @@ extern "C" {
             case GL_RENDERER:
                 return (const GLubyte*)PIXSOFTGL_RENDERER;
             case GL_EXTENSIONS:
-                return nullptr;
+                return (const GLubyte*)PIXSOFTGL_EXTENSIONS;
         }
+        PrintInfo("\n");
         return nullptr;
     }
 
     // Light Position
     void glLightfv(GLenum light, GLenum pname, const GLfloat *params) {
+        PrintInfo("glLightfv");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum,GLenum,const GLfloat*) = NULL;
             if (!real_gl) {
@@ -488,7 +127,6 @@ extern "C" {
             }
             real_gl(light,pname,params);
         }
-        PrintInfo("glLightfv");
         switch(pname) {
             case GL_POSITION:
                 lights[light & 0xFF].pos = Vec3{
@@ -502,6 +140,7 @@ extern "C" {
     }
 
     GLuint glGenLists(GLsizei range) {
+        PrintInfo("glGenLists");
         static GLuint (*real_gl)(GLsizei) = NULL;
         if (!real_gl) {
             real_gl = (GLuint (*)(GLsizei)) dlsym(RTLD_NEXT, "glGenLists");
@@ -511,27 +150,28 @@ extern "C" {
     }
 
     void glNewList(GLuint list, GLenum mode) {
+        PrintInfo("glNewList");
         static void (*real_gl)(GLuint,GLenum) = NULL;
         if (!real_gl) {
             real_gl = (void (*)(GLuint,GLenum)) dlsym(RTLD_NEXT, "glNewList");
         }
         real_gl(list,mode);
-        PrintInfo("glNewList");
         PrintInfo("\n");;
     }
 
     void glEndList() {
+        PrintInfo("glEndList");
         static void (*real_gl)() = NULL;
         if (!real_gl) {
             real_gl = (void (*)()) dlsym(RTLD_NEXT, "glEndList");
         }
         real_gl();
-        PrintInfo("glEndList");
         PrintInfo("\n");;
     }
 
     // Clear framebuffer(s)
     void glClear(GLbitfield mask) {
+        PrintInfo("glClear ");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLbitfield) = NULL;
             if (!real_gl) {
@@ -544,7 +184,6 @@ extern "C" {
         UpdateScreen();
 
         // Prepare for next frame
-        PrintInfo("glClear ");
         // Clear color
         if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
             PrintInfo("GL_COLOR_BUFFER_BIT ");
@@ -564,6 +203,7 @@ extern "C" {
 
     // Set Matrix mode
     void glMatrixMode(GLenum mode) {
+        PrintInfo("glMatrixMode ");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
@@ -573,7 +213,6 @@ extern "C" {
         }
 
         // Prepare next matrix Mode
-        PrintInfo("glMatrixMode ");
         matrixMode = mode;
         switch(matrixMode) {
             case GL_PROJECTION:
@@ -591,7 +230,8 @@ extern "C" {
 
     // Enable property
     void glEnable(GLenum cap) {
-            if (forwardToSystemGl) {
+        PrintInfo("glEnable ");
+        if (forwardToSystemGl) {
             static void (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
                 real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glEnable");
@@ -599,7 +239,6 @@ extern "C" {
             real_gl(cap);
         }
 
-        PrintInfo("glEnable ");
         switch(cap) {
             case GL_COLOR_MATERIAL:
                 PrintInfo("GL_COLOR_MATERIAL");
@@ -648,7 +287,8 @@ extern "C" {
 
     // Disable property
     void glDisable(GLenum cap) {
-            if (forwardToSystemGl) {
+        PrintInfo("glDisable ");
+        if (forwardToSystemGl) {
             static void (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
                 real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glDisable");
@@ -656,7 +296,6 @@ extern "C" {
             real_gl(cap);
         }
         
-        PrintInfo("glDisable ");
         switch(cap) {
             case GL_COLOR_MATERIAL:
                 PrintInfo("GL_COLOR_MATERIAL");
@@ -705,6 +344,7 @@ extern "C" {
 
     // Load new data
     void glBegin(GLenum mode) {
+        PrintInfo("glBegin ");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
@@ -715,7 +355,6 @@ extern "C" {
 
         drawingMode = mode;
         vertexIndex = 0;
-        PrintInfo("glBegin ");
         switch(drawingMode) {
             case GL_POINTS:
                 PrintInfo("GL_POINTS ");
@@ -753,7 +392,8 @@ extern "C" {
 
     // We're done, now draw whatever we sent to the fb
     void glEnd() {
-            if (forwardToSystemGl) {
+        PrintInfo("glEnd ");
+        if (forwardToSystemGl) {
             static void (*real_gl)() = NULL;
             if (!real_gl) {
                 real_gl = (void (*)()) dlsym(RTLD_NEXT, "glEnd");
@@ -761,7 +401,6 @@ extern "C" {
             real_gl();
         }
 
-        PrintInfo("glEnd ");
         switch(drawingMode) {
             case GL_POINTS:
                 for (int i = 0; i < vertexIndex; i++) {
@@ -839,6 +478,7 @@ extern "C" {
 
     // Load identity matrix
     void glLoadIdentity() {
+        PrintInfo("glLoadIdentity ");
         if (forwardToSystemGl) {
             static void (*real_gl)() = NULL;
             if (!real_gl) {
@@ -846,18 +486,19 @@ extern "C" {
             }
             real_gl();
         }
-        PrintInfo("glLoadIdentity ");
+        if (!lastAccessedMatrix) return;
         *lastAccessedMatrix = Mat4x4 {
             Vec4 { 1, 0 ,0,0 },
             Vec4 { 0, 1 ,0,0 },
             Vec4 { 0, 0 ,1,0 },
             Vec4 { 0, 0 ,0,1 }
         };
-        PrintInfo("\n");;
+        PrintInfo("\n");
     }
 
     // Float translate
     void glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
+        PrintInfo("glTranslatef");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -865,6 +506,7 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
+        if (!lastAccessedMatrix) return;
         Mat4x4 T = {
             Vec4{1, 0, 0, 0},
             Vec4{0, 1, 0, 0},
@@ -873,10 +515,12 @@ extern "C" {
         };
 
         *lastAccessedMatrix = (*lastAccessedMatrix) * T; // multiply, not add
+        PrintInfo("\n");
     }
 
     // Float Rotate
     void glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
+        PrintInfo("glRotatef");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -884,6 +528,7 @@ extern "C" {
             }
             real_gl(angleDeg,x,y,z);
         }
+        if (!lastAccessedMatrix) return;
         // Convert to radians
         double angle = angleDeg * M_PI / 180.0;
 
@@ -901,10 +546,12 @@ extern "C" {
         };
 
         *lastAccessedMatrix = (*lastAccessedMatrix) * R; // multiply, not add
+        PrintInfo("\n");
     }
 
     // Float scale
     void glScalef(GLfloat x, GLfloat y, GLfloat z) {
+        PrintInfo("glScalef");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLfloat,GLfloat,GLfloat) = NULL;
             if (!real_gl) {
@@ -912,6 +559,7 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
+        if (!lastAccessedMatrix) return;
         Mat4x4 S = {
             Vec4{double(x), 0, 0, 0},
             Vec4{0, double(y), 0, 0},
@@ -920,10 +568,12 @@ extern "C" {
         };
 
         *lastAccessedMatrix = (*lastAccessedMatrix) * S; // multiply, not add
+        PrintInfo("\n");
     }
 
     // Perspective Projection Matrix Creation
     void glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
+        PrintInfo("glFrustum");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLdouble,GLdouble,GLdouble,GLdouble,GLdouble,GLdouble) = NULL;
             if (!real_gl) {
@@ -931,16 +581,19 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
+        if (!lastAccessedMatrix) return;
         *lastAccessedMatrix = Mat4x4{
             Vec4{ (2*n)/(r-l), 0, 0, 0 },
             Vec4{ 0, (2*n)/(t-b), 0, 0 },
             Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1 },
             Vec4{ 0, 0, -(2*f*n)/(f-n), 0 }
         };
+        PrintInfo("\n");
     }
 
     // Orthographic Projection Matrix Creation
     void glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
+        PrintInfo("glOrtho");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLdouble,GLdouble,GLdouble,GLdouble,GLdouble,GLdouble) = NULL;
             if (!real_gl) {
@@ -948,16 +601,19 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
+        if (!lastAccessedMatrix) return;
         *lastAccessedMatrix = Mat4x4{
             Vec4{ 2/(r-l),0,0,0},
             Vec4{0,2/(t-b),0,0},
             Vec4{0,0,-(2/(f-n)),0},
             Vec4{-((r+l)/(r-l)), -((t+b)/(t-b)), -((f+n)/(f-n)), 1}
         };
+        PrintInfo("\n");
     }
 
     // Set fog integer
     void glFogi(GLenum pname, GLint param) {
+        PrintInfo("glFogi");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum,GLint) = NULL;
             if (!real_gl) {
@@ -970,10 +626,12 @@ extern "C" {
                 fogMode = param;
                 break;
         }
+        PrintInfo("\n");
     }
 
     // Set fog float values
     void glFogfv(GLenum pname, const GLfloat *params) {
+        PrintInfo("glFogfv");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum,const GLfloat*) = NULL;
             if (!real_gl) {
@@ -988,10 +646,12 @@ extern "C" {
                 };
                 break;
         }
+        PrintInfo("\n");
     }
 
     // Set fog float
     void glFogf(GLenum pname, GLfloat param) {
+        PrintInfo("glFogf");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum,GLfloat) = NULL;
             if (!real_gl) {
@@ -1007,6 +667,7 @@ extern "C" {
                 fogEnd = param;
                 break;        
         }
+        PrintInfo("\n");
     }
 
     void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels) {
@@ -1017,6 +678,8 @@ extern "C" {
             }
             real_gl(x,y,width,height,format,type,pixels);
         }
+        PrintInfo("glReadPixels ");
+        if (!pixels) return;
         // Assume format is always RGBA
         // Assume format is always unsigned Byte
         for (int iy = y; iy < y+height; iy++) {
@@ -1029,6 +692,7 @@ extern "C" {
                 pix[3] = 255;
             }
         }
+        PrintInfo("\n");
     }
 
     void glPushMatrix() {
@@ -1072,6 +736,37 @@ extern "C" {
             case GL_MODELVIEW:
                 modelMatrixPtr--;
                 lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
+                break;
+        }
+        PrintInfo("\n");;
+    }
+
+    void glGetIntegerv(GLenum pname, GLint *params) {
+        static void (*real_gl)(GLenum,GLint*) = NULL;
+        if (!real_gl) {
+            real_gl = (void (*)(GLenum,GLint*)) dlsym(RTLD_NEXT, "glGetIntegerv");
+        }
+        PrintInfo("glGetIntegerv ");
+        switch (pname) {
+            case GL_VIEWPORT:
+                PrintInfo("GL_VIEWPORT");
+                params[0] = 0;
+                params[1] = 0;
+                params[2] = renderAreaWidth;
+                params[3] = renderAreaHeight;
+                break;
+            case GL_DEPTH_BITS:
+                PrintInfo("GL_DEPTH_BITS");
+                params[0] = 8;
+                break;
+            case GL_MAX_TEXTURE_SIZE:
+                PrintInfo("GL_MAX_TEXTURE_SIZE");
+                params[0] = 0;
+                break;
+            default:
+                if (forwardToSystemGl) {
+                    real_gl(pname, params);
+                }
                 break;
         }
         PrintInfo("\n");;

@@ -33,3 +33,9 @@
 /PL
 cube
 test
+/audio
+*.log
+*.txt
+/texpacks
+/.cache
+/build
