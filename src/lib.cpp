@@ -2,6 +2,7 @@
 #include "render.h"
 #include "sdl.h"
 #include "maths.h"
+#include <GL/gl.h>
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
@@ -100,13 +101,12 @@ extern "C" {
 
     // Return OpenGL info
     const GLubyte* glGetString(GLenum name) {
+        static const GLubyte* (*real_gl)(GLenum) = NULL;
         PrintInfo("glGetString");
         if (forwardToSystemGl) {
-            static const GLubyte* (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
                 real_gl = (const GLubyte* (*)(GLenum)) dlsym(RTLD_NEXT, "glGetString");
             }
-            real_gl(name);
         }
         switch(name) {
             case GL_VERSION:
@@ -117,6 +117,9 @@ extern "C" {
                 return (const GLubyte*)PIXSOFTGL_RENDERER;
             case GL_EXTENSIONS:
                 return (const GLubyte*)PIXSOFTGL_EXTENSIONS;
+            default:
+                std::cout << std::hex << name << std::dec << std::endl;
+                return real_gl(name);
         }
         PrintInfo("\n");
         return nullptr;
@@ -230,6 +233,12 @@ extern "C" {
                 counterClockWiseWindingActive = false;
                 break;
         }
+    }
+
+    void glDepthMask(GLboolean flag) {
+        PrintInfo("glDepthMask");
+        depthWriteActive = flag;
+        PrintInfo("\n");
     }
 
     // Enable property
@@ -797,7 +806,7 @@ extern "C" {
                 break;
             case GL_MAX_TEXTURE_SIZE:
                 PrintInfo("GL_MAX_TEXTURE_SIZE");
-                params[0] = 0;
+                params[0] = MAX_TEXTURE_SIZE;
                 break;
             default:
                 if (forwardToSystemGl) {

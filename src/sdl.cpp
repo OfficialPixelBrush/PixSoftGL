@@ -7,6 +7,7 @@ SDL_Surface *surf;
 bool running = true;
 
 bool printInfo = true;
+bool pauseForEveryRefresh = false;
 
 void PrintInfo(int s) {
     if (!printInfo) return;
@@ -96,6 +97,7 @@ void put_pixel(SDL_Surface *surface, int x, int y,
     if (locked) SDL_UnlockSurface(surface);
 }
 
+//int i = 0;
 
 // Draw a Pixel to the screen
 void DrawPixel(PixelValue p, int x, int y) {
@@ -121,4 +123,8 @@ void UpdateScreen() {
     }
     // Poll to make not crash
     SDL_KeepAliveAndUpdate();
+    if (pauseForEveryRefresh) {
+        int test;
+        std::cin >> test;
+    }
 }

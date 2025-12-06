@@ -20,6 +20,7 @@ extern bool cullFaceActive;
 extern bool counterClockWiseWindingActive;
 extern bool normalizeActive;
 extern bool scissorTestActive;
+extern bool depthWriteActive;
 
 // Lights
 extern bool lightActive[MAX_LIGHTS];
@@ -48,9 +49,9 @@ extern Col3 clearColor;
 extern int projMatrixPtr;
 extern int modelMatrixPtr;
 extern int texMatrixPtr;
-extern Mat4x4 projMatricies[MAX_PROJECTION_MATRICIES];
-extern Mat4x4 modelMatricies[MAX_MODEL_MATRICIES];
-extern Mat4x4 texMatricies[MAX_TEXTURE_MATRICIES];
+extern Mat4x4 modelMatricies[MAX_MODELVIEW_STACK_DEPTH];
+extern Mat4x4 projMatricies[MAX_PROJECTION_STACK_DEPTH];
+extern Mat4x4 texMatricies[MAX_TEXTURE_STACK_DEPTH];
 extern Mat4x4* lastAccessedMatrix;
 
 // Vertex buffer

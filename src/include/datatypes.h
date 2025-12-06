@@ -5,6 +5,23 @@ struct PixelValue {
     unsigned char r,g,b;
 };
 
+// 2D Vector
+struct Vec2 {
+    double x,y;
+
+    Vec2 operator+(const Vec2& o) const {
+        return Vec2{x + o.x, y + o.y};
+    }
+
+    Vec2 operator-(const Vec2& o) const {
+        return Vec2{x - o.x, y - o.y};
+    }
+
+    Vec2 operator*(const Vec2& o) const {
+        return Vec2{x * o.x, y * o.y};
+    }
+};
+
 // 3D Vector
 struct Vec3 {
     double x,y,z;
@@ -110,6 +127,7 @@ struct Mat4x4 {
 struct Vertex {
     Vec3 pos;
     Col3 col;
+    Vec2 tex;
 };
 
 // Triangle
@@ -120,4 +138,13 @@ struct Triangle {
 // Light
 struct Light {
     Vec3 pos = Vec3{0,0,1};
+};
+
+struct Texture2D {
+    int textureWrapS;
+    int textureWrapT;
+    int textureMinFilter;
+    int textureMagFilter;
+    Col4 textureBorderColor;
+    float texturePriority;
 };

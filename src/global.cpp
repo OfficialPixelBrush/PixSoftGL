@@ -15,6 +15,7 @@ bool cullFaceActive = false;
 bool normalizeActive = false;
 bool scissorTestActive = false;
 bool counterClockWiseWindingActive = false;
+bool depthWriteActive = true;
 
 // Lights
 bool lightActive[MAX_LIGHTS];
@@ -43,9 +44,9 @@ Col3 clearColor = Col3{0,0,0};
 int projMatrixPtr = 0;
 int modelMatrixPtr = 0;
 int texMatrixPtr = 0;
-Mat4x4 projMatricies[MAX_PROJECTION_MATRICIES];
-Mat4x4 modelMatricies[MAX_MODEL_MATRICIES];
-Mat4x4 texMatricies[MAX_TEXTURE_MATRICIES];
+Mat4x4 modelMatricies[MAX_MODELVIEW_STACK_DEPTH];
+Mat4x4 projMatricies[MAX_PROJECTION_STACK_DEPTH];
+Mat4x4 texMatricies[MAX_TEXTURE_STACK_DEPTH];
 Mat4x4* lastAccessedMatrix = &modelMatricies[0];
 
 // Vertex buffer

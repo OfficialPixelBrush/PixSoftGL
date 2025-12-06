@@ -60,6 +60,7 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
     // Write new values to buffers
     if (!frameBufferColor) return;
     frameBufferColor[index] = Col3ToPixelValue(color);
+    if (!frameBufferDepth || !depthWriteActive) return;
     frameBufferDepth[index] = screenPos.z;
 }
 
