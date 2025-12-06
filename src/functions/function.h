@@ -16,4 +16,5 @@ void Process_glPushMatrix();
 void Process_glPopMatrix();
 void Process_glNewList(GLuint list, GLenum mode);
 void Process_glEndList();
+void Process_glCallList(GLuint list);
 GLuint Process_glGenLists(GLsizei range);

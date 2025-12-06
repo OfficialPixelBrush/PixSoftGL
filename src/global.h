@@ -22,6 +22,7 @@ extern bool counterClockWiseWindingActive;
 extern bool normalizeActive;
 extern bool scissorTestActive;
 extern bool depthWriteActive;
+extern bool alphaTestActive;
 
 // Lights
 extern bool lightActive[MAX_LIGHTS];
@@ -75,7 +76,11 @@ extern PixelValue* frameBufferColor;
 extern float* frameBufferDepth;
 
 // Display lists
-extern DisplayList* activeDisplayList;
+extern GLint activeDisplayListIndex;
+extern DisplayList activeDisplayList;
 extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 extern bool compileAndExecute;
+
+// GL error global
+extern GLenum errorState;

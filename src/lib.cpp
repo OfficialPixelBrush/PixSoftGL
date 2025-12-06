@@ -18,7 +18,7 @@ extern "C" {
             }
             real_gl(x,y);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glVertex2f(x, y);
         } else {
             if (compileAndExecute) {
@@ -39,7 +39,7 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glVertex3f(x, y, z);
         } else {
             if (compileAndExecute) {
@@ -60,7 +60,7 @@ extern "C" {
             }
             real_gl(x,y,width,height);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glViewport(x,y,width,height);
         } else {
             if (compileAndExecute) {
@@ -159,21 +159,40 @@ extern "C" {
 
     void glNewList(GLuint list, GLenum mode) {
         PrintInfo("glNewList");
-        static void (*real_gl)(GLuint,GLenum) = NULL;
-        if (!real_gl) {
-            real_gl = (void (*)(GLuint,GLenum)) dlsym(RTLD_NEXT, "glNewList");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLuint,GLenum) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLuint,GLenum)) dlsym(RTLD_NEXT, "glNewList");
+            }
+            real_gl(list,mode);
         }
-        real_gl(list,mode);
+        Process_glNewList(list, mode);
         PrintInfo("\n");
     }
 
     void glEndList() {
         PrintInfo("glEndList");
-        static void (*real_gl)() = NULL;
-        if (!real_gl) {
-            real_gl = (void (*)()) dlsym(RTLD_NEXT, "glEndList");
+        if (forwardToSystemGl) {
+            static void (*real_gl)() = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)()) dlsym(RTLD_NEXT, "glEndList");
+            }
+            real_gl();
         }
-        real_gl();
+        Process_glEndList();
+        PrintInfo("\n");
+    }
+
+    void glCallList(GLuint list) {
+        PrintInfo("glCallList");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLuint) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLuint)) dlsym(RTLD_NEXT, "glCallList");
+            }
+            real_gl(list);
+        }
+        Process_glCallList(list);
         PrintInfo("\n");
     }
 
@@ -327,6 +346,10 @@ extern "C" {
                 PrintInfo("GL_SCISSOR_TEST");
                 scissorTestActive = true;
                 break;
+            case GL_ALPHA_TEST:
+                PrintInfo("GL_ALPHA_TEST");
+                alphaTestActive = true;
+                break;
             default:
                 std::cout << std::hex;
                 PrintInfo(cap);
@@ -388,6 +411,10 @@ extern "C" {
                 PrintInfo("GL_SCISSOR_TEST");
                 scissorTestActive = false;
                 break;
+            case GL_ALPHA_TEST:
+                PrintInfo("GL_ALPHA_TEST");
+                alphaTestActive = false;
+                break;
             default:
                 std::cout << std::hex;
                 PrintInfo(cap);
@@ -407,7 +434,7 @@ extern "C" {
             }
             real_gl(mode);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glBegin(mode);
         } else {
             if (compileAndExecute) {
@@ -443,7 +470,7 @@ extern "C" {
             }
             real_gl();
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glEnd();
         } else {
             if (compileAndExecute) {
@@ -464,7 +491,7 @@ extern "C" {
             }
             real_gl();
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glLoadIdentity();
         } else {
             if (compileAndExecute) {
@@ -485,7 +512,7 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glTranslatef(x,y,z);
         } else {
             if (compileAndExecute) {
@@ -506,7 +533,7 @@ extern "C" {
             }
             real_gl(angleDeg,x,y,z);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glRotatef(angleDeg,x,y,z);
         } else {
             if (compileAndExecute) {
@@ -527,7 +554,7 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glScalef(x,y,z);
         } else {
             if (compileAndExecute) {
@@ -548,7 +575,7 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glFrustum(l,r,b,t,n,f);
         } else {
             if (compileAndExecute) {
@@ -569,7 +596,7 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glOrtho(l,r,t,b,n,f);
         } else {
             if (compileAndExecute) {
@@ -675,7 +702,7 @@ extern "C" {
             }
             real_gl();
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glPushMatrix();
         } else {
             if (compileAndExecute) {
@@ -695,7 +722,7 @@ extern "C" {
             }
             real_gl();
         }
-        if (!activeDisplayList) {
+        if (activeDisplayListIndex == 0) {
             Process_glPopMatrix();
         } else {
             if (compileAndExecute) {

@@ -1,4 +1,5 @@
 #include "global.h"
+#include <GL/gl.h>
 
 bool forwardToSystemGl = true;
 
@@ -16,6 +17,7 @@ bool normalizeActive = false;
 bool scissorTestActive = false;
 bool counterClockWiseWindingActive = false;
 bool depthWriteActive = true;
+bool alphaTestActive = false;
 
 // Lights
 bool lightActive[MAX_LIGHTS];
@@ -69,7 +71,11 @@ PixelValue* frameBufferColor;
 float* frameBufferDepth;
 
 // Display lists
-DisplayList* activeDisplayList = nullptr;
+GLint activeDisplayListIndex = 0;
+DisplayList activeDisplayList;
 DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 bool compileAndExecute = false;
+
+// GL error global
+GLenum errorState = 0;

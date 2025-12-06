@@ -4,9 +4,9 @@
 #include "include/commands.h"
 #include <GL/gl.h>
 
-void ExecuteDisplayList() {
-    for (int i = 0; i < activeDisplayList->numberOfCommands; i++) {
-        const auto& c = activeDisplayList->commands[i];
+void ExecuteDisplayList(const DisplayList& dl) {
+    for (int i = 0; i < dl.numberOfCommands; i++) {
+        const auto& c = dl.commands[i];
         switch(c.type) {
             case CMD_glVertex2f:
                 Process_glVertex2f(
@@ -113,85 +113,85 @@ void ExecuteDisplayList() {
 }
 
 void Record_glVector2f(GLfloat x, GLfloat y) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glVertex2f;
     c.data.PARAM_glVertex2f = {x,y};
 };
 
 void Record_glVector3f(GLfloat x, GLfloat y, GLfloat z) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glVertex3f;
     c.data.PARAM_glVertex3f = {x,y, z};
 };
 
 void Record_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glViewport;
     c.data.PARAM_glViewport = {x,y,width,height};
 };
 
 void Record_glBegin(GLenum mode) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glBegin;
     c.data.PARAM_glBegin = {mode};
 }
 
 void Record_glEnd() {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glEnd;
 }
 
 void Record_glLoadIdentity() {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glLoadIdentity;
 }
 void Record_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glTranslatef;
     c.data.PARAM_glTranslatef = {x,y,z};
 }
 
 void Record_glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glRotatef;
     c.data.PARAM_glRotatef = {angleDeg, x,y,z};
 }
 void Record_glScalef(GLfloat x, GLfloat y, GLfloat z) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glScalef;
     c.data.PARAM_glScalef = { x,y,z};
 }
 
 void Record_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glFrustum;
     c.data.PARAM_glFrustum = {l,r,b,t,n,f};
 }
 void Record_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glOrtho;
     c.data.PARAM_glOrtho = {l,r,b,t,n,f};
 }
 
 void Record_glPushMatrix() {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glPushMatrix;
 }
 
 void Record_glPopMatrix() {
-    if (!activeDisplayList) return;
-    auto& c = activeDisplayList->commands[activeDisplayList->numberOfCommands++];
+    if (activeDisplayListIndex == 0) return;
+    auto& c = activeDisplayList.commands[activeDisplayList.numberOfCommands++];
     c.type = CMD_glPopMatrix;
 }

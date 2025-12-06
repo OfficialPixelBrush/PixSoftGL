@@ -3,6 +3,7 @@
 #include "../sdl.h"
 #include "../global.h"
 #include "../maths.h"
+#include <GL/gl.h>
 #include <cstdlib>
 
 void Process_glVertex2f(GLfloat x, GLfloat y) {
@@ -261,9 +262,26 @@ void Process_glPopMatrix() {
 }
 
 void Process_glNewList(GLuint list, GLenum mode) {
-    
+    // List 0 is the global scope
+    if (list == 0)
+        errorState = GL_INVALID_VALUE;
+    // We're already making a display list, we can't nest them!
+    if (activeDisplayListIndex != 0)
+        errorState = GL_INVALID_OPERATION;
+    compileAndExecute = (mode & GL_COMPILE_AND_EXECUTE);
+    activeDisplayListIndex = list;
 }
 
 void Process_glEndList() {
+    // List 0 is the global scope and can't be ended
+    if (activeDisplayListIndex == 0)
+        errorState = GL_INVALID_OPERATION;
+    displayLists[activeDisplayListIndex] = activeDisplayList;
+}
 
+void Process_glCallList(GLuint list) {
+    // List 0 is the global scope and can't be called
+    if (list == 0)
+        errorState = GL_INVALID_VALUE;
+    ExecuteDisplayList(displayLists[list]);
 }

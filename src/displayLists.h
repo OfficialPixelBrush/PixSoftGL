@@ -23,6 +23,8 @@ struct DisplayList {
     DisplayListCommand commands[MAX_DISPLAY_LIST_COMMANDS];
 };
 
+void ExecuteDisplayList(const DisplayList& dl);
+
 void Record_glVector2f(GLfloat x, GLfloat y);
 void Record_glVector3f(GLfloat x, GLfloat y, GLfloat z);
 void Record_glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
