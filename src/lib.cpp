@@ -817,4 +817,8 @@ extern "C" {
         }
         PrintInfo("\n");
     }
+
+    //void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
+
+    //}
 }
