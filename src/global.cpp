@@ -72,7 +72,7 @@ float* frameBufferDepth;
 
 // Display lists
 GLint activeDisplayListIndex = 0;
-DisplayList activeDisplayList;
+// Currently active Display list is display List 0!!!
 DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 bool compileAndExecute = false;

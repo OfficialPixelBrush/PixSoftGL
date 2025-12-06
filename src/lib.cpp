@@ -148,13 +148,67 @@ extern "C" {
     }
 
     GLuint glGenLists(GLsizei range) {
-        PrintInfo("glGenLists");
-        static GLuint (*real_gl)(GLsizei) = NULL;
-        if (!real_gl) {
-            real_gl = (GLuint (*)(GLsizei)) dlsym(RTLD_NEXT, "glGenLists");
+        PrintInfo("glGenLists ");
+        PrintInfo(range);
+        if (forwardToSystemGl) {
+            static GLuint (*real_gl)(GLsizei) = NULL;
+            if (!real_gl) {
+                real_gl = (GLuint (*)(GLsizei)) dlsym(RTLD_NEXT, "glGenLists");
+            }
+            //return real_gl(range);
         }
-        return real_gl(range);
-        //return 0;
+        GLuint result = Process_glGenLists(range);
+        PrintInfo(": ");
+        PrintInfo(result);
+        PrintInfo("\n");
+        return result;
+    }
+
+    void glBindTexture(GLenum target, GLuint texture) {
+        PrintInfo("glBindTexture ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,GLuint) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLuint)) dlsym(RTLD_NEXT, "glBindTexture");
+            }
+            real_gl(target,texture);
+        }
+        if (activeDisplayListIndex == 0) {
+            Process_glBindTexture(target,texture);
+        } else {
+            if (compileAndExecute) {
+                Process_glBindTexture(target,texture);
+            }
+            Record_glBindTexture(target,texture);
+        }
+
+        PrintInfo("\n");
+    }
+
+    void glDeleteLists(GLuint list, GLsizei range) {
+        PrintInfo("glDeleteLists");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLuint,GLsizei) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLuint,GLsizei)) dlsym(RTLD_NEXT, "glDeleteLists");
+            }
+            real_gl(list,range);
+        }
+        Process_glDeleteLists(list, range);
+        PrintInfo("\n");
+    }
+
+    GLboolean glIsList(GLuint list) {
+        PrintInfo("glIsList");
+        if (forwardToSystemGl) {
+            static GLboolean (*real_gl)(GLuint) = NULL;
+            if (!real_gl) {
+                real_gl = (GLboolean (*)(GLuint)) dlsym(RTLD_NEXT, "glIsList");
+            }
+            //return real_gl(list);
+        }
+        PrintInfo("\n");
+        return Process_IsList(list);
     }
 
     void glNewList(GLuint list, GLenum mode) {

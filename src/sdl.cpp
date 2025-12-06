@@ -7,7 +7,7 @@ SDL_Surface *surf;
 bool running = true;
 
 bool printInfo = true;
-bool pauseForEveryRefresh = true;
+bool pauseForEveryRefresh = false;
 
 void PrintInfo(int s) {
     if (!printInfo) return;

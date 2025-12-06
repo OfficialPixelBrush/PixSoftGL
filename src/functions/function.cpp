@@ -4,6 +4,7 @@
 #include "../global.h"
 #include "../maths.h"
 #include <GL/gl.h>
+#include <SDL3/SDL_stdinc.h>
 #include <cstdlib>
 
 void Process_glVertex2f(GLfloat x, GLfloat y) {
@@ -14,7 +15,10 @@ void Process_glVertex2f(GLfloat x, GLfloat y) {
 
 void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
     vertices[vertexIndex].pos = Vec3{x,y,z};
-    vertices[vertexIndex].col = currentColor;
+    vertices[vertexIndex].col = Col3 {
+    SDL_randf(),SDL_randf(),SDL_randf()
+    };
+    
     vertexIndex++;
 }
 
@@ -276,7 +280,8 @@ void Process_glEndList() {
     // List 0 is the global scope and can't be ended
     if (activeDisplayListIndex == 0)
         errorState = GL_INVALID_OPERATION;
-    displayLists[activeDisplayListIndex] = activeDisplayList;
+    displayLists[activeDisplayListIndex] = displayLists[0];
+    displayLists[activeDisplayListIndex].numberOfCommands = 0;
 }
 
 void Process_glCallList(GLuint list) {
@@ -284,4 +289,38 @@ void Process_glCallList(GLuint list) {
     if (list == 0)
         errorState = GL_INVALID_VALUE;
     ExecuteDisplayList(displayLists[list]);
+}
+
+GLuint Process_glGenLists(GLsizei range) {
+    if (range == 0) return 0;
+    int numberOfEmptyDisplayLists = 0;
+    for (int i = 1; i < MAX_DISPLAY_LIST_ENTRIES; i++) {
+        // Look for range # of empty display lists
+        if (displayLists[i].numberOfCommands != -1) {
+            numberOfEmptyDisplayLists = 0;
+        } else {
+            numberOfEmptyDisplayLists++;
+        }
+
+        // If we find a suitable number of empty Display Lists,
+        // return the first empty index
+        if (numberOfEmptyDisplayLists == range) {
+            return i-numberOfEmptyDisplayLists+1;
+        }
+    }
+    return 0;
+}
+
+GLboolean Process_IsList(GLuint list) {
+    return (displayLists[list].numberOfCommands > -1);
+}
+
+void Process_glDeleteLists(GLuint list, GLsizei range) {
+    for (int i = list; i < list+range; i++) {
+        displayLists[i].numberOfCommands = -1;
+    }
+}
+
+void Process_glBindTexture(GLenum target, GLuint texture) {
+
 }

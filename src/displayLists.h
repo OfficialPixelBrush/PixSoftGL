@@ -15,11 +15,13 @@ struct DisplayListCommand {
         CMD_PARAM_glFrustum PARAM_glFrustum;
         CMD_PARAM_glOrtho PARAM_glOrtho;
         GLenum PARAM_glBegin;
+        CMD_PARAM_glBindTexture PARAM_glBindTexture;
     } data;
 };
 
 struct DisplayList {
-    int numberOfCommands = 0;
+    // If numberOfCommands is -1, unused
+    int numberOfCommands = -1;
     DisplayListCommand commands[MAX_DISPLAY_LIST_COMMANDS];
 };
 
@@ -38,3 +40,4 @@ void Record_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n
 void Record_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f);
 void Record_glPushMatrix();
 void Record_glPopMatrix();
+void Record_glBindTexture(GLenum target, GLuint texture);

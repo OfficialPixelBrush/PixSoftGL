@@ -38,6 +38,7 @@ enum CommandType {
     CMD_glPushMatrix,
     CMD_glPopMatrix,
     CMD_glGetIntegerv,
+    CMD_glBindTexture,
 };
 
 struct CMD_PARAM_glVertex2f {
@@ -71,4 +72,9 @@ struct CMD_PARAM_glFrustum {
 
 struct CMD_PARAM_glOrtho {
     GLdouble l,r,t,b,n,f;
+};
+
+struct CMD_PARAM_glBindTexture {
+    GLenum target;
+    GLuint texture;
 };

@@ -77,7 +77,7 @@ extern float* frameBufferDepth;
 
 // Display lists
 extern GLint activeDisplayListIndex;
-extern DisplayList activeDisplayList;
+// Currently active Display list is display List 0!!!
 extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 extern bool compileAndExecute;
