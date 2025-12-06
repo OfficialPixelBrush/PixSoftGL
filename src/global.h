@@ -1,6 +1,7 @@
 #pragma once
 
 // The current vertex index
+#include "displayLists.h"
 #include "include/datatypes.h"
 #include "include/defines.h"
 #include <GL/gl.h>
@@ -72,3 +73,7 @@ extern int viewportAreaTotal;
 // Screen framebuffer
 extern PixelValue* frameBufferColor;
 extern float* frameBufferDepth;
+
+// Display lists
+extern DisplayList* activeDisplayList;
+extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];

@@ -1,7 +1,9 @@
+#include "displayLists.h"
 #include "global.h"
 #include "render.h"
 #include "sdl.h"
 #include "maths.h"
+#include "functions/function.h"
 #include <GL/gl.h>
 
 // Actual OpenGL 1.1 Library functions!
@@ -16,9 +18,8 @@ extern "C" {
             }
             real_gl(x,y);
         }
-        vertices[vertexIndex].pos = Vec3{x,y,0};
-        vertices[vertexIndex].col = currentColor;
-        vertexIndex++;
+        Record_glVector2f(x,y);
+        Process_glVertex2f(x, y);
         //PrintInfo("\n");
     }
 
@@ -32,9 +33,8 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        vertices[vertexIndex].pos = Vec3{x,y,z};
-        vertices[vertexIndex].col = currentColor;
-        vertexIndex++;
+        Record_glVector3f(x, y, z);
+        Process_glVertex3f(x, y, z);
         //PrintInfo("\n");
     }
 
@@ -48,26 +48,8 @@ extern "C" {
             }
             real_gl(x,y,width,height);
         }
-        viewportOffsetX = x;
-        viewportOffsetY = y;
-        viewportAreaWidth = width;
-        viewportAreaHeight = height;
-        viewportAreaTotal = viewportAreaWidth * viewportAreaHeight;
-        
-        // Create buffers
-        if (!frameBufferColor) {
-            renderAreaWidth = viewportAreaWidth;
-            renderAreaHeight = viewportAreaHeight;
-            renderAreaTotal = viewportAreaTotal;
-            frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
-        }
-        if (!frameBufferDepth) {
-            frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
-        }
-
-        ReCreateWindow();
-        ClearFramebuffers(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+        Record_glViewport(x,y,width,height);
+        Process_glViewport(x,y,width,height);
         PrintInfo("\n");
     }
 
@@ -225,6 +207,13 @@ extern "C" {
 
     // Choose face winding order
     void glFrontFace(GLenum mode) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glFrontFace");
+            }
+            real_gl(mode);
+        }
         switch (mode) {
             case GL_CCW:
                 counterClockWiseWindingActive = true;
@@ -235,7 +224,34 @@ extern "C" {
         }
     }
 
+    void glLoadMatrixf(const GLfloat *m) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(const GLfloat *m) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(const GLfloat *m)) dlsym(RTLD_NEXT, "glLoadMatrixf");
+            }
+            real_gl(m);
+        }
+        PrintInfo("glLoadMatrixf");
+        if (!lastAccessedMatrix) return;
+        *lastAccessedMatrix = Mat4x4{
+            Vec4{m[0],m[1],m[2],m[3]},
+            Vec4{m[4],m[5],m[6],m[7]},
+            Vec4{m[8],m[9],m[10],m[11]},
+            Vec4{m[12],m[13],m[14],m[15]}
+        };
+        PrintInfo("\n");
+
+    }
+
     void glDepthMask(GLboolean flag) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLboolean flag) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLboolean flag)) dlsym(RTLD_NEXT, "glDepthMask");
+            }
+            real_gl(flag);
+        }
         PrintInfo("glDepthMask");
         depthWriteActive = flag;
         PrintInfo("\n");
@@ -373,41 +389,8 @@ extern "C" {
             }
             real_gl(mode);
         }
-
-        drawingMode = mode;
-        vertexIndex = 0;
-        switch(drawingMode) {
-            case GL_POINTS:
-                PrintInfo("GL_POINTS ");
-                break;
-            case GL_LINES:
-                PrintInfo("GL_LINES ");
-                break;
-            case GL_LINE_LOOP:
-                PrintInfo("GL_LINE_LOOP ");
-                break;
-            case GL_LINE_STRIP:
-                PrintInfo("GL_LINE_STRIP ");
-                break;
-            case GL_TRIANGLES:
-                PrintInfo("GL_TRIANGLES ");
-                break;
-            case GL_TRIANGLE_STRIP:
-                PrintInfo("GL_TRIANGLE_STRIP ");
-                break;
-            case GL_TRIANGLE_FAN:
-                PrintInfo("GL_TRIANGLE_FAN ");
-                break;
-            case GL_QUADS:
-                PrintInfo("GL_QUADS ");
-                break;
-            case GL_QUAD_STRIP:
-                PrintInfo("GL_QUAD_STRIP ");
-                break;
-            case GL_POLYGON:
-                PrintInfo("GL_POLYGON ");
-                break;
-        }
+        Record_glBegin(mode);
+        Process_glBegin(mode);
         PrintInfo("\n");
     }
 
@@ -436,86 +419,8 @@ extern "C" {
             }
             real_gl();
         }
-
-        switch(drawingMode) {
-            case GL_POINTS:
-                for (int i = 0; i < vertexIndex; i++) {
-                    Vec3 screenPos = ProjectPosition(vertices[i].pos);
-                    RenderPixel(screenPos, vertices[i].col);
-                }
-                break;
-            case GL_LINES:
-                for (int i = 0; i < vertexIndex; i+=2) {
-                    Vec3 screenPosA = ProjectPosition(vertices[i].pos);
-                    Vec3 screenPosB = ProjectPosition(vertices[i+2].pos);
-                    RenderLine(screenPosA, vertices[i].col, screenPosB, vertices[i+2].col);
-                }
-                break;
-            case GL_TRIANGLE_FAN:
-                for (int i = 1; i < vertexIndex; i+=2) {
-                    Triangle screenTri = ProjectTriangle(
-                        Triangle{
-                            vertices[i+1],
-                            vertices[i], 
-                            vertices[0], 
-                        }
-                    );
-                    RenderTriangle(screenTri);
-                }
-                break;
-            case GL_TRIANGLES:
-                for (int i = 0; i < vertexIndex; i+=3) {
-                    Triangle screenTri = ProjectTriangle(
-                        Triangle{
-                            vertices[i+2],
-                            vertices[i+1], 
-                            vertices[i], 
-                        }
-                    );
-                    RenderTriangle(screenTri);
-                }
-                break;
-            case GL_QUADS:
-                for (int i = 0; i < vertexIndex; i+=4) {
-                    Triangle screenTriA = ProjectTriangle(
-                        Triangle{
-                            vertices[i+2],
-                            vertices[i+1], 
-                            vertices[i], 
-                        }
-                    );
-                    Triangle screenTriB = ProjectTriangle(
-                        Triangle{
-                            vertices[i+3],
-                            vertices[i+2], 
-                            vertices[i],
-                        }
-                    );
-                    RenderTriangle(screenTriA);
-                    RenderTriangle(screenTriB);
-                } 
-                break;
-            case GL_QUAD_STRIP:
-                for (int i = 2; i + 1 < vertexIndex; i+=2) {
-                    Triangle screenTriA = ProjectTriangle(
-                        Triangle{
-                            vertices[i],
-                            vertices[i-1], 
-                            vertices[i-2], 
-                        }
-                    );
-                    Triangle screenTriB = ProjectTriangle(
-                        Triangle{
-                            vertices[i-2],
-                            vertices[i+1], 
-                            vertices[i],
-                        }
-                    );
-                    RenderTriangle(screenTriA);
-                    RenderTriangle(screenTriB);
-                } 
-                break;
-        }
+        Record_glEnd();
+        Process_glEnd();
         PrintInfo("\n");
     }
 
@@ -529,13 +434,8 @@ extern "C" {
             }
             real_gl();
         }
-        if (!lastAccessedMatrix) return;
-        *lastAccessedMatrix = Mat4x4 {
-            Vec4 { 1, 0 ,0,0 },
-            Vec4 { 0, 1 ,0,0 },
-            Vec4 { 0, 0 ,1,0 },
-            Vec4 { 0, 0 ,0,1 }
-        };
+        Record_glLoadIdentity();
+        Process_glLoadIdentity();
         PrintInfo("\n");
     }
 
@@ -549,15 +449,8 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        if (!lastAccessedMatrix) return;
-        Mat4x4 T = {
-            Vec4{1, 0, 0, 0},
-            Vec4{0, 1, 0, 0},
-            Vec4{0, 0, 1, 0},
-            Vec4{double(x), double(y), double(z), 1}  // last column is translation
-        };
-
-        *lastAccessedMatrix = (*lastAccessedMatrix) * T; // multiply, not add
+        Record_glTranslatef(x,y,z);
+        Process_glTranslatef(x,y,z);
         PrintInfo("\n");
     }
 
@@ -571,24 +464,8 @@ extern "C" {
             }
             real_gl(angleDeg,x,y,z);
         }
-        if (!lastAccessedMatrix) return;
-        // Convert to radians
-        double angle = angleDeg * M_PI / 180.0;
-
-        // Normalize axis
-        Vec3 u = Normalize(Vec3{x, y, z});
-        double c = cos(angle);
-        double s = sin(angle);
-        double t = 1 - c;
-
-        Mat4x4 R = {
-            Vec4{t*u.x*u.x + c,     t*u.x*u.y + s*u.z, t*u.x*u.z - s*u.y, 0},
-            Vec4{t*u.x*u.y - s*u.z, t*u.y*u.y + c,     t*u.y*u.z + s*u.x, 0},
-            Vec4{t*u.x*u.z + s*u.y, t*u.y*u.z - s*u.x, t*u.z*u.z + c,     0},
-            Vec4{0,                  0,                  0,               1}
-        };
-
-        *lastAccessedMatrix = (*lastAccessedMatrix) * R; // multiply, not add
+        Record_glRotatef(angleDeg,x,y,z);
+        Process_glRotatef(angleDeg,x,y,z);
         PrintInfo("\n");
     }
 
@@ -602,15 +479,8 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        if (!lastAccessedMatrix) return;
-        Mat4x4 S = {
-            Vec4{double(x), 0, 0, 0},
-            Vec4{0, double(y), 0, 0},
-            Vec4{0, 0, double(z), 0},
-            Vec4{0, 0, 0, 1}
-        };
-
-        *lastAccessedMatrix = (*lastAccessedMatrix) * S; // multiply, not add
+        Record_glScalef(x,y,z);
+        Process_glScalef(x,y,z);
         PrintInfo("\n");
     }
 
@@ -624,13 +494,8 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
-        if (!lastAccessedMatrix) return;
-        *lastAccessedMatrix = Mat4x4{
-            Vec4{ (2*n)/(r-l), 0, 0, 0 },
-            Vec4{ 0, (2*n)/(t-b), 0, 0 },
-            Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1 },
-            Vec4{ 0, 0, -(2*f*n)/(f-n), 0 }
-        };
+        Record_glFrustum(l,r,b,t,n,f);
+        Process_glFrustum(l,r,b,t,n,f);
         PrintInfo("\n");
     }
 
@@ -644,13 +509,8 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
-        if (!lastAccessedMatrix) return;
-        *lastAccessedMatrix = Mat4x4{
-            Vec4{ 2/(r-l),0,0,0},
-            Vec4{0,2/(t-b),0,0},
-            Vec4{0,0,-(2/(f-n)),0},
-            Vec4{-((r+l)/(r-l)), -((t+b)/(t-b)), -((f+n)/(f-n)), 1}
-        };
+        Record_glOrtho(l,r,b,t,n,f);
+        Process_glOrtho(l,r,t,b,n,f);
         PrintInfo("\n");
     }
 
@@ -749,18 +609,8 @@ extern "C" {
             real_gl();
         }
         PrintInfo("glPushMatrix ");
-        switch(drawingMode) {
-            case GL_PROJECTION:
-                projMatricies[projMatrixPtr + 1] = projMatricies[projMatrixPtr];
-                projMatrixPtr++;
-                lastAccessedMatrix = &projMatricies[projMatrixPtr];
-                break;
-            case GL_MODELVIEW:
-                modelMatricies[modelMatrixPtr + 1] = modelMatricies[modelMatrixPtr];
-                modelMatrixPtr++;
-                lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
-                break;
-        }
+        Record_glPushMatrix();
+        Process_glPushMatrix();
         PrintInfo("\n");
     }
 
@@ -773,16 +623,8 @@ extern "C" {
             real_gl();
         }
         PrintInfo("glPopMatrix ");
-        switch(drawingMode) {
-            case GL_PROJECTION:
-                projMatrixPtr--;
-                lastAccessedMatrix = &projMatricies[projMatrixPtr];
-                break;
-            case GL_MODELVIEW:
-                modelMatrixPtr--;
-                lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
-                break;
-        }
+        Record_glPopMatrix();
+        Process_glPopMatrix();
         PrintInfo("\n");
     }
 

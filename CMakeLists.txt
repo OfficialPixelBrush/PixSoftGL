@@ -12,6 +12,8 @@ add_library(GL SHARED
     src/sdl.cpp
     src/render.cpp
     src/maths.cpp
+    src/displayLists.cpp
+    src/functions/function.cpp
 )
 
 target_include_directories(GL PRIVATE include)

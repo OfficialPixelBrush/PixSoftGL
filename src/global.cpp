@@ -67,3 +67,7 @@ int viewportAreaTotal = viewportAreaWidth*viewportAreaHeight;
 // Screen framebuffer
 PixelValue* frameBufferColor;
 float* frameBufferDepth;
+
+// Display lists
+DisplayList* activeDisplayList = nullptr;
+DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
