@@ -71,3 +71,5 @@ float* frameBufferDepth;
 // Display lists
 DisplayList* activeDisplayList = nullptr;
 DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
+// If false, only compile
+bool compileAndExecute = false;

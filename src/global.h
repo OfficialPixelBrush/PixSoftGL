@@ -77,3 +77,5 @@ extern float* frameBufferDepth;
 // Display lists
 extern DisplayList* activeDisplayList;
 extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
+// If false, only compile
+extern bool compileAndExecute;

@@ -18,8 +18,14 @@ extern "C" {
             }
             real_gl(x,y);
         }
-        Record_glVector2f(x,y);
-        Process_glVertex2f(x, y);
+        if (!activeDisplayList) {
+            Process_glVertex2f(x, y);
+        } else {
+            if (compileAndExecute) {
+                Process_glVertex2f(x, y);
+            }
+            Record_glVector2f(x,y);
+        }
         //PrintInfo("\n");
     }
 
@@ -33,8 +39,14 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        Record_glVector3f(x, y, z);
-        Process_glVertex3f(x, y, z);
+        if (!activeDisplayList) {
+            Process_glVertex3f(x, y, z);
+        } else {
+            if (compileAndExecute) {
+                Process_glVertex3f(x, y, z);
+            }
+            Record_glVector3f(x, y, z);
+        }
         //PrintInfo("\n");
     }
 
@@ -48,8 +60,14 @@ extern "C" {
             }
             real_gl(x,y,width,height);
         }
-        Record_glViewport(x,y,width,height);
-        Process_glViewport(x,y,width,height);
+        if (!activeDisplayList) {
+            Process_glViewport(x,y,width,height);
+        } else {
+            if (compileAndExecute) {
+                Process_glViewport(x,y,width,height);
+            }
+            Record_glViewport(x,y,width,height);
+        }
         PrintInfo("\n");
     }
 
@@ -389,8 +407,14 @@ extern "C" {
             }
             real_gl(mode);
         }
-        Record_glBegin(mode);
-        Process_glBegin(mode);
+        if (!activeDisplayList) {
+            Process_glBegin(mode);
+        } else {
+            if (compileAndExecute) {
+                Process_glBegin(mode);
+            }
+            Record_glBegin(mode);
+        }
         PrintInfo("\n");
     }
 
@@ -419,8 +443,14 @@ extern "C" {
             }
             real_gl();
         }
-        Record_glEnd();
-        Process_glEnd();
+        if (!activeDisplayList) {
+            Process_glEnd();
+        } else {
+            if (compileAndExecute) {
+                Process_glEnd();
+            }
+            Record_glEnd();
+        }
         PrintInfo("\n");
     }
 
@@ -434,8 +464,14 @@ extern "C" {
             }
             real_gl();
         }
-        Record_glLoadIdentity();
-        Process_glLoadIdentity();
+        if (!activeDisplayList) {
+            Process_glLoadIdentity();
+        } else {
+            if (compileAndExecute) {
+                Process_glLoadIdentity();
+            }
+            Record_glLoadIdentity();
+        }
         PrintInfo("\n");
     }
 
@@ -449,8 +485,14 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        Record_glTranslatef(x,y,z);
-        Process_glTranslatef(x,y,z);
+        if (!activeDisplayList) {
+            Process_glTranslatef(x,y,z);
+        } else {
+            if (compileAndExecute) {
+                Process_glTranslatef(x,y,z);
+            }
+            Record_glTranslatef(x,y,z);
+        }
         PrintInfo("\n");
     }
 
@@ -464,8 +506,14 @@ extern "C" {
             }
             real_gl(angleDeg,x,y,z);
         }
-        Record_glRotatef(angleDeg,x,y,z);
-        Process_glRotatef(angleDeg,x,y,z);
+        if (!activeDisplayList) {
+            Process_glRotatef(angleDeg,x,y,z);
+        } else {
+            if (compileAndExecute) {
+                Process_glRotatef(angleDeg,x,y,z);
+            }
+            Record_glRotatef(angleDeg,x,y,z);
+        }
         PrintInfo("\n");
     }
 
@@ -479,8 +527,14 @@ extern "C" {
             }
             real_gl(x,y,z);
         }
-        Record_glScalef(x,y,z);
-        Process_glScalef(x,y,z);
+        if (!activeDisplayList) {
+            Process_glScalef(x,y,z);
+        } else {
+            if (compileAndExecute) {
+                Process_glScalef(x,y,z);
+            }
+            Record_glScalef(x,y,z);
+        }
         PrintInfo("\n");
     }
 
@@ -494,8 +548,14 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
-        Record_glFrustum(l,r,b,t,n,f);
-        Process_glFrustum(l,r,b,t,n,f);
+        if (!activeDisplayList) {
+            Process_glFrustum(l,r,b,t,n,f);
+        } else {
+            if (compileAndExecute) {
+                Process_glFrustum(l,r,b,t,n,f);
+            }
+            Record_glFrustum(l,r,b,t,n,f);
+        }
         PrintInfo("\n");
     }
 
@@ -509,8 +569,14 @@ extern "C" {
             }
             real_gl(l,r,b,t,n,f);
         }
-        Record_glOrtho(l,r,b,t,n,f);
-        Process_glOrtho(l,r,t,b,n,f);
+        if (!activeDisplayList) {
+            Process_glOrtho(l,r,t,b,n,f);
+        } else {
+            if (compileAndExecute) {
+                Process_glOrtho(l,r,t,b,n,f);
+            }
+            Record_glOrtho(l,r,b,t,n,f);
+        }
         PrintInfo("\n");
     }
 
@@ -601,6 +667,7 @@ extern "C" {
     }
 
     void glPushMatrix() {
+        PrintInfo("glPushMatrix ");
         if (forwardToSystemGl) {
             static void (*real_gl)() = NULL;
             if (!real_gl) {
@@ -608,13 +675,19 @@ extern "C" {
             }
             real_gl();
         }
-        PrintInfo("glPushMatrix ");
-        Record_glPushMatrix();
-        Process_glPushMatrix();
+        if (!activeDisplayList) {
+            Process_glPushMatrix();
+        } else {
+            if (compileAndExecute) {
+                Process_glPushMatrix();
+            }
+            Record_glPushMatrix();
+        }
         PrintInfo("\n");
     }
 
     void glPopMatrix() {
+        PrintInfo("glPopMatrix ");
         if (forwardToSystemGl) {
             static void (*real_gl)() = NULL;
             if (!real_gl) {
@@ -622,9 +695,14 @@ extern "C" {
             }
             real_gl();
         }
-        PrintInfo("glPopMatrix ");
-        Record_glPopMatrix();
-        Process_glPopMatrix();
+        if (!activeDisplayList) {
+            Process_glPopMatrix();
+        } else {
+            if (compileAndExecute) {
+                Process_glPopMatrix();
+            }
+            Record_glPopMatrix();
+        }
         PrintInfo("\n");
     }
 

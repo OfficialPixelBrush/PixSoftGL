@@ -19,8 +19,6 @@ struct DisplayListCommand {
 };
 
 struct DisplayList {
-    // If false, only compile
-    bool compileAndExecute = false;
     int numberOfCommands = 0;
     DisplayListCommand commands[MAX_DISPLAY_LIST_COMMANDS];
 };

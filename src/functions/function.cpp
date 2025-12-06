@@ -259,3 +259,11 @@ void Process_glPopMatrix() {
             break;
     }
 }
+
+void Process_glNewList(GLuint list, GLenum mode) {
+    
+}
+
+void Process_glEndList() {
+
+}

@@ -14,3 +14,6 @@ void Process_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble 
 void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f);
 void Process_glPushMatrix();
 void Process_glPopMatrix();
+void Process_glNewList(GLuint list, GLenum mode);
+void Process_glEndList();
+GLuint Process_glGenLists(GLsizei range);
