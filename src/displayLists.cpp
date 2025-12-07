@@ -18,7 +18,7 @@ void ExecuteDisplayList(const DisplayList& dl) {
                 Process_glVertex3f(
                     c.data.PARAM_glVertex3f.x, 
                     c.data.PARAM_glVertex3f.y,
-                     c.data.PARAM_glVertex3f.z
+                    c.data.PARAM_glVertex3f.z
                 );
                 break;
             case CMD_glViewport:
@@ -31,23 +31,43 @@ void ExecuteDisplayList(const DisplayList& dl) {
                 break;
             case CMD_glClearColor:
             case CMD_glColor3f:
+                Process_glColor3f(
+                    c.data.PARAM_glColor3f.red,
+                    c.data.PARAM_glColor3f.green,
+                    c.data.PARAM_glColor3f.blue    
+                );
+                break;
             case CMD_glGetString:
+                break;
             case CMD_glLightfv:
+                break;
             case CMD_glGenLists:
+                break;
             case CMD_glNewList:
+                break;
             case CMD_glEndList:
+                break;
             case CMD_glClear:
+                break;
             case CMD_glMatrixMode:
+                break;
             case CMD_glFrontFace:
+                break;
             case CMD_glLoadMatrixf:
+                break;
             case CMD_glDepthMask:
+                break;
             case CMD_glEnable:
+                break;
             case CMD_glDisable:
+                break;
             case CMD_glBegin:
                 Process_glBegin(c.data.PARAM_glBegin);
                 break;
             case CMD_glFinish:
+                break;
             case CMD_glFlush:
+                break;
             case CMD_glEnd:
                 Process_glEnd();
                 break;
@@ -97,9 +117,13 @@ void ExecuteDisplayList(const DisplayList& dl) {
                 );
                 break;
             case CMD_glFogi:
+                break;
             case CMD_glFogfv:
+                break;
             case CMD_glFogf:
+                break;
             case CMD_glReadPixels:
+                break;
             case CMD_glPushMatrix:
                 Process_glPushMatrix();
                 break;
@@ -131,6 +155,13 @@ void Record_glVector3f(GLfloat x, GLfloat y, GLfloat z) {
     c.type = CMD_glVertex3f;
     c.data.PARAM_glVertex3f = {x,y, z};
 };
+
+void Record_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
+    if (activeDisplayListIndex == 0) return;
+    auto& c = displayLists[0].commands[displayLists[0].numberOfCommands++];
+    c.type = CMD_glColor3f;
+    c.data.PARAM_glColor3f = {red, green, blue};
+}
 
 void Record_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
     if (activeDisplayListIndex == 0) return;

@@ -1,5 +1,8 @@
 #include "sdl.h"
+#include "global.h"
+#include "include/datatypes.h"
 #include "maths.h"
+#include <exception>
 
 // SDL Stuff
 SDL_Window *win;
@@ -117,7 +120,11 @@ void UpdateScreen() {
     //PrintInfo("\033[H");
     for (int y = 0; y < renderAreaHeight; y++) {
         for (int x = 0; x < renderAreaWidth; x++) {
-            DrawPixel(frameBufferColor[x + y * renderAreaWidth], x, y);
+            int index = x + y * renderAreaWidth;
+            if (index < 0 || index >= renderAreaTotal) continue;
+            std::cout << frameBufferColor << ": " << index << "/" << renderAreaTotal << std::endl;
+            PixelValue p = frameBufferColor[index];
+            DrawPixel(p,x,y);
         }
         //PrintInfo("\n");;
     }

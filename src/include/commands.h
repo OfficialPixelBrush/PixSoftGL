@@ -78,3 +78,7 @@ struct CMD_PARAM_glBindTexture {
     GLenum target;
     GLuint texture;
 };
+
+struct CMD_PARAM_glColor3f {
+    GLfloat red, green, blue;
+};

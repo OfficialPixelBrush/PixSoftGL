@@ -1,4 +1,5 @@
 #include "render.h"
+#include "global.h"
 #include "maths.h"
 #include <cmath>
 #include "sdl.h"
@@ -22,18 +23,24 @@ void ClearFramebuffers(GLenum mask) {
 
 // Render Pixel to framebuffer
 void RenderPixel(Vec3 screenPos, Col3 color) {
-    int screenX = int(screenPos.x) + viewportOffsetX;
-    int screenY = int(screenPos.y) + viewportOffsetY;
+    int vx = int(screenPos.x); // local viewport coords
+    int vy = int(screenPos.y);
 
-    // Scissor test
+    int sx = vx + viewportOffsetX; // screen coords
+    int sy = vy + viewportOffsetY;
+
+    // Scissor / viewport bounds
     if (scissorTestActive) {
-        if (screenX > viewportAreaWidth + viewportOffsetX || screenX < viewportOffsetX) return;
-        if (screenY > viewportAreaHeight + viewportOffsetY || screenY < viewportOffsetY) return;
+        if (sx < viewportOffsetX || sx >= viewportOffsetX + viewportAreaWidth) return;
+        if (sy < viewportOffsetY || sy >= viewportOffsetY + viewportAreaHeight) return;
     }
 
-    // Figure out index for pixel
-    int index = screenX + (screenY * renderAreaWidth);
+    // Compute safe index inside framebuffer
+    // Only use renderAreaWidth for the GLOBAL full buffer.
+    // Offset the pixel correctly:
+    int index = sx + sy * renderAreaWidth;
     if (index < 0 || index >= renderAreaTotal) return;
+
 
     // If the new pixel is behind the old one, skip
     if (depthTestActive && frameBufferDepth && screenPos.z >= frameBufferDepth[index]) {
@@ -58,7 +65,11 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
     }
 
     // Write new values to buffers
-    if (!frameBufferColor) return;
+    if (!frameBufferColor) {
+        std::cout << "Missing framebuffer" << std::endl;
+        return;
+    }
+    //std::cout << "Wrote to: " << index << "/" << renderAreaTotal << std::endl;
     frameBufferColor[index] = Col3ToPixelValue(color);
     if (!frameBufferDepth || !depthWriteActive) return;
     frameBufferDepth[index] = screenPos.z;

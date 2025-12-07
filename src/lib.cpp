@@ -5,6 +5,8 @@
 #include "maths.h"
 #include "functions/function.h"
 #include <GL/gl.h>
+#include <SDL3/SDL_stdinc.h>
+#include <cstdint>
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
@@ -95,7 +97,14 @@ extern "C" {
             }
             real_gl(red,green,blue);
         }
-        currentColor = Col3{red,green,blue};
+        if (activeDisplayListIndex == 0) {
+            Process_glColor3f(red,green,blue);
+        } else {
+            if (compileAndExecute) {
+                Process_glColor3f(red,green,blue);
+            }
+            Record_glColor3f(red,green,blue);
+        }
         //PrintInfo("\n");
     }
 
@@ -212,7 +221,7 @@ extern "C" {
     }
 
     void glNewList(GLuint list, GLenum mode) {
-        PrintInfo("glNewList");
+        PrintInfo("glNewList ");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLuint,GLenum) = NULL;
             if (!real_gl) {
@@ -789,8 +798,11 @@ extern "C" {
 
     void glGetIntegerv(GLenum pname, GLint *params) {
         static void (*real_gl)(GLenum,GLint*) = NULL;
-        if (!real_gl) {
-            real_gl = (void (*)(GLenum,GLint*)) dlsym(RTLD_NEXT, "glGetIntegerv");
+        if (forwardToSystemGl) {
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLint*)) dlsym(RTLD_NEXT, "glGetIntegerv");
+            }
+            real_gl(pname,params);
         }
         PrintInfo("glGetIntegerv ");
         switch (pname) {
@@ -818,7 +830,76 @@ extern "C" {
         PrintInfo("\n");
     }
 
-    //void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
+    void glEnableClientState(GLenum cap) {
+        PrintInfo("glEnableClientState ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glEnableClientState");
+            }
+            real_gl(cap);
+        }
+        clientState = cap;
+        PrintInfo("\n");
+    }
 
-    //}
+    void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
+        PrintInfo("glVertexPointer ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLint,GLenum,GLsizei,const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLint,GLenum,GLsizei,const GLvoid*)) dlsym(RTLD_NEXT, "glVertexPointer");
+            }
+            real_gl(size,type,stride,ptr);
+        }
+        vertexArrayStride = stride;
+        vertexArrayPointer = ptr;
+        PrintInfo("\n");
+    }
+    
+    void glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
+        PrintInfo("glColorPointer ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLint,GLenum,GLsizei,const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLint,GLenum,GLsizei,const GLvoid*)) dlsym(RTLD_NEXT, "glColorPointer");
+            }
+            real_gl(size,type,stride,ptr);
+        }
+        colorArrayStride = stride;
+        colorArrayPointer = ptr;
+        PrintInfo("\n");
+    }
+
+    void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
+        PrintInfo("glDrawElements ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,GLsizei,GLenum,const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLsizei,GLenum,const GLvoid*)) dlsym(RTLD_NEXT, "glDrawElements");
+            }
+            real_gl(mode,count,type,indices);
+        }
+        switch(mode) {
+            case GL_TRIANGLES:
+                break;
+        }
+
+        for (int i = 0; i < count; i+=vertexArrayStride) {
+            const uint16_t* idx = (const uint16_t*)indices;
+            uint16_t value0 = idx[i];
+            uint16_t value1 = idx[i+1];
+            uint16_t value2 = idx[i+2];
+            const GLfloat* VAR = (const GLfloat*)vertexArrayPointer;
+            Triangle screenTri = ProjectTriangle(
+                Triangle{
+                    VAR[value0],
+                    VAR[value1], 
+                    VAR[value2], 
+                }
+            );
+            RenderTriangle(screenTri);
+        }
+        PrintInfo("\n");
+    }
 }

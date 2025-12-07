@@ -15,11 +15,17 @@ void Process_glVertex2f(GLfloat x, GLfloat y) {
 
 void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
     vertices[vertexIndex].pos = Vec3{x,y,z};
-    vertices[vertexIndex].col = Col3 {
+    vertices[vertexIndex].col = currentColor;
+    
+    /*vertices[vertexIndex].col = Col3 {
     SDL_randf(),SDL_randf(),SDL_randf()
-    };
+    };*/
     
     vertexIndex++;
+}
+
+void Process_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
+    currentColor = Col3{red,green,blue};
 }
 
 void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
@@ -272,7 +278,11 @@ void Process_glNewList(GLuint list, GLenum mode) {
     // We're already making a display list, we can't nest them!
     if (activeDisplayListIndex != 0)
         errorState = GL_INVALID_OPERATION;
-    compileAndExecute = (mode & GL_COMPILE_AND_EXECUTE);
+    compileAndExecute = (mode == GL_COMPILE_AND_EXECUTE);
+    if (compileAndExecute)
+        PrintInfo("COMPILE_AND_EXECUTE");
+    else
+        PrintInfo("COMPILE");
     activeDisplayListIndex = list;
 }
 

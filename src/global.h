@@ -82,5 +82,14 @@ extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 extern bool compileAndExecute;
 
+// Arrays
+extern GLenum clientState;
+extern const GLvoid *vertexArrayPointer;
+extern GLint vertexArrayStride;
+extern const GLvoid *colorArrayPointer;
+extern GLint colorArrayStride;
+extern const GLvoid *textureArrayPointer;
+extern GLint textureArrayStride;
+
 // GL error global
 extern GLenum errorState;

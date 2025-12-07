@@ -1,5 +1,6 @@
 #include "global.h"
 #include <GL/gl.h>
+#include <cstddef>
 
 bool forwardToSystemGl = true;
 
@@ -76,6 +77,15 @@ GLint activeDisplayListIndex = 0;
 DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 bool compileAndExecute = false;
+
+// Arrays
+GLenum clientState = 0;
+const GLvoid *vertexArrayPointer = nullptr;
+GLint vertexArrayStride = 0;
+const GLvoid *colorArrayPointer = nullptr;
+GLint colorArrayStride = 0;
+const GLvoid *textureArrayPointer = nullptr;
+GLint textureArrayStride =  0;
 
 // GL error global
 GLenum errorState = 0;
