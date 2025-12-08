@@ -40,9 +40,12 @@ void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
         renderAreaWidth = viewportAreaWidth;
         renderAreaHeight = viewportAreaHeight;
         renderAreaTotal = viewportAreaTotal;
+        free(frameBufferColor);
+        std::cout << "FB CHANGED!!!" << std::endl;
         frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
     }
     if (!frameBufferDepth) {
+        free(frameBufferDepth);
         frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
     }
 
@@ -288,10 +291,12 @@ void Process_glNewList(GLuint list, GLenum mode) {
 
 void Process_glEndList() {
     // List 0 is the global scope and can't be ended
-    if (activeDisplayListIndex == 0)
+    if (activeDisplayListIndex == 0) {
+        displayLists[activeDisplayListIndex].numberOfCommands = -1;
         errorState = GL_INVALID_OPERATION;
+    }
+    displayLists[0].numberOfCommands++;
     displayLists[activeDisplayListIndex] = displayLists[0];
-    displayLists[activeDisplayListIndex].numberOfCommands = 0;
 }
 
 void Process_glCallList(GLuint list) {

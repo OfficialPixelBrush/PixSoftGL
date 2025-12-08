@@ -122,7 +122,7 @@ void UpdateScreen() {
         for (int x = 0; x < renderAreaWidth; x++) {
             int index = x + y * renderAreaWidth;
             if (index < 0 || index >= renderAreaTotal) continue;
-            std::cout << frameBufferColor << ": " << index << "/" << renderAreaTotal << std::endl;
+            //std::cout << frameBufferColor << ": " << index << "/" << renderAreaTotal << std::endl;
             PixelValue p = frameBufferColor[index];
             DrawPixel(p,x,y);
         }
