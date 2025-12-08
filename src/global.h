@@ -43,8 +43,8 @@ extern GLenum projectionMode;
 extern GLenum matrixMode;
 
 // Currently active color
-extern Col3 currentColor;
-extern Col3 clearColor;
+extern Col4 currentColor;
+extern Col4 clearColor;
 
 // Matricies
 extern int projMatrixPtr;

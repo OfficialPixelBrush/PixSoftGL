@@ -81,6 +81,10 @@ struct Col3 {
 // Floating-point r,g,b,a color
 struct Col4 {
     float r,g,b,a;
+    
+    Col4 operator*(const Col4& o) const {
+        return Col4{r * o.r, g * o.g, b * o.b, a * o.a};
+    }
 };
 
 // 4x4 Matrix
@@ -130,7 +134,7 @@ struct Mat4x4 {
 // Vertex
 struct Vertex {
     Vec3 pos;
-    Col3 col;
+    Col4 col = Col4{1,0,1,1};
     Vec2 uv;
 };
 

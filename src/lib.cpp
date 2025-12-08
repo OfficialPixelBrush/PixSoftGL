@@ -85,7 +85,7 @@ extern "C" {
             }
             real_gl(red,green,blue,alpha);
         }
-        clearColor = Col3{red,green,blue};
+        clearColor = Col4{red,green,blue, alpha};
         PrintInfo("\n");
     }
 
@@ -833,6 +833,19 @@ extern "C" {
     }
 
     void glEnableClientState(GLenum cap) {
+        PrintInfo("glEnableClientState ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glEnableClientState");
+            }
+            real_gl(cap);
+        }
+        clientState = cap;
+        PrintInfo("\n");
+    }
+
+    void glDisableClientState(GLenum cap) {
         PrintInfo("glEnableClientState ");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum) = NULL;

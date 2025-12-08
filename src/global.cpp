@@ -39,8 +39,8 @@ GLenum projectionMode = 0;
 GLenum matrixMode = GL_MODELVIEW;
 
 // Currently active color
-Col3 currentColor = Col3{1,1,1};
-Col3 clearColor = Col3{0,0,0};
+Col4 currentColor = Col4{1,0,1,1};
+Col4 clearColor = Col4{0,0,0,1};
 
 // Matricies
 int projMatrixPtr = 0;

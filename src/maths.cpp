@@ -2,6 +2,16 @@
 #include <cstdlib>
 
 // Interpolate two colors linearly
+Col4 lerp(Col4 a, Col4 b, float t) {
+    return Col4{
+        a.r + t * (b.r - a.r),
+        a.g + t * (b.g - a.g),
+        a.b + t * (b.b - a.b),
+        a.a + t * (b.a - a.a),
+    };
+}
+
+// Interpolate two colors linearly
 Col3 lerp(Col3 a, Col3 b, float t) {
     return Col3{
         a.r + t * (b.r - a.r),
@@ -68,6 +78,14 @@ PixelValue Col3ToPixelValue(Col3 color) {
     };
 }
 
+Col3 PixelValueToCol3(PixelValue color) {
+    return Col3{
+        static_cast<float>(float(color.r)/255.0),
+        static_cast<float>(float(color.g)/255.0),
+        static_cast<float>(float(color.b)/255.0)
+    };
+}
+
 // Normalize vector
 Vec3 Normalize(Vec3 v) {
     float mag = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
@@ -119,7 +137,7 @@ bool PointInTriangle(Triangle tri, Vec3 p) {
 }
 
 // Simple barycentric color interpolation
-Col3 BarycentricColor(Triangle tri, Vec3& p) {
+Col4 BarycentricColor(Triangle tri, Vec3& p) {
     Vec3 a = tri.a.pos;
     Vec3 b = tri.b.pos;
     Vec3 c = tri.c.pos;
@@ -135,10 +153,11 @@ Col3 BarycentricColor(Triangle tri, Vec3& p) {
     // Calulate depth too
     p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
 
-    return Col3{
+    return Col4{
         w1*tri.a.col.r + w2*tri.b.col.r + w3*tri.c.col.r,
         w1*tri.a.col.g + w2*tri.b.col.g + w3*tri.c.col.g,
-        w1*tri.a.col.b + w2*tri.b.col.b + w3*tri.c.col.b
+        w1*tri.a.col.b + w2*tri.b.col.b + w3*tri.c.col.b,
+        w1*tri.a.col.a + w2*tri.b.col.a + w3*tri.c.col.a
     };
 }
 

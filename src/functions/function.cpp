@@ -22,7 +22,7 @@ void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
 }
 
 void Process_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
-    currentColor = Col3{red,green,blue};
+    currentColor = Col4{red,green,blue, 1.0};
 }
 
 void Process_glTexCoord2f(GLfloat s, GLfloat t) {
@@ -342,26 +342,61 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
 }
 
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
-    switch(mode) {
-        case GL_TRIANGLES:
-            break;
-    }
+    if (mode != GL_TRIANGLES) return; // only triangles supported
 
-    const uint16_t* idx = (const uint16_t*)indices;
-    const GLfloat* VAR = (const GLfloat*)vertexArrayPointer;
     int vertexStrideFloats = vertexArrayStride / sizeof(GLfloat);
+    const GLfloat* VAR = (const GLfloat*)vertexArrayPointer;
 
-    for (int i = 0; i < count; i += 3) {
-        uint16_t value0 = idx[i + 0];
-        uint16_t value1 = idx[i + 1];
-        uint16_t value2 = idx[i + 2];
+    if (type == GL_UNSIGNED_SHORT) {
+        const uint16_t* idx = (const uint16_t*)indices;
 
-        Triangle screenTri = ProjectTriangle({
-            VAR[value0 * vertexStrideFloats + 0],
-            VAR[value1 * vertexStrideFloats + 0],
-            VAR[value2 * vertexStrideFloats + 0],
-        });
-        RenderTriangle(screenTri);
+        for (int i = 0; i < count; i += 3) {
+            uint16_t v0 = idx[i + 0];
+            uint16_t v1 = idx[i + 1];
+            uint16_t v2 = idx[i + 2];
+
+            // fetch full 3D positions
+            GLfloat x0 = VAR[v0 * vertexStrideFloats + 0];
+            GLfloat y0 = VAR[v0 * vertexStrideFloats + 1];
+            GLfloat z0 = VAR[v0 * vertexStrideFloats + 2];
+
+            GLfloat x1 = VAR[v1 * vertexStrideFloats + 0];
+            GLfloat y1 = VAR[v1 * vertexStrideFloats + 1];
+            GLfloat z1 = VAR[v1 * vertexStrideFloats + 2];
+
+            GLfloat x2 = VAR[v2 * vertexStrideFloats + 0];
+            GLfloat y2 = VAR[v2 * vertexStrideFloats + 1];
+            GLfloat z2 = VAR[v2 * vertexStrideFloats + 2];
+
+            Triangle screenTri = ProjectTriangle({{x0, y0, z0}, {x1, y1, z1}, {x2, y2, z2}});
+            RenderTriangle(screenTri);
+        }
+    } else if (type == GL_UNSIGNED_INT) {
+        const uint32_t* idx = (const uint32_t*)indices;
+
+        for (int i = 0; i < count; i += 3) {
+            uint32_t v0 = idx[i + 0];
+            uint32_t v1 = idx[i + 1];
+            uint32_t v2 = idx[i + 2];
+
+            GLfloat x0 = VAR[v0 * vertexStrideFloats + 0];
+            GLfloat y0 = VAR[v0 * vertexStrideFloats + 1];
+            GLfloat z0 = VAR[v0 * vertexStrideFloats + 2];
+
+            GLfloat x1 = VAR[v1 * vertexStrideFloats + 0];
+            GLfloat y1 = VAR[v1 * vertexStrideFloats + 1];
+            GLfloat z1 = VAR[v1 * vertexStrideFloats + 2];
+
+            GLfloat x2 = VAR[v2 * vertexStrideFloats + 0];
+            GLfloat y2 = VAR[v2 * vertexStrideFloats + 1];
+            GLfloat z2 = VAR[v2 * vertexStrideFloats + 2];
+
+            Triangle screenTri = ProjectTriangle({{x0, y0, z0}, {x1, y1, z1}, {x2, y2, z2}});
+            RenderTriangle(screenTri);
+        }
+    } else {
+        // unsupported index type
+        return;
     }
 }
 
@@ -382,9 +417,10 @@ void Process_glBindTexture(GLenum target, GLuint texture) {
 }
 
 void Process_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
-    currentColor = Col3{
+    currentColor = Col4{
         params[0],
         params[1],
         params[2],
+        params[3],
     };
 }
