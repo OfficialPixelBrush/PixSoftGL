@@ -660,10 +660,10 @@ extern "C" {
             real_gl(l,r,b,t,n,f);
         }
         if (activeDisplayListIndex == 0) {
-            Process_glOrtho(l,r,t,b,n,f);
+            Process_glOrtho(l,r,b,t,n,f);
         } else {
             if (compileAndExecute) {
-                Process_glOrtho(l,r,t,b,n,f);
+                Process_glOrtho(l,r,b,t,n,f);
             }
             Record_glOrtho(l,r,b,t,n,f);
         }
