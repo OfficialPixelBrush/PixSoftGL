@@ -348,9 +348,10 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
     const uint8_t* BASE = (const uint8_t*)vertexArrayPointer;
 
     int stride    = vertexArrayStride;
-    int posOff    = 0;
-    int colOff    = 12;
-    int uvOff     = textureArrayPointer ? 16 : -1;
+    int posOff = (uint8_t*)vertexArrayPointer - BASE;
+    int colOff = colorArrayPointer ? (uint8_t*)colorArrayPointer - BASE : -1;
+    int uvOff  = textureArrayPointer ? (uint8_t*)textureArrayPointer - BASE : -1;
+
 
     auto fetchPos = [&](int i){
         const float* p = (const float*)(BASE + i * stride + posOff);

@@ -25,7 +25,7 @@ Light lights[MAX_LIGHTS];
 
 // Fog variables
 int fogMode = 0;
-Col4 fogColor = Col4{0,0,0,0};
+Col4 fogColor = Col4{0,0,0,1};
 float fogStart = 0.0;
 float fogEnd = 0.0;
 
