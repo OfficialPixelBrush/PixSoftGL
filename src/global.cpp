@@ -78,6 +78,10 @@ DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 bool compileAndExecute = false;
 
+// Textures
+TextureSlot* lastAccessedTexture = nullptr;
+TextureSlot textureArray[MAX_TEXTURES];
+
 // Arrays
 GLenum clientState = 0;
 const GLvoid *vertexArrayPointer = nullptr;

@@ -22,6 +22,7 @@
 
 #define MAX_DISPLAY_LIST_COMMANDS 64
 #define MAX_DISPLAY_LIST_ENTRIES 128
+#define MAX_TEXTURES 64
 
 
 #define RGBA_MODE false

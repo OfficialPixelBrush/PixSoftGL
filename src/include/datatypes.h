@@ -140,6 +140,11 @@ struct Light {
     Vec3 pos = Vec3{0,0,1};
 };
 
+struct TextureSlot {
+    int textureType;
+    void* texture = nullptr;
+};
+
 struct Texture2D {
     int textureWrapS;
     int textureWrapT;
@@ -147,4 +152,6 @@ struct Texture2D {
     int textureMagFilter;
     Col4 textureBorderColor;
     float texturePriority;
+    int width, height;
+    unsigned char* textureData;
 };

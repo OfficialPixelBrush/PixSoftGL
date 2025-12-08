@@ -82,6 +82,10 @@ extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 // If false, only compile
 extern bool compileAndExecute;
 
+// Textures
+extern TextureSlot* lastAccessedTexture;
+extern TextureSlot textureArray[MAX_TEXTURES];
+
 // Arrays
 extern GLenum clientState;
 extern const GLvoid *vertexArrayPointer;

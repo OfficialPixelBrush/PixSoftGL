@@ -897,4 +897,40 @@ extern "C" {
         //int x;
         //std::cin >> x;
     }
+
+    void glGenTextures(GLsizei n, GLuint *textures) {
+        PrintInfo("glGenTextures ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLsizei, GLuint*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLsizei, GLuint*)) dlsym(RTLD_NEXT, "glGenTextures");
+            }
+            real_gl(n, textures);
+        }
+        Process_glGenTextures(n,textures);
+        PrintInfo("\n");
+    }
+
+    void glTexParameteri(GLenum target, GLenum pname, GLint param) {
+        if (!lastAccessedTexture) return;
+        auto tex = (Texture2D*)lastAccessedTexture->texture;
+        switch(pname) {
+            case GL_TEXTURE_WRAP_S:
+                tex->textureWrapS = param;
+                break;
+            case GL_TEXTURE_WRAP_T:
+                tex->textureWrapT = param;
+                break;
+            case GL_TEXTURE_MIN_FILTER:
+                tex->textureMinFilter = param;
+                break;
+            case GL_TEXTURE_MAG_FILTER:
+                tex->textureMagFilter = param;
+                break;
+        }
+    }
+
+    void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) {
+
+    }
 }

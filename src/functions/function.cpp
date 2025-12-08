@@ -336,10 +336,6 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
     }
 }
 
-void Process_glBindTexture(GLenum target, GLuint texture) {
-
-}
-
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
     switch(mode) {
         case GL_TRIANGLES:
@@ -362,4 +358,21 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoi
         });
         RenderTriangle(screenTri);
     }
+}
+
+void Process_glGenTextures(GLsizei n, GLuint *textures) {
+    int count = 0;
+    for (int i = 0; i < MAX_TEXTURES && count < n; i++) {
+        if (!textureArray[i].texture) { // free slot
+            textures[count] = i;
+            textureArray[i].texture = (void*)1; // mark as used
+            count++;
+        }
+    }
+}
+
+void Process_glBindTexture(GLenum target, GLuint texture) {
+    *lastAccessedTexture = textureArray[texture];
+    lastAccessedTexture->textureType = target;
+    lastAccessedTexture->texture = (Texture2D*)malloc(sizeof(Texture2D));
 }

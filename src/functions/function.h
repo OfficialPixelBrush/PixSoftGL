@@ -21,5 +21,6 @@ void Process_glCallList(GLuint list);
 GLuint Process_glGenLists(GLsizei range);
 GLboolean Process_IsList(GLuint list);
 void Process_glDeleteLists(GLuint list, GLsizei range);
-void Process_glBindTexture(GLenum target, GLuint texture);
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
+void Process_glGenTextures(GLsizei n, GLuint *textures);
+void Process_glBindTexture(GLenum target, GLuint texture);
