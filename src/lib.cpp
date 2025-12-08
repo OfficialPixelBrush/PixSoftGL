@@ -369,57 +369,13 @@ extern "C" {
             }
             real_gl(cap);
         }
-
-        switch(cap) {
-            case GL_COLOR_MATERIAL:
-                PrintInfo("GL_COLOR_MATERIAL");
-                colorMaterialActive = true;
-                break;
-            case GL_FOG:
-                PrintInfo("GL_FOG");
-                fogActive = true;
-                break;
-            case GL_DEPTH_TEST:
-                PrintInfo("GL_DEPTH_TEST");
-                depthTestActive = true;
-                break;
-            case GL_TEXTURE_2D:
-                PrintInfo("GL_TEXTURE_2D");
-                textureType = GL_TEXTURE_2D;
-                break;
-            case GL_LIGHTING:
-                PrintInfo("GL_LIGHTING");
-                lightingActive = true;
-                break;
-            case GL_BLEND:
-                PrintInfo("GL_BLEND");
-                blendActive = true;
-                break;
-            case GL_CULL_FACE:
-                PrintInfo("GL_CULL_FACE");
-                cullFaceActive = true;
-                break;
-            case GL_LIGHT0:
-                PrintInfo("GL_LIGHT0");
-                lightActive[0] = true;
-                break;
-            case GL_NORMALIZE:
-                PrintInfo("GL_NORMALIZE");
-                normalizeActive = true;
-                break;
-            case GL_SCISSOR_TEST:
-                PrintInfo("GL_SCISSOR_TEST");
-                scissorTestActive = true;
-                break;
-            case GL_ALPHA_TEST:
-                PrintInfo("GL_ALPHA_TEST");
-                alphaTestActive = true;
-                break;
-            default:
-                std::cout << std::hex;
-                PrintInfo(cap);
-                std::cout << std::dec;
-                break;
+        if (activeDisplayListIndex == 0) {
+            Process_glEnable(cap);
+        } else {
+            if (compileAndExecute) {
+                Process_glEnable(cap);
+            }
+            Record_glEnable(cap);
         }
         PrintInfo("\n");
     }
@@ -434,57 +390,13 @@ extern "C" {
             }
             real_gl(cap);
         }
-        
-        switch(cap) {
-            case GL_COLOR_MATERIAL:
-                PrintInfo("GL_COLOR_MATERIAL");
-                colorMaterialActive = false;
-                break;
-            case GL_FOG:
-                PrintInfo("GL_FOG");
-                fogActive = false;
-                break;
-            case GL_DEPTH_TEST:
-                PrintInfo("GL_DEPTH_TEST");
-                depthTestActive = false;
-                break;
-            case GL_TEXTURE_2D:
-                PrintInfo("GL_TEXTURE_2D");
-                textureType = 0;
-                break;
-            case GL_LIGHTING:
-                PrintInfo("GL_LIGHTING");
-                lightingActive = false;
-                break;
-            case GL_BLEND:
-                PrintInfo("GL_BLEND");
-                blendActive = false;
-                break;
-            case GL_CULL_FACE:
-                PrintInfo("GL_CULL_FACE");
-                cullFaceActive = false;
-                break;
-            case GL_LIGHT0:
-                PrintInfo("GL_LIGHT0");
-                lightActive[0] = false;
-                break;
-            case GL_NORMALIZE:
-                PrintInfo("GL_NORMALIZE");
-                normalizeActive = false;
-                break;
-            case GL_SCISSOR_TEST:
-                PrintInfo("GL_SCISSOR_TEST");
-                scissorTestActive = false;
-                break;
-            case GL_ALPHA_TEST:
-                PrintInfo("GL_ALPHA_TEST");
-                alphaTestActive = false;
-                break;
-            default:
-                std::cout << std::hex;
-                PrintInfo(cap);
-                std::cout << std::dec;
-                break;
+        if (activeDisplayListIndex == 0) {
+            Process_glDisable(cap);
+        } else {
+            if (compileAndExecute) {
+                Process_glDisable(cap);
+            }
+            Record_glDisable(cap);
         }
         PrintInfo("\n");
     }
@@ -883,6 +795,20 @@ extern "C" {
         }
         colorArrayStride = stride;
         colorArrayPointer = ptr;
+        PrintInfo("\n");
+    }
+
+    void glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
+        PrintInfo("glTexCoordPointer ");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLint,GLenum,GLsizei,const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLint,GLenum,GLsizei,const GLvoid*)) dlsym(RTLD_NEXT, "glTexCoordPointer");
+            }
+            real_gl(size,type,stride,ptr);
+        }
+        textureArrayStride = stride;
+        textureArrayPointer = ptr;
         PrintInfo("\n");
     }
 

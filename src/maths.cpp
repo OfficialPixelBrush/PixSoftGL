@@ -1,4 +1,5 @@
 #include "maths.h"
+#include "global.h"
 #include <cstdlib>
 
 // Interpolate two colors linearly
@@ -183,11 +184,27 @@ Col4 BarycentricTexture(Triangle tri, Vec3& p) {
     // Interpolate UVs
     float u = w1*tri.a.uv.x + w2*tri.b.uv.x + w3*tri.c.uv.x;
     float v = w1*tri.a.uv.y + w2*tri.b.uv.y + w3*tri.c.uv.y;
-    u*=2.0;
-    v*=2.0;
 
-    int tx = std::clamp(int(u * (lastAccessedTexture->texture2D.width  - 1)), 0, lastAccessedTexture->texture2D.width - 1);
-    int ty = std::clamp(int(v * (lastAccessedTexture->texture2D.height - 1)), 0, lastAccessedTexture->texture2D.height - 1);
+    int tx, ty;
+
+    // clamp
+    if (lastAccessedTexture->texture2D.textureWrapS == GL_CLAMP || lastAccessedTexture->texture2D.textureWrapS == GL_CLAMP_TO_EDGE) {
+        tx = std::clamp(int(u * (lastAccessedTexture->texture2D.width - 1)), 0, lastAccessedTexture->texture2D.width - 1);
+    } 
+    // repeat
+    else {
+        int i = int(std::floor(u * lastAccessedTexture->texture2D.width));
+        tx = i % lastAccessedTexture->texture2D.width;
+        if (tx < 0) tx += lastAccessedTexture->texture2D.width;
+    }
+
+    if (lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP || lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP_TO_EDGE) {
+        ty = std::clamp(int(v * (lastAccessedTexture->texture2D.height - 1)), 0, lastAccessedTexture->texture2D.height - 1);
+    } else {
+        int j = int(std::floor(v * lastAccessedTexture->texture2D.height));
+        ty = j % lastAccessedTexture->texture2D.height;
+        if (ty < 0) ty += lastAccessedTexture->texture2D.height;
+    }
 
     return lastAccessedTexture->texture2D.textureData[ty * lastAccessedTexture->texture2D.width + tx];
 }

@@ -341,64 +341,59 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
     }
 }
 
-void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
-    if (mode != GL_TRIANGLES) return; // only triangles supported
+void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
+{
+    if (mode != GL_TRIANGLES) return;
 
-    int vertexStrideFloats = vertexArrayStride / sizeof(GLfloat);
-    const GLfloat* VAR = (const GLfloat*)vertexArrayPointer;
+    const uint8_t* BASE = (const uint8_t*)vertexArrayPointer;
+
+    int stride    = vertexArrayStride;
+    int posOff    = 0;
+    int colOff    = 12;
+    int uvOff     = textureArrayPointer ? 16 : -1;
+
+    auto fetchPos = [&](int i){
+        const float* p = (const float*)(BASE + i * stride + posOff);
+        return Vec3{p[0], p[1], p[2]};
+    };
+    auto fetchCol = [&](int i){
+        const uint8_t* c = BASE + i * stride + colOff;
+        return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
+    };
+    auto fetchUV = [&](int i){
+        if (uvOff < 0) return Vec2{0,0};
+        const float* t = (const float*)(BASE + i * stride + uvOff);
+        return Vec2{t[0], t[1]};
+    };
+
+    auto drawTri = [&](int a, int b, int c){
+        Triangle tri;
+        tri.a.pos = fetchPos(a);
+        tri.b.pos = fetchPos(b);
+        tri.c.pos = fetchPos(c);
+
+        tri.a.col = fetchCol(a);
+        tri.b.col = fetchCol(b);
+        tri.c.col = fetchCol(c);
+
+        tri.a.uv  = fetchUV(a);
+        tri.b.uv  = fetchUV(b);
+        tri.c.uv  = fetchUV(c);
+
+        RenderTriangle(ProjectTriangle(tri));
+    };
 
     if (type == GL_UNSIGNED_SHORT) {
         const uint16_t* idx = (const uint16_t*)indices;
-
-        for (int i = 0; i < count; i += 3) {
-            uint16_t v0 = idx[i + 0];
-            uint16_t v1 = idx[i + 1];
-            uint16_t v2 = idx[i + 2];
-
-            // fetch full 3D positions
-            GLfloat x0 = VAR[v0 * vertexStrideFloats + 0];
-            GLfloat y0 = VAR[v0 * vertexStrideFloats + 1];
-            GLfloat z0 = VAR[v0 * vertexStrideFloats + 2];
-
-            GLfloat x1 = VAR[v1 * vertexStrideFloats + 0];
-            GLfloat y1 = VAR[v1 * vertexStrideFloats + 1];
-            GLfloat z1 = VAR[v1 * vertexStrideFloats + 2];
-
-            GLfloat x2 = VAR[v2 * vertexStrideFloats + 0];
-            GLfloat y2 = VAR[v2 * vertexStrideFloats + 1];
-            GLfloat z2 = VAR[v2 * vertexStrideFloats + 2];
-
-            Triangle screenTri = ProjectTriangle({{x0, y0, z0}, {x1, y1, z1}, {x2, y2, z2}});
-            RenderTriangle(screenTri);
-        }
-    } else if (type == GL_UNSIGNED_INT) {
-        const uint32_t* idx = (const uint32_t*)indices;
-
-        for (int i = 0; i < count; i += 3) {
-            uint32_t v0 = idx[i + 0];
-            uint32_t v1 = idx[i + 1];
-            uint32_t v2 = idx[i + 2];
-
-            GLfloat x0 = VAR[v0 * vertexStrideFloats + 0];
-            GLfloat y0 = VAR[v0 * vertexStrideFloats + 1];
-            GLfloat z0 = VAR[v0 * vertexStrideFloats + 2];
-
-            GLfloat x1 = VAR[v1 * vertexStrideFloats + 0];
-            GLfloat y1 = VAR[v1 * vertexStrideFloats + 1];
-            GLfloat z1 = VAR[v1 * vertexStrideFloats + 2];
-
-            GLfloat x2 = VAR[v2 * vertexStrideFloats + 0];
-            GLfloat y2 = VAR[v2 * vertexStrideFloats + 1];
-            GLfloat z2 = VAR[v2 * vertexStrideFloats + 2];
-
-            Triangle screenTri = ProjectTriangle({{x0, y0, z0}, {x1, y1, z1}, {x2, y2, z2}});
-            RenderTriangle(screenTri);
-        }
+        for (int i = 0; i < count; i += 3)
+            drawTri(idx[i], idx[i+1], idx[i+2]);
     } else {
-        // unsupported index type
-        return;
+        const uint32_t* idx = (const uint32_t*)indices;
+        for (int i = 0; i < count; i += 3)
+            drawTri(idx[i], idx[i+1], idx[i+2]);
     }
 }
+
 
 void Process_glGenTextures(GLsizei n, GLuint *textures) {
     int count = 0;
@@ -423,4 +418,112 @@ void Process_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
         params[2],
         params[3],
     };
+}
+
+void Process_glEnable(GLenum cap) {
+    switch(cap) {
+        case GL_COLOR_MATERIAL:
+            PrintInfo("GL_COLOR_MATERIAL");
+            colorMaterialActive = true;
+            break;
+        case GL_FOG:
+            PrintInfo("GL_FOG");
+            fogActive = true;
+            break;
+        case GL_DEPTH_TEST:
+            PrintInfo("GL_DEPTH_TEST");
+            depthTestActive = true;
+            break;
+        case GL_TEXTURE_2D:
+            PrintInfo("GL_TEXTURE_2D");
+            textureType = GL_TEXTURE_2D;
+            break;
+        case GL_LIGHTING:
+            PrintInfo("GL_LIGHTING");
+            lightingActive = true;
+            break;
+        case GL_BLEND:
+            PrintInfo("GL_BLEND");
+            blendActive = true;
+            break;
+        case GL_CULL_FACE:
+            PrintInfo("GL_CULL_FACE");
+            cullFaceActive = true;
+            break;
+        case GL_LIGHT0:
+            PrintInfo("GL_LIGHT0");
+            lightActive[0] = true;
+            break;
+        case GL_NORMALIZE:
+            PrintInfo("GL_NORMALIZE");
+            normalizeActive = true;
+            break;
+        case GL_SCISSOR_TEST:
+            PrintInfo("GL_SCISSOR_TEST");
+            scissorTestActive = true;
+            break;
+        case GL_ALPHA_TEST:
+            PrintInfo("GL_ALPHA_TEST");
+            alphaTestActive = true;
+            break;
+        default:
+            std::cout << std::hex;
+            PrintInfo(cap);
+            std::cout << std::dec;
+            break;
+    }
+}
+
+void Process_glDisable(GLenum cap) {
+    switch(cap) {
+        case GL_COLOR_MATERIAL:
+            PrintInfo("GL_COLOR_MATERIAL");
+            colorMaterialActive = false;
+            break;
+        case GL_FOG:
+            PrintInfo("GL_FOG");
+            fogActive = false;
+            break;
+        case GL_DEPTH_TEST:
+            PrintInfo("GL_DEPTH_TEST");
+            depthTestActive = false;
+            break;
+        case GL_TEXTURE_2D:
+            PrintInfo("GL_TEXTURE_2D");
+            textureType = 0;
+            break;
+        case GL_LIGHTING:
+            PrintInfo("GL_LIGHTING");
+            lightingActive = false;
+            break;
+        case GL_BLEND:
+            PrintInfo("GL_BLEND");
+            blendActive = false;
+            break;
+        case GL_CULL_FACE:
+            PrintInfo("GL_CULL_FACE");
+            cullFaceActive = false;
+            break;
+        case GL_LIGHT0:
+            PrintInfo("GL_LIGHT0");
+            lightActive[0] = false;
+            break;
+        case GL_NORMALIZE:
+            PrintInfo("GL_NORMALIZE");
+            normalizeActive = false;
+            break;
+        case GL_SCISSOR_TEST:
+            PrintInfo("GL_SCISSOR_TEST");
+            scissorTestActive = false;
+            break;
+        case GL_ALPHA_TEST:
+            PrintInfo("GL_ALPHA_TEST");
+            alphaTestActive = false;
+            break;
+        default:
+            std::cout << std::hex;
+            PrintInfo(cap);
+            std::cout << std::dec;
+            break;
+    }
 }

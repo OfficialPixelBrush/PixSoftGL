@@ -58,8 +58,10 @@ void ExecuteDisplayList(const DisplayList& dl) {
             case CMD_glDepthMask:
                 break;
             case CMD_glEnable:
+                Process_glEnable(c.data.PARAM_glEnable);
                 break;
             case CMD_glDisable:
+                Process_glDisable(c.data.PARAM_glDisable);
                 break;
             case CMD_glBegin:
                 Process_glBegin(c.data.PARAM_glBegin);
@@ -267,4 +269,18 @@ void Record_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
     auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
     c.type = CMD_glMaterialfv;
     c.data.PARAM_glMaterialfv = {face,pname,params};
+}
+
+void Record_glDisable(GLenum cap) {
+    if (activeDisplayListIndex == 0) return;
+    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    c.type = CMD_glDisable;
+    c.data.PARAM_glDisable = {cap};
+}
+
+void Record_glEnable(GLenum cap) {
+    if (activeDisplayListIndex == 0) return;
+    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    c.type = CMD_glEnable;
+    c.data.PARAM_glEnable = {cap};
 }

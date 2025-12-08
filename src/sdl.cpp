@@ -136,6 +136,7 @@ void UpdateScreen() {
     // Poll to make not crash
     SDL_KeepAliveAndUpdate();
     if (pauseForEveryRefresh) {
+        std::cout << "Waiting for input... ";
         int test;
         std::cin >> test;
     }

@@ -79,11 +79,13 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
     if (!frameBufferDepth || !depthWriteActive) return;
     frameBufferDepth[index] = screenPos.z;
 
+    /*
     if (drawVisualizer % 500 == 0) {
         UpdateScreen();
         drawVisualizer = 0;
     }
     drawVisualizer++;
+    */
 }
 
 // Render Line to Framebuffer
