@@ -40,6 +40,7 @@ enum CommandType {
     CMD_glGetIntegerv,
     CMD_glBindTexture,
     CMD_glDrawElements,
+    CMD_glMaterialfv,
 };
 
 struct CMD_PARAM_glVertex2f {
@@ -89,4 +90,10 @@ struct CMD_PARAM_glDrawElements {
     GLsizei count;
     GLenum type;
     const GLvoid *indices;
+};
+
+struct CMD_PARAM_glMaterialfv {
+    GLenum face;
+    GLenum pname;
+    const GLfloat *params;
 };

@@ -978,4 +978,22 @@ extern "C" {
         }
         Process_glTexCoord2f(s,t);
     }
+
+    void glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,GLenum,const GLfloat *) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLenum,const GLfloat *)) dlsym(RTLD_NEXT, "glMaterialfv");
+            }
+            real_gl(face,pname,params);
+        }
+        if (activeDisplayListIndex == 0) {
+            Process_glMaterialfv(face,pname,params);
+        } else {
+            if (compileAndExecute) {
+                Process_glMaterialfv(face,pname,params);
+            }
+            Record_glMaterialfv(face,pname,params);
+        }
+    }
 }

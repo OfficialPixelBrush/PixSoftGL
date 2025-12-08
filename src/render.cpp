@@ -21,6 +21,8 @@ void ClearFramebuffers(GLenum mask) {
     }
 }
 
+int drawVisualizer = 0;
+
 // Render Pixel to framebuffer
 void RenderPixel(Vec3 screenPos, Col3 color) {
     int vx = int(screenPos.x); // local viewport coords
@@ -73,6 +75,12 @@ void RenderPixel(Vec3 screenPos, Col3 color) {
     frameBufferColor[index] = Col3ToPixelValue(color);
     if (!frameBufferDepth || !depthWriteActive) return;
     frameBufferDepth[index] = screenPos.z;
+
+    if (drawVisualizer % 50 == 0) {
+        UpdateScreen();
+        drawVisualizer = 0;
+    }
+    drawVisualizer++;
 }
 
 // Render Line to Framebuffer

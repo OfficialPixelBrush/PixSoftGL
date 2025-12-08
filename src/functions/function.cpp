@@ -41,12 +41,9 @@ void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
         renderAreaWidth = viewportAreaWidth;
         renderAreaHeight = viewportAreaHeight;
         renderAreaTotal = viewportAreaTotal;
-        free(frameBufferColor);
-        std::cout << "FB CHANGED!!!" << std::endl;
         frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
     }
     if (!frameBufferDepth) {
-        free(frameBufferDepth);
         frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
     }
 
@@ -291,6 +288,7 @@ void Process_glNewList(GLuint list, GLenum mode) {
         PrintInfo("COMPILE_AND_EXECUTE");
     else
         PrintInfo("COMPILE");
+    displayLists[0].numberOfCommands = -1;
     activeDisplayListIndex = list;
 }
 
@@ -381,4 +379,12 @@ void Process_glGenTextures(GLsizei n, GLuint *textures) {
 void Process_glBindTexture(GLenum target, GLuint texture) {
     lastAccessedTexture = &textureArray[texture];
     lastAccessedTexture->textureType = target;
+}
+
+void Process_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
+    currentColor = Col3{
+        params[0],
+        params[1],
+        params[2],
+    };
 }

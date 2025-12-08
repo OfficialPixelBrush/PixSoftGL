@@ -25,3 +25,4 @@ void Process_glDeleteLists(GLuint list, GLsizei range);
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 void Process_glGenTextures(GLsizei n, GLuint *textures);
 void Process_glBindTexture(GLenum target, GLuint texture);
+void Process_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params);

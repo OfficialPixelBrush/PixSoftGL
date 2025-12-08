@@ -146,6 +146,13 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glDrawElements.indices
                 );
                 break;
+            case CMD_glMaterialfv:
+                Process_glMaterialfv(
+                    c.data.PARAM_glMaterialfv.face,
+                    c.data.PARAM_glMaterialfv.pname,
+                    c.data.PARAM_glMaterialfv.params
+                );
+                break;
             }
     }
 }
@@ -253,4 +260,11 @@ void Record_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid
     auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
     c.type = CMD_glDrawElements;
     c.data.PARAM_glDrawElements = {mode,count,type,indices};
+}
+
+void Record_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
+    if (activeDisplayListIndex == 0) return;
+    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    c.type = CMD_glMaterialfv;
+    c.data.PARAM_glMaterialfv = {face,pname,params};
 }
