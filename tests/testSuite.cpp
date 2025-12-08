@@ -15,7 +15,7 @@
 #include <vector>
 #include <string>
 
-#define PAUSE_BETWEEN_TESTS 10000
+#define PAUSE_BETWEEN_TESTS 100000
 
 static const int WIN_W = 256;
 static const int WIN_H = 256;
