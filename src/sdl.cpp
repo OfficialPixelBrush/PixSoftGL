@@ -9,7 +9,7 @@ SDL_Window *win;
 SDL_Surface *surf;
 bool running = true;
 
-bool printInfo = true;
+bool printInfo = false;
 bool pauseForEveryRefresh = false;
 
 void PrintInfoHex(int s) {

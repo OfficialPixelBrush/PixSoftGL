@@ -3,6 +3,18 @@
     {
       "type": "cppdbg",
       "request": "launch",
+      "name": "Debug testCube",
+      "program": "${workspaceFolder}/tests/testCube",
+      "cwd": "${workspaceFolder}",
+      "args": [],
+      "environment": [
+        { "name": "LD_PRELOAD", "value": "${workspaceFolder}/build/libGL.so" }
+      ],
+      "MIMode": "gdb"
+    },
+    {
+      "type": "cppdbg",
+      "request": "launch",
       "name": "Debug testSuite",
       "program": "${workspaceFolder}/tests/testSuite",
       "cwd": "${workspaceFolder}",
@@ -15,8 +27,8 @@
     {
       "type": "cppdbg",
       "request": "launch",
-      "name": "Debug testCube",
-      "program": "${workspaceFolder}/tests/testCube",
+      "name": "Debug glxgears",
+      "program": "/usr/bin/glxgears",
       "cwd": "${workspaceFolder}",
       "args": [],
       "environment": [

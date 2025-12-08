@@ -1,4 +1,5 @@
 #include "maths.h"
+#include <cstdlib>
 
 // Interpolate two colors linearly
 Col3 lerp(Col3 a, Col3 b, float t) {
@@ -50,9 +51,9 @@ Vec3 ProjectPosition(Vec3 pos) {
 // Project triangle to screen
 Triangle ProjectTriangle(Triangle tri) {
     return Triangle{
-        Vertex { ProjectPosition(tri.a.pos), tri.a.col },
-        Vertex { ProjectPosition(tri.b.pos), tri.b.col },
-        Vertex { ProjectPosition(tri.c.pos), tri.c.col },
+        Vertex { ProjectPosition(tri.a.pos), tri.a.col, tri.a.uv },
+        Vertex { ProjectPosition(tri.b.pos), tri.b.col, tri.b.uv },
+        Vertex { ProjectPosition(tri.c.pos), tri.c.col, tri.c.uv },
     };
 }
 
@@ -139,4 +140,35 @@ Col3 BarycentricColor(Triangle tri, Vec3& p) {
         w1*tri.a.col.g + w2*tri.b.col.g + w3*tri.c.col.g,
         w1*tri.a.col.b + w2*tri.b.col.b + w3*tri.c.col.b
     };
+}
+
+Col4 BarycentricTexture(Triangle tri, Vec3& p) {
+    Vec3 a = tri.a.pos;
+    Vec3 b = tri.b.pos;
+    Vec3 c = tri.c.pos;
+
+    // Compute barycentric coordinates
+    float det = (b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y);
+    float w1 = ((b.y - c.y)*(p.x - c.x) + (c.x - b.x)*(p.y - c.y)) / det;
+    float w2 = ((c.y - a.y)*(p.x - c.x) + (a.x - c.x)*(p.y - c.y)) / det;
+    float w3 = 1.0f - w1 - w2;
+
+    // Clamp weights to [0,1] to avoid sampling outside
+    w1 = std::clamp(w1, 0.0f, 1.0f);
+    w2 = std::clamp(w2, 0.0f, 1.0f);
+    w3 = std::clamp(w3, 0.0f, 1.0f);
+
+    // Depth (optional)
+    //p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
+
+    // Interpolate UVs
+    float u = w1*tri.a.uv.x + w2*tri.b.uv.x + w3*tri.c.uv.x;
+    float v = w1*tri.a.uv.y + w2*tri.b.uv.y + w3*tri.c.uv.y;
+    u*=2.0;
+    v*=2.0;
+
+    int tx = std::clamp(int(u * (lastAccessedTexture->texture2D.width  - 1)), 0, lastAccessedTexture->texture2D.width - 1);
+    int ty = std::clamp(int(v * (lastAccessedTexture->texture2D.height - 1)), 0, lastAccessedTexture->texture2D.height - 1);
+
+    return lastAccessedTexture->texture2D.textureData[ty * lastAccessedTexture->texture2D.width + tx];
 }

@@ -1,5 +1,6 @@
 #include "displayLists.h"
 #include "global.h"
+#include "include/datatypes.h"
 #include "render.h"
 #include "sdl.h"
 #include "maths.h"
@@ -7,6 +8,7 @@
 #include <GL/gl.h>
 #include <SDL3/SDL_stdinc.h>
 #include <cstdint>
+#include <cstdlib>
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
@@ -383,7 +385,7 @@ extern "C" {
                 break;
             case GL_TEXTURE_2D:
                 PrintInfo("GL_TEXTURE_2D");
-                texture2dActive = true;
+                textureType = GL_TEXTURE_2D;
                 break;
             case GL_LIGHTING:
                 PrintInfo("GL_LIGHTING");
@@ -448,7 +450,7 @@ extern "C" {
                 break;
             case GL_TEXTURE_2D:
                 PrintInfo("GL_TEXTURE_2D");
-                texture2dActive = false;
+                textureType = 0;
                 break;
             case GL_LIGHTING:
                 PrintInfo("GL_LIGHTING");
@@ -912,25 +914,68 @@ extern "C" {
     }
 
     void glTexParameteri(GLenum target, GLenum pname, GLint param) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,GLenum,GLint) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLenum,GLint)) dlsym(RTLD_NEXT, "glTexParameteri");
+            }
+            real_gl(target,pname,param);
+        }
         if (!lastAccessedTexture) return;
-        auto tex = (Texture2D*)lastAccessedTexture->texture;
+        auto& tex = lastAccessedTexture->texture2D;
         switch(pname) {
             case GL_TEXTURE_WRAP_S:
-                tex->textureWrapS = param;
+                tex.textureWrapS = param;
                 break;
             case GL_TEXTURE_WRAP_T:
-                tex->textureWrapT = param;
+                tex.textureWrapT = param;
                 break;
             case GL_TEXTURE_MIN_FILTER:
-                tex->textureMinFilter = param;
+                tex.textureMinFilter = param;
                 break;
             case GL_TEXTURE_MAG_FILTER:
-                tex->textureMagFilter = param;
+                tex.textureMagFilter = param;
                 break;
         }
     }
 
     void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,GLint,GLint,GLsizei,GLsizei,GLint,GLenum,GLenum,const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLint,GLint,GLsizei,GLsizei,GLint,GLenum,GLenum,const GLvoid*)) dlsym(RTLD_NEXT, "glTexImage2D");
+            }
+            real_gl(target,level,internalFormat,width,height,border,format,type,pixels);
+        }
+        if (!lastAccessedTexture) return;
+        lastAccessedTexture->texture2D.width = width;
+        lastAccessedTexture->texture2D.height = height;
+        lastAccessedTexture->texture2D.textureData = (Col4*)malloc(sizeof(Col4)*width*height);
+        const unsigned char* charPix = (const unsigned char*)pixels;
+        
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                int idx = (y*width + x)*4;  // RGBA
+                int texIdx = y*width + x;   // Col4 array index
 
+                lastAccessedTexture->texture2D.textureData[texIdx] = Col4{
+                    charPix[idx] / 255.0f,
+                    charPix[idx+1] / 255.0f,
+                    charPix[idx+2] / 255.0f,
+                    charPix[idx+3] / 255.0f
+                };
+            }
+        }
+    }
+
+    void glTexCoord2f(GLfloat s, GLfloat t) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLfloat,GLfloat) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLfloat,GLfloat)) dlsym(RTLD_NEXT, "glTexCoord2f");
+            }
+            real_gl(s,t);
+        }
+        Process_glTexCoord2f(s,t);
     }
 }

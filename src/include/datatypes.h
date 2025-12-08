@@ -72,6 +72,10 @@ struct Vec4 {
 // Floating-point r,g,b color
 struct Col3 {
     float r,g,b;
+    
+    Col3 operator*(const Col3& o) const {
+        return Col3{r * o.r, g * o.g, b * o.b};
+    }
 };
 
 // Floating-point r,g,b,a color
@@ -127,7 +131,7 @@ struct Mat4x4 {
 struct Vertex {
     Vec3 pos;
     Col3 col;
-    Vec2 tex;
+    Vec2 uv;
 };
 
 // Triangle
@@ -140,11 +144,6 @@ struct Light {
     Vec3 pos = Vec3{0,0,1};
 };
 
-struct TextureSlot {
-    int textureType;
-    void* texture = nullptr;
-};
-
 struct Texture2D {
     int textureWrapS;
     int textureWrapT;
@@ -152,6 +151,15 @@ struct Texture2D {
     int textureMagFilter;
     Col4 textureBorderColor;
     float texturePriority;
-    int width, height;
-    unsigned char* textureData;
+    int width;
+    int height;
+    Col4* textureData;
+};
+
+struct TextureSlot {
+    bool allocated = false;
+    int textureType = 0;
+    union {
+        Texture2D texture2D;
+    };
 };

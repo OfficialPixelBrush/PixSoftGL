@@ -10,22 +10,23 @@
 void Process_glVertex2f(GLfloat x, GLfloat y) {
     vertices[vertexIndex].pos = Vec3{x,y,0};
     vertices[vertexIndex].col = currentColor;
+    vertices[vertexIndex].uv = currentTextureUV;
     vertexIndex++;
 }
 
 void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
     vertices[vertexIndex].pos = Vec3{x,y,z};
     vertices[vertexIndex].col = currentColor;
-    
-    /*vertices[vertexIndex].col = Col3 {
-    SDL_randf(),SDL_randf(),SDL_randf()
-    };*/
-    
+    vertices[vertexIndex].uv = currentTextureUV;
     vertexIndex++;
 }
 
 void Process_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
     currentColor = Col3{red,green,blue};
+}
+
+void Process_glTexCoord2f(GLfloat s, GLfloat t) {
+    currentTextureUV = Vec2{s,t};
 }
 
 void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
@@ -99,50 +100,50 @@ void Process_glEnd() {
             }
             break;
         case GL_LINES:
-            for (int i = 0; i < vertexIndex; i+=2) {
+            for (int i = 0; i + 1 < vertexIndex; i+=2) {
                 Vec3 screenPosA = ProjectPosition(vertices[i].pos);
-                Vec3 screenPosB = ProjectPosition(vertices[i+2].pos);
-                RenderLine(screenPosA, vertices[i].col, screenPosB, vertices[i+2].col);
+                Vec3 screenPosB = ProjectPosition(vertices[i+1].pos);
+                RenderLine(screenPosA, vertices[i].col, screenPosB, vertices[i+1].col);
             }
             break;
         case GL_TRIANGLE_FAN:
-            for (int i = 1; i < vertexIndex; i+=2) {
+            for (int i = 1; i + 1 < vertexIndex; i+=2) {
                 Triangle screenTri = ProjectTriangle(
                     Triangle{
-                        vertices[i+1],
-                        vertices[i], 
                         vertices[0], 
+                        vertices[i], 
+                        vertices[i+1],
                     }
                 );
                 RenderTriangle(screenTri);
             }
             break;
         case GL_TRIANGLES:
-            for (int i = 0; i < vertexIndex; i+=3) {
+            for (int i = 0; i + 2 < vertexIndex; i+=3) {
                 Triangle screenTri = ProjectTriangle(
                     Triangle{
-                        vertices[i+2],
-                        vertices[i+1], 
                         vertices[i], 
+                        vertices[i+1], 
+                        vertices[i+2],
                     }
                 );
                 RenderTriangle(screenTri);
             }
             break;
         case GL_QUADS:
-            for (int i = 0; i < vertexIndex; i+=4) {
+            for (int i = 0; i + 3 < vertexIndex; i+=4) {
                 Triangle screenTriA = ProjectTriangle(
                     Triangle{
-                        vertices[i+2],
-                        vertices[i+1], 
                         vertices[i], 
+                        vertices[i+1], 
+                        vertices[i+2],
                     }
                 );
                 Triangle screenTriB = ProjectTriangle(
                     Triangle{
-                        vertices[i+3],
-                        vertices[i+2], 
                         vertices[i],
+                        vertices[i+2], 
+                        vertices[i+3],
                     }
                 );
                 RenderTriangle(screenTriA);
@@ -150,19 +151,19 @@ void Process_glEnd() {
             } 
             break;
         case GL_QUAD_STRIP:
-            for (int i = 2; i + 1 < vertexIndex; i+=2) {
+            for (int i = 0; i + 3 < vertexIndex; i+=2) {
                 Triangle screenTriA = ProjectTriangle(
                     Triangle{
                         vertices[i],
-                        vertices[i-1], 
-                        vertices[i-2], 
+                        vertices[i+1],
+                        vertices[i+2],
                     }
                 );
                 Triangle screenTriB = ProjectTriangle(
                     Triangle{
-                        vertices[i-2],
-                        vertices[i+1], 
-                        vertices[i],
+                        vertices[i+1],
+                        vertices[i+3],
+                        vertices[i+2],
                     }
                 );
                 RenderTriangle(screenTriA);
@@ -247,7 +248,7 @@ void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n,
 }
 
 void Process_glPushMatrix() {
-    switch(drawingMode) {
+    switch(matrixMode) {
         case GL_PROJECTION:
             projMatricies[projMatrixPtr + 1] = projMatricies[projMatrixPtr];
             projMatrixPtr++;
@@ -262,7 +263,7 @@ void Process_glPushMatrix() {
 }
 
 void Process_glPopMatrix() {
-    switch(drawingMode) {
+    switch(matrixMode) {
         case GL_PROJECTION:
             projMatrixPtr--;
             lastAccessedMatrix = &projMatricies[projMatrixPtr];
@@ -276,11 +277,15 @@ void Process_glPopMatrix() {
 
 void Process_glNewList(GLuint list, GLenum mode) {
     // List 0 is the global scope
-    if (list == 0)
+    if (list == 0) {
         errorState = GL_INVALID_VALUE;
+        return;
+    }
     // We're already making a display list, we can't nest them!
-    if (activeDisplayListIndex != 0)
+    if (activeDisplayListIndex != 0) {
         errorState = GL_INVALID_OPERATION;
+        return;
+    }
     compileAndExecute = (mode == GL_COMPILE_AND_EXECUTE);
     if (compileAndExecute)
         PrintInfo("COMPILE_AND_EXECUTE");
@@ -294,9 +299,11 @@ void Process_glEndList() {
     if (activeDisplayListIndex == 0) {
         displayLists[activeDisplayListIndex].numberOfCommands = -1;
         errorState = GL_INVALID_OPERATION;
+        return;
     }
     displayLists[0].numberOfCommands++;
     displayLists[activeDisplayListIndex] = displayLists[0];
+    activeDisplayListIndex = 0;
 }
 
 void Process_glCallList(GLuint list) {
@@ -363,16 +370,15 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoi
 void Process_glGenTextures(GLsizei n, GLuint *textures) {
     int count = 0;
     for (int i = 0; i < MAX_TEXTURES && count < n; i++) {
-        if (!textureArray[i].texture) { // free slot
+        if (!textureArray[i].allocated) {
+            textureArray[i].allocated = true;
             textures[count] = i;
-            textureArray[i].texture = (void*)1; // mark as used
             count++;
         }
     }
 }
 
 void Process_glBindTexture(GLenum target, GLuint texture) {
-    *lastAccessedTexture = textureArray[texture];
+    lastAccessedTexture = &textureArray[texture];
     lastAccessedTexture->textureType = target;
-    lastAccessedTexture->texture = (Texture2D*)malloc(sizeof(Texture2D));
 }

@@ -14,7 +14,6 @@ extern int vertexIndex;
 extern bool depthTestActive;
 extern bool fogActive;
 extern bool colorMaterialActive;
-extern bool texture2dActive;
 extern bool blendActive;
 extern bool lightingActive;
 extern bool cullFaceActive;
@@ -83,6 +82,8 @@ extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 extern bool compileAndExecute;
 
 // Textures
+extern Vec2 currentTextureUV;
+extern GLenum textureType;
 extern TextureSlot* lastAccessedTexture;
 extern TextureSlot textureArray[MAX_TEXTURES];
 

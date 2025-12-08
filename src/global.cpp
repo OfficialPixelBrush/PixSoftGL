@@ -10,7 +10,6 @@ int vertexIndex = 0;
 bool depthTestActive = false;
 bool fogActive = false;
 bool colorMaterialActive = false;
-bool texture2dActive = false;
 bool blendActive = false;
 bool lightingActive = false;
 bool cullFaceActive = false;
@@ -79,6 +78,8 @@ DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
 bool compileAndExecute = false;
 
 // Textures
+Vec2 currentTextureUV = Vec2{0,0};
+GLenum textureType = 0;
 TextureSlot* lastAccessedTexture = nullptr;
 TextureSlot textureArray[MAX_TEXTURES];
 

@@ -114,6 +114,10 @@ void RenderTriangle(Triangle tri) {
             Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};
             if (PointInTriangle(tri, point)) {
                 Col3 color = BarycentricColor(tri, point);
+                if (lastAccessedTexture) {
+                    Col4 rgba = BarycentricTexture(tri,point);
+                    color = color * Col3{rgba.r, rgba.g, rgba.b};
+                }
                 RenderPixel(point, color);
             }
         }

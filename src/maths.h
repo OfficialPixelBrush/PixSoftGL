@@ -16,3 +16,4 @@ Vec3 Perpendicular2D(Vec3 vec);
 bool PointOnRightSideOfLine(Vec3 a, Vec3 b, Vec3 p);
 bool PointInTriangle(Triangle tri, Vec3 p);
 Col3 BarycentricColor(Triangle tri, Vec3& p);
+Col4 BarycentricTexture(Triangle tri, Vec3& p);
