@@ -12,9 +12,14 @@ bool running = true;
 bool printInfo = true;
 bool pauseForEveryRefresh = false;
 
+void PrintInfoHex(int s) {
+    if (!printInfo) return;
+    std::cout << std::hex << s << std::dec;
+}
+
 void PrintInfo(int s) {
     if (!printInfo) return;
-    std::cout << s;
+    std::cout << std::dec << s;
 }
 
 void PrintInfo(const std::string& s) {

@@ -39,6 +39,7 @@ enum CommandType {
     CMD_glPopMatrix,
     CMD_glGetIntegerv,
     CMD_glBindTexture,
+    CMD_glDrawElements,
 };
 
 struct CMD_PARAM_glVertex2f {
@@ -81,4 +82,11 @@ struct CMD_PARAM_glBindTexture {
 
 struct CMD_PARAM_glColor3f {
     GLfloat red, green, blue;
+};
+
+struct CMD_PARAM_glDrawElements {
+    GLenum mode;
+    GLsizei count;
+    GLenum type;
+    const GLvoid *indices;
 };

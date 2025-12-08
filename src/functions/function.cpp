@@ -339,3 +339,27 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
 void Process_glBindTexture(GLenum target, GLuint texture) {
 
 }
+
+void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
+    switch(mode) {
+        case GL_TRIANGLES:
+            break;
+    }
+
+    const uint16_t* idx = (const uint16_t*)indices;
+    const GLfloat* VAR = (const GLfloat*)vertexArrayPointer;
+    int vertexStrideFloats = vertexArrayStride / sizeof(GLfloat);
+
+    for (int i = 0; i < count; i += 3) {
+        uint16_t value0 = idx[i + 0];
+        uint16_t value1 = idx[i + 1];
+        uint16_t value2 = idx[i + 2];
+
+        Triangle screenTri = ProjectTriangle({
+            VAR[value0 * vertexStrideFloats + 0],
+            VAR[value1 * vertexStrideFloats + 0],
+            VAR[value2 * vertexStrideFloats + 0],
+        });
+        RenderTriangle(screenTri);
+    }
+}

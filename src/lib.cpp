@@ -873,6 +873,12 @@ extern "C" {
 
     void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
         PrintInfo("glDrawElements ");
+        PrintInfoHex(mode);
+        PrintInfo(" - ");
+        PrintInfoHex(count);
+        PrintInfo(" - ");
+        PrintInfoHex(type);
+        PrintInfo("\n");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum,GLsizei,GLenum,const GLvoid*) = NULL;
             if (!real_gl) {
@@ -880,26 +886,15 @@ extern "C" {
             }
             real_gl(mode,count,type,indices);
         }
-        switch(mode) {
-            case GL_TRIANGLES:
-                break;
+        if (activeDisplayListIndex == 0) {
+            Process_glDrawElements(mode,count,type,indices);
+        } else {
+            if (compileAndExecute) {
+                Process_glDrawElements(mode,count,type,indices);
+            }
+            Record_glDrawElements(mode,count,type,indices);
         }
-
-        for (int i = 0; i < count; i+=vertexArrayStride) {
-            const uint16_t* idx = (const uint16_t*)indices;
-            uint16_t value0 = idx[i];
-            uint16_t value1 = idx[i+1];
-            uint16_t value2 = idx[i+2];
-            const GLfloat* VAR = (const GLfloat*)vertexArrayPointer;
-            Triangle screenTri = ProjectTriangle(
-                Triangle{
-                    VAR[value0],
-                    VAR[value1], 
-                    VAR[value2], 
-                }
-            );
-            RenderTriangle(screenTri);
-        }
-        PrintInfo("\n");
+        //int x;
+        //std::cin >> x;
     }
 }

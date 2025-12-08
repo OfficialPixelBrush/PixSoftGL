@@ -138,6 +138,14 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glBindTexture.texture
                 );
                 break;
+            case CMD_glDrawElements:
+                Process_glDrawElements(
+                    c.data.PARAM_glDrawElements.mode,
+                    c.data.PARAM_glDrawElements.count,
+                    c.data.PARAM_glDrawElements.type,
+                    c.data.PARAM_glDrawElements.indices
+                );
+                break;
             }
     }
 }
@@ -238,4 +246,11 @@ void Record_glBindTexture(GLenum target, GLuint texture) {
     auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
     c.type = CMD_glBindTexture;
     c.data.PARAM_glBindTexture = {target, texture};
+}
+
+void Record_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
+    if (activeDisplayListIndex == 0) return;
+    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    c.type = CMD_glDrawElements;
+    c.data.PARAM_glDrawElements = {mode,count,type,indices};
 }

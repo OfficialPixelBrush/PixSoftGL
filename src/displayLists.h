@@ -17,6 +17,7 @@ struct DisplayListCommand {
         GLenum PARAM_glBegin;
         CMD_PARAM_glBindTexture PARAM_glBindTexture;
         CMD_PARAM_glColor3f PARAM_glColor3f;
+        CMD_PARAM_glDrawElements PARAM_glDrawElements;
     } data;
 };
 
@@ -43,3 +44,4 @@ void Record_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, 
 void Record_glPushMatrix();
 void Record_glPopMatrix();
 void Record_glBindTexture(GLenum target, GLuint texture);
+void Record_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
