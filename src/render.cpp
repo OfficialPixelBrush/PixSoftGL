@@ -126,7 +126,7 @@ void RenderTriangle(Triangle tri) {
     int yMin = renderAreaHeight;
     int xMax = 0;
     int yMax = 0;
-    DetermineBounding(tri,xMin,yMin,xMax,yMax);
+    if (!DetermineBounding(tri,xMin,yMin,xMax,yMax)) return;
     for (int y = yMin; y <= yMax; y++) {
         for (int x = xMin; x <= xMax; x++) {
             Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};

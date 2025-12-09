@@ -21,5 +21,5 @@ bool PointOnRightSideOfLine(Vec3 a, Vec3 b, Vec3 p);
 bool PointInTriangle(Triangle tri, Vec3 p);
 Col4 BarycentricColor(Triangle tri, Vec3& p);
 Col4 BarycentricTexture(Triangle tri, Vec3& p);
-void DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax);
+bool DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax);
 Vec3 CalculateNormal(Triangle& tri);

@@ -206,17 +206,23 @@ Col4 BarycentricTexture(Triangle tri, Vec3& p) {
     return lastAccessedTexture->texture2D.textureData[ty * lastAccessedTexture->texture2D.width + tx];
 }
 
-void DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax) {
+bool DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax) {
     xMin = std::min({xMin, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
     yMin = std::min({yMin, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
     xMax = std::max({xMax, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
     yMax = std::max({yMax, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
+
+    // Check if completely outside render area
+    if (xMax < 0 || yMax < 0 || xMin >= renderAreaWidth || yMin >= renderAreaHeight) {
+        return false; // discard
+    }
 
     // Clamp to render area
     xMin = std::max(0, xMin);
     yMin = std::max(0, yMin);
     xMax = std::min(renderAreaWidth, xMax);
     yMax = std::min(renderAreaHeight, yMax);
+    return true;
 }
 
 Vec3 CalculateNormal(Triangle& tri) {
