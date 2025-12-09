@@ -234,3 +234,11 @@ Vec3 CalculateNormal(Triangle& tri) {
         A.x * B.y - A.y * B.x
     });
 }
+
+void RecomputeBase() {
+    const void* minPtr = nullptr;
+    if (vertexArrayPointer) minPtr = vertexArrayPointer;
+    if (colorArrayPointer) minPtr = !minPtr ? colorArrayPointer : std::min(minPtr, colorArrayPointer);
+    if (textureArrayPointer) minPtr = !minPtr ? textureArrayPointer : std::min(minPtr, textureArrayPointer);
+    vertexArrayBasePointer = minPtr;
+}

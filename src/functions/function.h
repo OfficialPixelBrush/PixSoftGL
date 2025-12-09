@@ -30,3 +30,4 @@ void Process_glEnable(GLenum cap);
 void Process_glDisable(GLenum cap);
 void Process_glMatrixMode(GLenum mode);
 void Process_glFrontFace(GLenum mode);
+void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count);

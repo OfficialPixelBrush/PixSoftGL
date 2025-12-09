@@ -29,6 +29,12 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glViewport.height
                 );
                 break;
+            case CMD_glTexCoord2f:
+                Process_glTexCoord2f(
+                    c.data.PARAM_glTexCoord2f.s,
+                    c.data.PARAM_glTexCoord2f.t
+                );
+                break;
             case CMD_glClearColor:
             case CMD_glColor3f:
                 Process_glColor3f(
@@ -157,6 +163,13 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glMaterialfv.params
                 );
                 break;
+            case CMD_glDrawArrays:
+                Process_glDrawArrays(
+                    c.data.PARAM_glDrawArrays.mode,
+                    c.data.PARAM_glDrawArrays.first,
+                    c.data.PARAM_glDrawArrays.count
+                );
+                break;
             }
     }
 }
@@ -182,6 +195,14 @@ void Record_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
     DisplayListCommand c;
     c.type = CMD_glColor3f;
     c.data.PARAM_glColor3f = {red, green, blue};
+    displayLists[0].commands.push_back(c);
+}
+
+void Record_glTexCoord2f(GLfloat s, GLfloat t) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glTexCoord2f;
+    c.data.PARAM_glTexCoord2f = {s,t};
     displayLists[0].commands.push_back(c);
 }
 
@@ -212,6 +233,7 @@ void Record_glLoadIdentity() {
     if (activeDisplayListIndex == 0) return;
     DisplayListCommand c;
     c.type = CMD_glLoadIdentity;
+    displayLists[0].commands.push_back(c);
 }
 void Record_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
     if (activeDisplayListIndex == 0) return;
@@ -321,5 +343,13 @@ void Record_glFrontFace(GLenum mode) {
     DisplayListCommand c;
     c.type = CMD_glFrontFace;
     c.data.PARAM_glFrontFace = {mode};
+    displayLists[0].commands.push_back(c);
+}
+
+void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glDrawArrays;
+    c.data.PARAM_glDrawArrays = {mode,first,count};
     displayLists[0].commands.push_back(c);
 }

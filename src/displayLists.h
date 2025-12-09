@@ -24,6 +24,8 @@ struct DisplayListCommand {
         GLenum PARAM_glDisable;
         GLenum PARAM_glMatrixMode;
         GLenum PARAM_glFrontFace;
+        CMD_PARAM_glDrawArrays PARAM_glDrawArrays;
+        CMD_PARAM_glTexCoord2f PARAM_glTexCoord2f;
     } data;
 };
 
@@ -36,6 +38,7 @@ void ExecuteDisplayList(const DisplayList& dl);
 void Record_glVector2f(GLfloat x, GLfloat y);
 void Record_glVector3f(GLfloat x, GLfloat y, GLfloat z);
 void Record_glColor3f(GLfloat red, GLfloat green, GLfloat blue);
+void Record_glTexCoord2f(GLfloat s, GLfloat t);
 void Record_glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 void Record_glBegin(GLenum mode);
 void Record_glEnd();
@@ -54,3 +57,4 @@ void Record_glEnable(GLenum cap);
 void Record_glDisable(GLenum cap);
 void Record_glMatrixMode(GLenum mode);
 void Record_glFrontFace(GLenum mode);
+void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count);

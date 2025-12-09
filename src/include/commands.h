@@ -6,6 +6,7 @@
 enum CommandType {
     CMD_glVertex2f,
     CMD_glVertex3f,
+    CMD_glTexCoord2f,
     CMD_glViewport,
     CMD_glClearColor,
     CMD_glColor3f,
@@ -41,6 +42,7 @@ enum CommandType {
     CMD_glBindTexture,
     CMD_glDrawElements,
     CMD_glMaterialfv,
+    CMD_glDrawArrays,
 };
 
 struct CMD_PARAM_glVertex2f {
@@ -96,4 +98,15 @@ struct CMD_PARAM_glMaterialfv {
     GLenum face;
     GLenum pname;
     const GLfloat *params;
+};
+
+struct CMD_PARAM_glDrawArrays {
+    GLenum mode;
+    GLint first;
+    GLsizei count;
+};
+
+struct CMD_PARAM_glTexCoord2f {
+    GLfloat s;
+    GLfloat t;
 };

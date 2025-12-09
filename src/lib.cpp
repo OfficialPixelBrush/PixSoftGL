@@ -64,6 +64,8 @@ extern "C" {
             }
             real_gl(x,y,width,height);
         }
+        //width /= 3;
+        //height /= 3;
         if (activeDisplayListIndex == 0) {
             Process_glViewport(x,y,width,height);
         } else {
@@ -649,16 +651,15 @@ extern "C" {
         if (!pixels) return;
         // Assume format is always RGBA
         // Assume format is always unsigned Byte
+        uint8_t* pix = static_cast<uint8_t*>(pixels);
         for (int iy = y; iy < y + height; iy++) {
             for (int ix = x; ix < x+width; ix++) {
                 int srcY = (renderAreaHeight - 1 - iy);
                 PixelValue c = frameBufferColor[ix + srcY * renderAreaWidth];
-                uint8_t* pix = static_cast<uint8_t*>(pixels);
-                pix[0] = c.r;
-                pix[1] = c.g;
-                pix[2] = c.b;
-                pix[3] = 255;
-                pix += 4;
+                *pix++ = c.r;
+                *pix++ = c.g;
+                *pix++ = c.b;
+                *pix++ = 255;
             }
         }
         PrintInfo("\n");
@@ -747,7 +748,17 @@ extern "C" {
             }
             real_gl(cap);
         }
-        clientState = cap;
+        switch(cap) {
+            case GL_VERTEX_ARRAY:
+                vertexArrayActive = true;
+                break;
+            case GL_COLOR_ARRAY:
+                colorArrayActive = true;
+                break;
+            case GL_TEXTURE_COORD_ARRAY:
+                textureArrayActive = true;
+                break;
+        }
         PrintInfo("\n");
     }
 
@@ -756,11 +767,21 @@ extern "C" {
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum) = NULL;
             if (!real_gl) {
-                real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glEnableClientState");
+                real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glDisableClientState");
             }
             real_gl(cap);
         }
-        clientState = cap;
+        switch(cap) {
+            case GL_VERTEX_ARRAY:
+                vertexArrayActive = false;
+                break;
+            case GL_COLOR_ARRAY:
+                colorArrayActive = false;
+                break;
+            case GL_TEXTURE_COORD_ARRAY:
+                textureArrayActive = false;
+                break;
+        }
         PrintInfo("\n");
     }
 
@@ -773,8 +794,9 @@ extern "C" {
             }
             real_gl(size,type,stride,ptr);
         }
-        vertexArrayStride = stride;
         vertexArrayPointer = ptr;
+        vertexArrayStride = stride;
+        RecomputeBase();
         PrintInfo("\n");
     }
     
@@ -787,8 +809,9 @@ extern "C" {
             }
             real_gl(size,type,stride,ptr);
         }
-        colorArrayStride = stride;
         colorArrayPointer = ptr;
+        colorArrayStride = stride;
+        RecomputeBase();
         PrintInfo("\n");
     }
 
@@ -801,9 +824,31 @@ extern "C" {
             }
             real_gl(size,type,stride,ptr);
         }
-        textureArrayStride = stride;
         textureArrayPointer = ptr;
+        textureArrayStride = stride;
+        RecomputeBase();
         PrintInfo("\n");
+    }
+
+    void glDrawArrays(GLenum mode, GLint first, GLsizei count) {
+        PrintInfo("glDrawArrays ");
+        PrintInfo("\n");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,GLint,GLsizei) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,GLint,GLsizei)) dlsym(RTLD_NEXT, "glDrawArrays");
+            }
+            real_gl(mode,first,count);
+        }
+        if (activeDisplayListIndex == 0) {
+            Process_glDrawArrays(mode,first,count);
+        } else {
+            if (compileAndExecute) {
+                Process_glDrawArrays(mode,first,count);
+            }
+            Record_glDrawArrays(mode,first,count);
+        }
+
     }
 
     void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
@@ -911,7 +956,14 @@ extern "C" {
             }
             real_gl(s,t);
         }
-        Process_glTexCoord2f(s,t);
+        if (activeDisplayListIndex == 0) {
+            Process_glTexCoord2f(s,t);
+        } else {
+            if (compileAndExecute) {
+                Process_glTexCoord2f(s,t);
+            }
+            Record_glTexCoord2f(s,t);
+        }
     }
 
     void glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {

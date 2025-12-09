@@ -85,13 +85,19 @@ TextureSlot* lastAccessedTexture = nullptr;
 std::vector<TextureSlot> textureArray;
 
 // Arrays
-GLenum clientState = 0;
+bool vertexArrayActive = false;
 const GLvoid *vertexArrayPointer = nullptr;
 GLint vertexArrayStride = 0;
+
+bool colorArrayActive = false;
 const GLvoid *colorArrayPointer = nullptr;
 GLint colorArrayStride = 0;
+
+bool textureArrayActive = false;
 const GLvoid *textureArrayPointer = nullptr;
 GLint textureArrayStride =  0;
+
+const GLvoid *vertexArrayBasePointer = nullptr;
 
 // GL error global
 GLenum errorState = 0;

@@ -80,7 +80,7 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
     frameBufferDepth[index] = screenPos.z;
 
     /*
-    if (drawVisualizer % 500 == 0) {
+    if (drawVisualizer % 50 == 0) {
         UpdateScreen();
         drawVisualizer = 0;
     }

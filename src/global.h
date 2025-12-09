@@ -89,13 +89,18 @@ extern TextureSlot* lastAccessedTexture;
 extern std::vector<TextureSlot> textureArray;
 
 // Arrays
-extern GLenum clientState;
+extern bool vertexArrayActive;
 extern const GLvoid *vertexArrayPointer;
 extern GLint vertexArrayStride;
+
+extern bool colorArrayActive;
 extern const GLvoid *colorArrayPointer;
 extern GLint colorArrayStride;
+
+extern bool textureArrayActive;
 extern const GLvoid *textureArrayPointer;
 extern GLint textureArrayStride;
+extern const GLvoid *vertexArrayBasePointer;
 
 // GL error global
 extern GLenum errorState;

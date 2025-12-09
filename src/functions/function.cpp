@@ -227,23 +227,25 @@ void Process_glScalef(GLfloat x, GLfloat y, GLfloat z) {
 void Process_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
     if (!lastAccessedMatrix) return;
 
-    *lastAccessedMatrix = Mat4x4{
+    Mat4x4 F = Mat4x4{
         Vec4{ 2*n/(r-l), 0,            0,               0 },
         Vec4{ 0,         2*n/(t-b),    0,               0 },
         Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n),  -1 },
         Vec4{ 0,          0,           -2*f*n/(f-n),    0 }
     };
+    *lastAccessedMatrix = (*lastAccessedMatrix) * F;
 }
 
 void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
     if (!lastAccessedMatrix) return;
 
-    *lastAccessedMatrix = Mat4x4{
+    Mat4x4 O = Mat4x4{
         Vec4{ 2.0/(r-l), 0,           0,           0 },
         Vec4{ 0,         2.0/(t-b),   0,           0 },
         Vec4{ 0,         0,         -2.0/(f-n),    0 },
         Vec4{ -(r+l)/(r-l), -(t+b)/(t-b), -(f+n)/(f-n), 1 }
     };
+    *lastAccessedMatrix = (*lastAccessedMatrix) * O;
 }
 
 void Process_glPushMatrix() {
@@ -324,6 +326,7 @@ GLuint Process_glGenLists(GLsizei range) {
 }
 
 GLboolean Process_IsList(GLuint list) {
+    if (list > displayLists.size()) return false;
     return (displayLists[list].commands.size() > 0);
 }
 
@@ -337,30 +340,36 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
         displayLists[list - 1 + i].commands.clear();
     }
 }
-
-void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
+void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
-    if (mode != GL_TRIANGLES) return;
+    // ADD GL_QUADS SUPPORT!
+    if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer)
+        return;
 
-    const uint8_t* BASE = (const uint8_t*)vertexArrayPointer;
+    const uint8_t* BASE = (const uint8_t*)vertexArrayBasePointer;
 
-    int stride    = vertexArrayStride;
-    int posOff = (uint8_t*)vertexArrayPointer - BASE;
-    int colOff = colorArrayPointer ? (uint8_t*)colorArrayPointer - BASE : -1;
+    // Each array needs its OWN stride!
+    int vStride = vertexArrayStride > 0 ? vertexArrayStride : 3 * sizeof(float);
+    int cStride = colorArrayStride > 0 ? colorArrayStride : 4 * sizeof(uint8_t);
+    int tStride = textureArrayStride > 0 ? textureArrayStride : 2 * sizeof(float);
+
+    int posOff = vertexArrayPointer ? (uint8_t*)vertexArrayPointer - BASE : 0;
+    int colOff = colorArrayPointer   ? (uint8_t*)colorArrayPointer   - BASE : -1;
     int uvOff  = textureArrayPointer ? (uint8_t*)textureArrayPointer - BASE : -1;
 
-
-    auto fetchPos = [&](int i){
-        const float* p = (const float*)(BASE + i * stride + posOff);
+    auto fetchPos = [&](int i) -> Vec3 {
+        if (!vertexArrayPointer) return Vec3{0,0,0};
+        const float* p = (const float*)(BASE + i * vStride + posOff);
         return Vec3{p[0], p[1], p[2]};
     };
-    auto fetchCol = [&](int i){
-        const uint8_t* c = BASE + i * stride + colOff;
+    auto fetchCol = [&](int i) -> Col4 {
+        if (colOff < 0) return Col4{1,1,1,1};
+        const uint8_t* c = BASE + i * cStride + colOff;
         return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
     };
-    auto fetchUV = [&](int i){
+    auto fetchUV = [&](int i) -> Vec2 {
         if (uvOff < 0) return Vec2{0,0};
-        const float* t = (const float*)(BASE + i * stride + uvOff);
+        const float* t = (const float*)(BASE + i * tStride + uvOff);
         return Vec2{t[0], t[1]};
     };
 
@@ -374,21 +383,96 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
         tri.b.col = fetchCol(b);
         tri.c.col = fetchCol(c);
 
-        tri.a.uv  = fetchUV(a);
-        tri.b.uv  = fetchUV(b);
-        tri.c.uv  = fetchUV(c);
+        tri.a.uv = fetchUV(a);
+        tri.b.uv = fetchUV(b);
+        tri.c.uv = fetchUV(c);
+
+        RenderTriangle(ProjectTriangle(tri));
+    };
+
+    if (mode == GL_QUADS) {
+        for (int i = 0; i < count; i += 4) {
+            drawTri(first + i, first + i + 1, first + i + 2);
+            drawTri(first + i, first + i + 2, first + i + 3);
+        }
+    } else { // GL_TRIANGLES
+        for (int i = 0; i < count; i += 3) {
+            drawTri(first + i, first + i + 1, first + i + 2);
+        }
+    }
+}
+
+void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
+{
+    if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer || !indices)
+        return;
+
+    const uint8_t* BASE = (const uint8_t*)vertexArrayBasePointer;
+
+    // Each array needs its OWN stride!
+    int vStride = vertexArrayStride > 0 ? vertexArrayStride : 3 * sizeof(float);
+    int cStride = colorArrayStride > 0 ? colorArrayStride : 4 * sizeof(uint8_t);
+    int tStride = textureArrayStride > 0 ? textureArrayStride : 2 * sizeof(float);
+
+    int posOff = vertexArrayPointer ? (uint8_t*)vertexArrayPointer - BASE : 0;
+    int colOff = colorArrayPointer   ? (uint8_t*)colorArrayPointer   - BASE : -1;
+    int uvOff  = textureArrayPointer ? (uint8_t*)textureArrayPointer - BASE : -1;
+
+    auto fetchPos = [&](int i) -> Vec3 {
+        if (!vertexArrayPointer) return Vec3{0,0,0};
+        const float* p = (const float*)(BASE + i * vStride + posOff);
+        return Vec3{p[0], p[1], p[2]};
+    };
+    auto fetchCol = [&](int i) -> Col4 {
+        if (colOff < 0) return Col4{1,1,1,1};
+        const uint8_t* c = BASE + i * cStride + colOff;
+        return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
+    };
+    auto fetchUV = [&](int i) -> Vec2 {
+        if (uvOff < 0) return Vec2{0,0};
+        const float* t = (const float*)(BASE + i * tStride + uvOff);
+        return Vec2{t[0], t[1]};
+    };
+
+    auto drawTri = [&](int a, int b, int c){
+        Triangle tri;
+        tri.a.pos = fetchPos(a);
+        tri.b.pos = fetchPos(b);
+        tri.c.pos = fetchPos(c);
+
+        tri.a.col = fetchCol(a);
+        tri.b.col = fetchCol(b);
+        tri.c.col = fetchCol(c);
+
+        tri.a.uv = fetchUV(a);
+        tri.b.uv = fetchUV(b);
+        tri.c.uv = fetchUV(c);
 
         RenderTriangle(ProjectTriangle(tri));
     };
 
     if (type == GL_UNSIGNED_SHORT) {
         const uint16_t* idx = (const uint16_t*)indices;
-        for (int i = 0; i < count; i += 3)
-            drawTri(idx[i], idx[i+1], idx[i+2]);
-    } else {
+        if (mode == GL_QUADS) {
+            for (int i = 0; i < count; i += 4) {
+                drawTri(idx[i], idx[i+1], idx[i+2]);
+                drawTri(idx[i], idx[i+2], idx[i+3]);
+            }
+        } else { // GL_TRIANGLES
+            for (int i = 0; i < count; i += 3)
+                drawTri(idx[i], idx[i+1], idx[i+2]);
+        }
+    } else if (type == GL_UNSIGNED_INT) {
         const uint32_t* idx = (const uint32_t*)indices;
-        for (int i = 0; i < count; i += 3)
-            drawTri(idx[i], idx[i+1], idx[i+2]);
+        if (mode == GL_QUADS) {
+            for (int i = 0; i < count; i += 4) {
+                drawTri(idx[i], idx[i+1], idx[i+2]);
+                drawTri(idx[i], idx[i+2], idx[i+3]);
+            }
+        } else { // GL_TRIANGLES
+            for (int i = 0; i < count; i += 3)
+                drawTri(idx[i], idx[i+1], idx[i+2]);
+        }
     }
 }
 
