@@ -15,7 +15,7 @@ bool lightingActive = false;
 bool cullFaceActive = false;
 bool normalizeActive = false;
 bool scissorTestActive = false;
-bool counterClockWiseWindingActive = false;
+bool counterClockWiseWindingActive = true;
 bool depthWriteActive = true;
 bool alphaTestActive = false;
 

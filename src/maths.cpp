@@ -90,6 +90,11 @@ Vec3 Normalize(Vec3 v) {
     return Vec3{v.x/mag, v.y/mag, v.z/mag};
 };
 
+// 3D Dot Product
+float Dot3D(Vec3 a, Vec3 b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 // 2D Dot Product
 float Dot2D(Vec3 a, Vec3 b) {
     return a.x * b.x + a.y * b.y;
@@ -203,4 +208,27 @@ Col4 BarycentricTexture(Triangle tri, Vec3& p) {
     }
 
     return lastAccessedTexture->texture2D.textureData[ty * lastAccessedTexture->texture2D.width + tx];
+}
+
+void DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax) {
+    xMin = std::min({xMin, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
+    yMin = std::min({yMin, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
+    xMax = std::max({xMax, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
+    yMax = std::max({yMax, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
+
+    // Clamp to render area
+    xMin = std::max(0, xMin);
+    yMin = std::max(0, yMin);
+    xMax = std::min(renderAreaWidth, xMax);
+    yMax = std::min(renderAreaHeight, yMax);
+}
+
+Vec3 CalculateNormal(Triangle& tri) {
+    Vec3 A = tri.b.pos - tri.a.pos;
+    Vec3 B = tri.c.pos - tri.a.pos;
+    return Normalize(Vec3 {
+        A.y * B.z - A.z * B.y,
+        A.z * B.x - A.x * B.z,
+        A.x * B.y - A.y * B.x
+    });
 }

@@ -114,7 +114,7 @@ int main() {
 
         angle += 1.0f;
         if (angle > 360) angle -= 360;
-        if (angle > 30) break;
+        //if (angle > 30) break;
         drawCube();
         usleep(16000); // ~60 FPS
     }

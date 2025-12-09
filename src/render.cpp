@@ -120,19 +120,6 @@ void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
     }
 }
 
-void DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax) {
-    xMin = std::min({xMin, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
-    yMin = std::min({yMin, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
-    xMax = std::max({xMax, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
-    yMax = std::max({yMax, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
-
-    // Clamp to render area
-    xMin = std::max(0, xMin);
-    yMin = std::max(0, yMin);
-    xMax = std::min(renderAreaWidth, xMax);
-    yMax = std::min(renderAreaHeight, yMax);
-}
-
 // Render triangle to framebuffer
 void RenderTriangle(Triangle tri) {
     int xMin = renderAreaWidth;
@@ -147,6 +134,15 @@ void RenderTriangle(Triangle tri) {
                 Col4 color = BarycentricColor(tri, point);
                 if (lastAccessedTexture) {
                     color = color * BarycentricTexture(tri,point);
+                }
+                if (lightingActive) {
+                    Vec3 normal = CalculateNormal(tri);
+                    Vec3 lightDir = Normalize(lights[0].pos - point);
+                    float brightness = Dot3D(normal, lightDir);
+                    brightness *= 3.0;
+                    color.r *= brightness;
+                    color.g *= brightness;
+                    color.b *= brightness;
                 }
                 RenderPixel(point, color);
             }
