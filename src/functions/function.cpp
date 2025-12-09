@@ -313,7 +313,7 @@ void Process_glCallList(GLuint list) {
         errorState = GL_INVALID_VALUE;
         return;
     }
-    ExecuteDisplayList(displayLists[list-1]);
+    ExecuteDisplayList(displayLists[list]);
 }
 
 GLuint Process_glGenLists(GLsizei range) {
