@@ -120,10 +120,28 @@ void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
     }
 }
 
+void DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax) {
+    xMin = std::min({xMin, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
+    yMin = std::min({yMin, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
+    xMax = std::max({xMax, int(tri.a.pos.x), int(tri.b.pos.x), int(tri.c.pos.x)});
+    yMax = std::max({yMax, int(tri.a.pos.y), int(tri.b.pos.y), int(tri.c.pos.y)});
+
+    // Clamp to render area
+    xMin = std::max(0, xMin);
+    yMin = std::max(0, yMin);
+    xMax = std::min(renderAreaWidth, xMax);
+    yMax = std::min(renderAreaHeight, yMax);
+}
+
 // Render triangle to framebuffer
 void RenderTriangle(Triangle tri) {
-    for (int y = 0; y < renderAreaHeight; y++) {
-        for (int x = 0; x < renderAreaWidth; x++) {
+    int xMin = renderAreaWidth;
+    int yMin = renderAreaHeight;
+    int xMax = 0;
+    int yMax = 0;
+    DetermineBounding(tri,xMin,yMin,xMax,yMax);
+    for (int y = yMin; y <= yMax; y++) {
+        for (int x = xMin; x <= xMax; x++) {
             Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};
             if (PointInTriangle(tri, point)) {
                 Col4 color = BarycentricColor(tri, point);
