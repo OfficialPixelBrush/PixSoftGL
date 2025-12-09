@@ -33,6 +33,11 @@ GLfloat texcoords[] = {
     0,1
 };
 
+// Indices for glDrawElements
+GLushort indices[] = {
+    0, 1, 2, 3
+};
+
 GLuint texture;
 
 void initTexture() {
@@ -40,12 +45,14 @@ void initTexture() {
     glBindTexture(GL_TEXTURE_2D, texture);
 
     const int texSize = 2;
-    GLubyte texData[texSize * texSize * 3] = {
-        255, 0, 0,   0, 255, 0,
-        0, 0, 255, 255, 255, 0
+    GLubyte texData[texSize * texSize * 4] = {
+        255, 0, 0, 255,
+        0, 255, 0, 255,
+        0, 0, 255, 255,
+        255, 255, 0, 255
     };
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texSize, texSize, 0, GL_RGB, GL_UNSIGNED_BYTE, texData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texSize, texSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
@@ -62,7 +69,7 @@ void drawQuad() {
 
     glLoadIdentity();
     glTranslatef(0,0,-5);
-    glRotatef(angle,1,1,0);
+    glRotatef(angle,0,0,1);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
@@ -72,7 +79,7 @@ void drawQuad() {
     glColorPointer(4, GL_UNSIGNED_BYTE, 0, colors);
     glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
-    glDrawArrays(GL_QUADS, 0, 4);
+    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indices);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -108,7 +115,7 @@ int main() {
     );
 
     XMapWindow(dpy, win);
-    XStoreName(dpy, win, "OpenGL 1.1 Pointer Test");
+    XStoreName(dpy, win, "OpenGL DrawElements Test");
 
     ctx = glXCreateContext(dpy, vi, NULL, True);
     glXMakeCurrent(dpy, win, ctx);
@@ -128,6 +135,8 @@ int main() {
             if (ev.type == KeyPress)
                 return 0;
         }
+
+        angle += 1.0f;
 
         drawQuad();
         glXSwapBuffers(dpy, win);

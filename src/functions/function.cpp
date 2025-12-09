@@ -340,9 +340,8 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
         displayLists[list - 1 + i].commands.clear();
     }
 }
-void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count)
-{
-    // ADD GL_QUADS SUPPORT!
+
+void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
     if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer)
         return;
 
@@ -407,30 +406,21 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
     if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer || !indices)
         return;
 
-    const uint8_t* BASE = (const uint8_t*)vertexArrayBasePointer;
-
-    // Each array needs its OWN stride!
-    int vStride = vertexArrayStride > 0 ? vertexArrayStride : 3 * sizeof(float);
-    int cStride = colorArrayStride > 0 ? colorArrayStride : 4 * sizeof(uint8_t);
-    int tStride = textureArrayStride > 0 ? textureArrayStride : 2 * sizeof(float);
-
-    int posOff = vertexArrayPointer ? (uint8_t*)vertexArrayPointer - BASE : 0;
-    int colOff = colorArrayPointer   ? (uint8_t*)colorArrayPointer   - BASE : -1;
-    int uvOff  = textureArrayPointer ? (uint8_t*)textureArrayPointer - BASE : -1;
-
     auto fetchPos = [&](int i) -> Vec3 {
         if (!vertexArrayPointer) return Vec3{0,0,0};
-        const float* p = (const float*)(BASE + i * vStride + posOff);
+        const float* p = (const float*)(vertexArrayPointer) + i * vertexArrayStride;
         return Vec3{p[0], p[1], p[2]};
     };
+
     auto fetchCol = [&](int i) -> Col4 {
-        if (colOff < 0) return Col4{1,1,1,1};
-        const uint8_t* c = BASE + i * cStride + colOff;
+        if (!colorArrayPointer) return Col4{1,1,1,1};
+        const uint8_t* c = (const uint8_t*)(colorArrayPointer) + i * colorArrayStride;
         return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
     };
+
     auto fetchUV = [&](int i) -> Vec2 {
-        if (uvOff < 0) return Vec2{0,0};
-        const float* t = (const float*)(BASE + i * tStride + uvOff);
+        if (!textureArrayPointer) return Vec2{0,0};
+        const float* t = (const float*)(textureArrayPointer) + i * textureArrayStride;
         return Vec2{t[0], t[1]};
     };
 
