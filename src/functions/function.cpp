@@ -104,7 +104,7 @@ void Process_glEnd() {
             }
             break;
         case GL_TRIANGLE_FAN:
-            for (int i = 1; i + 1 < vertexIndex; i+=2) {
+            for (int i = 1; i + 1 < vertexIndex; i++) {
                 Triangle screenTri = ProjectTriangle(
                     Triangle{
                         vertices[0], 
@@ -226,21 +226,23 @@ void Process_glScalef(GLfloat x, GLfloat y, GLfloat z) {
 
 void Process_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
     if (!lastAccessedMatrix) return;
+
     *lastAccessedMatrix = Mat4x4{
-        Vec4{ (2*n)/(r-l), 0, 0, 0 },
-        Vec4{ 0, (2*n)/(t-b), 0, 0 },
-        Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n), -1 },
-        Vec4{ 0, 0, -(2*f*n)/(f-n), 0 }
+        Vec4{ 2*n/(r-l), 0,            0,               0 },
+        Vec4{ 0,         2*n/(t-b),    0,               0 },
+        Vec4{ (r+l)/(r-l), (t+b)/(t-b), -(f+n)/(f-n),  -1 },
+        Vec4{ 0,          0,           -2*f*n/(f-n),    0 }
     };
 }
 
 void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
     if (!lastAccessedMatrix) return;
+
     *lastAccessedMatrix = Mat4x4{
-        Vec4{ 2/(r-l),0,0,0},
-        Vec4{0,2/(t-b),0,0},
-        Vec4{0,0,-(2/(f-n)),0},
-        Vec4{-((r+l)/(r-l)), -((t+b)/(t-b)), -((f+n)/(f-n)), 1}
+        Vec4{ 2/(r-l), 0,       0,      -(r+l)/(r-l) },
+        Vec4{ 0,       2/(t-b), 0,      -(t+b)/(t-b) },
+        Vec4{ 0,       0,      -2/(f-n), -(f+n)/(f-n) },
+        Vec4{ 0,       0,       0,       1 }
     };
 }
 
@@ -288,56 +290,51 @@ void Process_glNewList(GLuint list, GLenum mode) {
         PrintInfo("COMPILE_AND_EXECUTE");
     else
         PrintInfo("COMPILE");
-    displayLists[0].numberOfCommands = -1;
     activeDisplayListIndex = list;
+    displayLists[0].commands.clear();
 }
 
 void Process_glEndList() {
     // List 0 is the global scope and can't be ended
     if (activeDisplayListIndex == 0) {
-        displayLists[activeDisplayListIndex].numberOfCommands = -1;
+        displayLists[activeDisplayListIndex].commands.clear();
         errorState = GL_INVALID_OPERATION;
         return;
     }
-    displayLists[0].numberOfCommands++;
+    if (activeDisplayListIndex >= displayLists.size()) {
+        displayLists.resize(activeDisplayListIndex + 1);
+    }
     displayLists[activeDisplayListIndex] = displayLists[0];
     activeDisplayListIndex = 0;
 }
 
 void Process_glCallList(GLuint list) {
-    // List 0 is the global scope and can't be called
-    if (list == 0)
+    if (list == 0 || list > displayLists.size()) {
         errorState = GL_INVALID_VALUE;
-    ExecuteDisplayList(displayLists[list]);
+        return;
+    }
+    ExecuteDisplayList(displayLists[list-1]);
 }
 
 GLuint Process_glGenLists(GLsizei range) {
-    if (range == 0) return 0;
-    int numberOfEmptyDisplayLists = 0;
-    for (int i = 1; i < MAX_DISPLAY_LIST_ENTRIES; i++) {
-        // Look for range # of empty display lists
-        if (displayLists[i].numberOfCommands != -1) {
-            numberOfEmptyDisplayLists = 0;
-        } else {
-            numberOfEmptyDisplayLists++;
-        }
-
-        // If we find a suitable number of empty Display Lists,
-        // return the first empty index
-        if (numberOfEmptyDisplayLists == range) {
-            return i-numberOfEmptyDisplayLists+1;
-        }
-    }
-    return 0;
+    if (range <= 0) return 0;
+    GLuint firstID = displayLists.size(); // zero-based
+    displayLists.resize(displayLists.size() + range);
+    return firstID + 1; // return non-zero ID
 }
 
 GLboolean Process_IsList(GLuint list) {
-    return (displayLists[list].numberOfCommands > -1);
+    return (displayLists[list].commands.size() > 0);
 }
 
 void Process_glDeleteLists(GLuint list, GLsizei range) {
-    for (int i = list; i < list+range; i++) {
-        displayLists[i].numberOfCommands = -1;
+    if (list == 0 || list > displayLists.size()) return;
+
+    if (list + range - 1 > displayLists.size())
+        range = displayLists.size() - list + 1;
+
+    for (GLuint i = 0; i < range; ++i) {
+        displayLists[list - 1 + i].commands.clear();
     }
 }
 
@@ -395,15 +392,11 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
     }
 }
 
-
 void Process_glGenTextures(GLsizei n, GLuint *textures) {
     int count = 0;
-    for (int i = 0; i < MAX_TEXTURES && count < n; i++) {
-        if (!textureArray[i].allocated) {
-            textureArray[i].allocated = true;
-            textures[count] = i;
-            count++;
-        }
+    for (int i = 0; i < n; i++) {
+        textureArray.push_back(TextureSlot{});
+        textures[i] = textureArray.size() - 1;
     }
 }
 
@@ -525,6 +518,32 @@ void Process_glDisable(GLenum cap) {
             std::cout << std::hex;
             PrintInfo(cap);
             std::cout << std::dec;
+            break;
+    }
+}
+
+void Process_glMatrixMode(GLenum mode) {
+    matrixMode = mode;
+    switch(matrixMode) {
+        case GL_PROJECTION:
+            PrintInfo("GL_PROJECTION");
+            projectionMode = GL_PROJECTION;
+            lastAccessedMatrix = &projMatricies[projMatrixPtr];
+            break;
+        case GL_MODELVIEW:
+            PrintInfo("GL_MODELVIEW");
+            lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
+            break;
+    }
+}
+
+void Process_glFrontFace(GLenum mode) {
+    switch (mode) {
+        case GL_CCW:
+            counterClockWiseWindingActive = true;
+            break;
+        case GL_CW:
+            counterClockWiseWindingActive = false;
             break;
     }
 }

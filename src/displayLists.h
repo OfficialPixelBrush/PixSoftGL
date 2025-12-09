@@ -2,6 +2,7 @@
 
 #include "include/commands.h"
 #include <GL/gl.h>
+#include <vector>
 
 struct DisplayListCommand {
     CommandType type;
@@ -21,13 +22,13 @@ struct DisplayListCommand {
         CMD_PARAM_glMaterialfv PARAM_glMaterialfv;
         GLenum PARAM_glEnable;
         GLenum PARAM_glDisable;
+        GLenum PARAM_glMatrixMode;
+        GLenum PARAM_glFrontFace;
     } data;
 };
 
 struct DisplayList {
-    // If numberOfCommands is -1, unused
-    int numberOfCommands = -1;
-    DisplayListCommand commands[MAX_DISPLAY_LIST_COMMANDS];
+    std::vector<DisplayListCommand> commands;
 };
 
 void ExecuteDisplayList(const DisplayList& dl);
@@ -51,3 +52,5 @@ void Record_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid
 void Record_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params);
 void Record_glEnable(GLenum cap);
 void Record_glDisable(GLenum cap);
+void Record_glMatrixMode(GLenum mode);
+void Record_glFrontFace(GLenum mode);

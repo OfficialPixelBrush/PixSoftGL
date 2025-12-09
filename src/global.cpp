@@ -73,7 +73,8 @@ float* frameBufferDepth;
 // Display lists
 GLint activeDisplayListIndex = 0;
 // Currently active Display list is display List 0!!!
-DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
+DisplayList* activeDisplayList = nullptr;
+std::vector<DisplayList> displayLists = {};
 // If false, only compile
 bool compileAndExecute = false;
 
@@ -81,7 +82,7 @@ bool compileAndExecute = false;
 Vec2 currentTextureUV = Vec2{0,0};
 GLenum textureType = 0;
 TextureSlot* lastAccessedTexture = nullptr;
-TextureSlot textureArray[MAX_TEXTURES];
+std::vector<TextureSlot> textureArray;
 
 // Arrays
 GLenum clientState = 0;

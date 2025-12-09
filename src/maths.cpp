@@ -38,24 +38,20 @@ Mat4x4 Vec3ToMat4x4(Vec3 pos) {
 
 // Project world-space position to screen, return eye-space distance in z
 Vec3 ProjectPosition(Vec3 pos) {
-    switch(projectionMode) {
-        case GL_PROJECTION: {
-            // transform to eye (modelview) space first
-            Vec4 eye = modelMatricies[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
-            // eye.z is negative in front of the camera in typical OpenGL; use -eye.z as positive distance
-            float eyeDist = float(-eye.z);
+    // transform to eye (modelview) space first
+    Vec4 eye = modelMatricies[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
+    // eye.z is negative in front of the camera in typical OpenGL; use -eye.z as positive distance
+    float eyeDist = float(-eye.z);
 
-            // then project
-            Vec4 clip = projMatricies[projMatrixPtr] * eye;
-            Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
+    // then project
+    Vec4 clip = projMatricies[projMatrixPtr] * eye;
+    Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
 
-            return Vec3{
-                (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
-                (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaHeight,
-                eyeDist           // store eye-space distance for fog calculations
-            };
-        }
-    }
+    return Vec3{
+        (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
+        (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaHeight,
+        eyeDist           // store eye-space distance for fog calculations
+    };
     return Vec3{0,0,0};
 }
 
@@ -96,12 +92,12 @@ Vec3 Normalize(Vec3 v) {
 
 // 2D Dot Product
 float Dot2D(Vec3 a, Vec3 b) {
-    return a.x*b.x + a.y*b.y;
+    return a.x * b.x + a.y * b.y;
 }
 
 // 2D Cross Product
 float Cross2D(Vec3 a, Vec3 b) {
-    return a.x*b.x - a.y*b.y;
+    return a.x * b.y - a.y * b.x;
 }
 
 // Rotate vector 90°
@@ -147,9 +143,9 @@ Col4 BarycentricColor(Triangle tri, Vec3& p) {
     float w1 = ((b.y - c.y)*(p.x - c.x) + (c.x - b.x)*(p.y - c.y)) / det;
     float w2 = ((c.y - a.y)*(p.x - c.x) + (a.x - c.x)*(p.y - c.y)) / det;
     float w3 = 1.0f - w1 - w2;
-    w1 = std::clamp(w1, 0.0f, 1.0f);
-    w2 = std::clamp(w2, 0.0f, 1.0f);
-    w3 = std::clamp(w3, 0.0f, 1.0f);
+    //w1 = std::clamp(w1, 0.0f, 1.0f);
+    //w2 = std::clamp(w2, 0.0f, 1.0f);
+    //w3 = std::clamp(w3, 0.0f, 1.0f);
 
     // Calulate depth too
     p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
@@ -174,9 +170,9 @@ Col4 BarycentricTexture(Triangle tri, Vec3& p) {
     float w3 = 1.0f - w1 - w2;
 
     // Clamp weights to [0,1] to avoid sampling outside
-    w1 = std::clamp(w1, 0.0f, 1.0f);
-    w2 = std::clamp(w2, 0.0f, 1.0f);
-    w3 = std::clamp(w3, 0.0f, 1.0f);
+    //w1 = std::clamp(w1, 0.0f, 1.0f);
+    //w2 = std::clamp(w2, 0.0f, 1.0f);
+    //w3 = std::clamp(w3, 0.0f, 1.0f);
 
     // Depth (optional)
     //p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;

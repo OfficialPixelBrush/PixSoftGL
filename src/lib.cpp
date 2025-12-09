@@ -290,20 +290,14 @@ extern "C" {
             }
             real_gl(mode);
         }
-
-        // Prepare next matrix Mode
-        matrixMode = mode;
-        switch(matrixMode) {
-            case GL_PROJECTION:
-                PrintInfo("GL_PROJECTION");
-                projectionMode = GL_PROJECTION;
-                lastAccessedMatrix = &projMatricies[projMatrixPtr];
-                break;
-            case GL_MODELVIEW:
-                PrintInfo("GL_MODELVIEW");
-                lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
-                break;
-        }
+        if (activeDisplayListIndex == 0) {
+            Process_glMatrixMode(mode);
+        } else {
+            if (compileAndExecute) {
+                Process_glMatrixMode(mode);
+            }
+            Record_glMatrixMode(mode);
+        }        
         PrintInfo("\n");
     }
 
@@ -316,13 +310,13 @@ extern "C" {
             }
             real_gl(mode);
         }
-        switch (mode) {
-            case GL_CCW:
-                counterClockWiseWindingActive = true;
-                break;
-            case GL_CW:
-                counterClockWiseWindingActive = false;
-                break;
+        if (activeDisplayListIndex == 0) {
+            Process_glFrontFace(mode);
+        } else {
+            if (compileAndExecute) {
+                Process_glFrontFace(mode);
+            }
+            Record_glFrontFace(mode);
         }
     }
 
@@ -887,6 +881,8 @@ extern "C" {
             real_gl(target,level,internalFormat,width,height,border,format,type,pixels);
         }
         if (!lastAccessedTexture) return;
+        if (width > MAX_TEXTURE_SIZE || height > MAX_TEXTURE_SIZE) return;
+        if (!pixels) return;
         lastAccessedTexture->texture2D.width = width;
         lastAccessedTexture->texture2D.height = height;
         lastAccessedTexture->texture2D.textureData = (Col4*)malloc(sizeof(Col4)*width*height);

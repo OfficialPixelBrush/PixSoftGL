@@ -5,6 +5,7 @@
 #include "include/datatypes.h"
 #include "include/defines.h"
 #include <GL/gl.h>
+#include <vector>
 
 extern bool forwardToSystemGl;
 
@@ -77,7 +78,7 @@ extern float* frameBufferDepth;
 // Display lists
 extern GLint activeDisplayListIndex;
 // Currently active Display list is display List 0!!!
-extern DisplayList displayLists[MAX_DISPLAY_LIST_ENTRIES];
+extern std::vector<DisplayList> displayLists;
 // If false, only compile
 extern bool compileAndExecute;
 
@@ -85,7 +86,7 @@ extern bool compileAndExecute;
 extern Vec2 currentTextureUV;
 extern GLenum textureType;
 extern TextureSlot* lastAccessedTexture;
-extern TextureSlot textureArray[MAX_TEXTURES];
+extern std::vector<TextureSlot> textureArray;
 
 // Arrays
 extern GLenum clientState;

@@ -161,7 +161,6 @@ struct Texture2D {
 };
 
 struct TextureSlot {
-    bool allocated = false;
     int textureType = 0;
     union {
         Texture2D texture2D;

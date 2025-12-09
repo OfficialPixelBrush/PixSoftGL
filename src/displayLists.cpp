@@ -5,7 +5,7 @@
 #include <GL/gl.h>
 
 void ExecuteDisplayList(const DisplayList& dl) {
-    for (int i = 0; i < dl.numberOfCommands; i++) {
+    for (int i = 0; i < dl.commands.size(); i++) {
         const auto& c = dl.commands[i];
         switch(c.type) {
             case CMD_glVertex2f:
@@ -50,8 +50,10 @@ void ExecuteDisplayList(const DisplayList& dl) {
             case CMD_glClear:
                 break;
             case CMD_glMatrixMode:
+                Process_glMatrixMode(c.data.PARAM_glMatrixMode);
                 break;
             case CMD_glFrontFace:
+                Process_glFrontFace(c.data.PARAM_glFrontFace);
                 break;
             case CMD_glLoadMatrixf:
                 break;
@@ -102,8 +104,8 @@ void ExecuteDisplayList(const DisplayList& dl) {
                 Process_glFrustum(
                     c.data.PARAM_glFrustum.l,
                     c.data.PARAM_glFrustum.r,
-                    c.data.PARAM_glFrustum.t,
                     c.data.PARAM_glFrustum.b,
+                    c.data.PARAM_glFrustum.t,
                     c.data.PARAM_glFrustum.n,
                     c.data.PARAM_glFrustum.f
                 );
@@ -112,8 +114,8 @@ void ExecuteDisplayList(const DisplayList& dl) {
                 Process_glOrtho(
                     c.data.PARAM_glOrtho.l,
                     c.data.PARAM_glOrtho.r,
-                    c.data.PARAM_glOrtho.t,
                     c.data.PARAM_glOrtho.b,
+                    c.data.PARAM_glOrtho.t,
                     c.data.PARAM_glOrtho.n,
                     c.data.PARAM_glOrtho.f
                 );
@@ -161,126 +163,163 @@ void ExecuteDisplayList(const DisplayList& dl) {
 
 void Record_glVector2f(GLfloat x, GLfloat y) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glVertex2f;
     c.data.PARAM_glVertex2f = {x,y};
-};
+    displayLists[0].commands.push_back(c);
+}
 
 void Record_glVector3f(GLfloat x, GLfloat y, GLfloat z) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glVertex3f;
     c.data.PARAM_glVertex3f = {x,y, z};
-};
+    displayLists[0].commands.push_back(c);
+}
 
 void Record_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glColor3f;
     c.data.PARAM_glColor3f = {red, green, blue};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glViewport;
     c.data.PARAM_glViewport = {x,y,width,height};
-};
+    displayLists[0].commands.push_back(c);
+}
 
 void Record_glBegin(GLenum mode) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glBegin;
     c.data.PARAM_glBegin = {mode};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glEnd() {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glEnd;
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glLoadIdentity() {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glLoadIdentity;
 }
 void Record_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glTranslatef;
     c.data.PARAM_glTranslatef = {x,y,z};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glRotatef;
     c.data.PARAM_glRotatef = {angleDeg, x,y,z};
+    displayLists[0].commands.push_back(c);
 }
+
 void Record_glScalef(GLfloat x, GLfloat y, GLfloat z) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glScalef;
     c.data.PARAM_glScalef = { x,y,z};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glFrustum;
     c.data.PARAM_glFrustum = {l,r,b,t,n,f};
+    displayLists[0].commands.push_back(c);
 }
+
 void Record_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glOrtho;
     c.data.PARAM_glOrtho = {l,r,b,t,n,f};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glPushMatrix() {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glPushMatrix;
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glPopMatrix() {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glPopMatrix;
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glBindTexture(GLenum target, GLuint texture) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glBindTexture;
     c.data.PARAM_glBindTexture = {target, texture};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+
+    DisplayListCommand c;
     c.type = CMD_glDrawElements;
-    c.data.PARAM_glDrawElements = {mode,count,type,indices};
+    c.data.PARAM_glDrawElements = { mode, count, type, indices };
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glMaterialfv(GLenum face, GLenum pname, const GLfloat *params) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glMaterialfv;
     c.data.PARAM_glMaterialfv = {face,pname,params};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glDisable(GLenum cap) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glDisable;
     c.data.PARAM_glDisable = {cap};
+    displayLists[0].commands.push_back(c);
 }
 
 void Record_glEnable(GLenum cap) {
     if (activeDisplayListIndex == 0) return;
-    auto& c = displayLists[0].commands[++displayLists[0].numberOfCommands];
+    DisplayListCommand c;
     c.type = CMD_glEnable;
     c.data.PARAM_glEnable = {cap};
+    displayLists[0].commands.push_back(c);
+}
+
+void Record_glMatrixMode(GLenum mode) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glMatrixMode;
+    c.data.PARAM_glMatrixMode = {mode};
+    displayLists[0].commands.push_back(c);
+}
+
+void Record_glFrontFace(GLenum mode) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glFrontFace;
+    c.data.PARAM_glFrontFace = {mode};
+    displayLists[0].commands.push_back(c);
 }
