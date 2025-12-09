@@ -239,24 +239,24 @@ void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n,
     if (!lastAccessedMatrix) return;
 
     *lastAccessedMatrix = Mat4x4{
-        Vec4{ 2/(r-l), 0,       0,      -(r+l)/(r-l) },
-        Vec4{ 0,       2/(t-b), 0,      -(t+b)/(t-b) },
-        Vec4{ 0,       0,      -2/(f-n), -(f+n)/(f-n) },
-        Vec4{ 0,       0,       0,       1 }
+        Vec4{ 2.0/(r-l), 0,           0,           0 },
+        Vec4{ 0,         2.0/(t-b),   0,           0 },
+        Vec4{ 0,         0,         -2.0/(f-n),    0 },
+        Vec4{ -(r+l)/(r-l), -(t+b)/(t-b), -(f+n)/(f-n), 1 }
     };
 }
 
 void Process_glPushMatrix() {
     switch(matrixMode) {
         case GL_PROJECTION:
-            projMatricies[projMatrixPtr + 1] = projMatricies[projMatrixPtr];
+            projMatrices[projMatrixPtr + 1] = projMatrices[projMatrixPtr];
             projMatrixPtr++;
-            lastAccessedMatrix = &projMatricies[projMatrixPtr];
+            lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
-            modelMatricies[modelMatrixPtr + 1] = modelMatricies[modelMatrixPtr];
+            modelMatrices[modelMatrixPtr + 1] = modelMatrices[modelMatrixPtr];
             modelMatrixPtr++;
-            lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
+            lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
     }
 }
@@ -265,11 +265,11 @@ void Process_glPopMatrix() {
     switch(matrixMode) {
         case GL_PROJECTION:
             projMatrixPtr--;
-            lastAccessedMatrix = &projMatricies[projMatrixPtr];
+            lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
             modelMatrixPtr--;
-            lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
+            lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
     }
 }
@@ -528,11 +528,11 @@ void Process_glMatrixMode(GLenum mode) {
         case GL_PROJECTION:
             PrintInfo("GL_PROJECTION");
             projectionMode = GL_PROJECTION;
-            lastAccessedMatrix = &projMatricies[projMatrixPtr];
+            lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
             PrintInfo("GL_MODELVIEW");
-            lastAccessedMatrix = &modelMatricies[modelMatrixPtr];
+            lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
     }
 }

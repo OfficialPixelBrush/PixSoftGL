@@ -38,21 +38,17 @@ Mat4x4 Vec3ToMat4x4(Vec3 pos) {
 
 // Project world-space position to screen, return eye-space distance in z
 Vec3 ProjectPosition(Vec3 pos) {
-    // transform to eye (modelview) space first
-    Vec4 eye = modelMatricies[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
-    // eye.z is negative in front of the camera in typical OpenGL; use -eye.z as positive distance
-    float eyeDist = float(-eye.z);
+    Vec4 eye = modelMatrices[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
+    float eyeDist = -eye.z;
 
-    // then project
-    Vec4 clip = projMatricies[projMatrixPtr] * eye;
+    Vec4 clip = projMatrices[projMatrixPtr] * eye;
     Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
 
     return Vec3{
         (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
         (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaHeight,
-        eyeDist           // store eye-space distance for fog calculations
+        eyeDist
     };
-    return Vec3{0,0,0};
 }
 
 // Project triangle to screen

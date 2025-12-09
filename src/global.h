@@ -47,13 +47,13 @@ extern GLenum matrixMode;
 extern Col4 currentColor;
 extern Col4 clearColor;
 
-// Matricies
+// Matrices
 extern int projMatrixPtr;
 extern int modelMatrixPtr;
 extern int texMatrixPtr;
-extern Mat4x4 modelMatricies[MAX_MODELVIEW_STACK_DEPTH];
-extern Mat4x4 projMatricies[MAX_PROJECTION_STACK_DEPTH];
-extern Mat4x4 texMatricies[MAX_TEXTURE_STACK_DEPTH];
+extern Mat4x4 modelMatrices[MAX_MODELVIEW_STACK_DEPTH];
+extern Mat4x4 projMatrices[MAX_PROJECTION_STACK_DEPTH];
+extern Mat4x4 texMatrices[MAX_TEXTURE_STACK_DEPTH];
 extern Mat4x4* lastAccessedMatrix;
 
 // Vertex buffer

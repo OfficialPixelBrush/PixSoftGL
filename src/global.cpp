@@ -42,14 +42,14 @@ GLenum matrixMode = GL_MODELVIEW;
 Col4 currentColor = Col4{1,0,1,1};
 Col4 clearColor = Col4{0,0,0,1};
 
-// Matricies
+// Matrices
 int projMatrixPtr = 0;
 int modelMatrixPtr = 0;
 int texMatrixPtr = 0;
-Mat4x4 modelMatricies[MAX_MODELVIEW_STACK_DEPTH];
-Mat4x4 projMatricies[MAX_PROJECTION_STACK_DEPTH];
-Mat4x4 texMatricies[MAX_TEXTURE_STACK_DEPTH];
-Mat4x4* lastAccessedMatrix = &modelMatricies[0];
+Mat4x4 modelMatrices[MAX_MODELVIEW_STACK_DEPTH];
+Mat4x4 projMatrices[MAX_PROJECTION_STACK_DEPTH];
+Mat4x4 texMatrices[MAX_TEXTURE_STACK_DEPTH];
+Mat4x4* lastAccessedMatrix = &modelMatrices[0];
 
 // Vertex buffer
 Vertex vertices[MAX_VERTICES];
