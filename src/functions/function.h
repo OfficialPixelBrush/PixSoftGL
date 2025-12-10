@@ -31,3 +31,6 @@ void Process_glDisable(GLenum cap);
 void Process_glMatrixMode(GLenum mode);
 void Process_glFrontFace(GLenum mode);
 void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count);
+void Process_glFogi(GLenum pname, GLint param);
+void Process_glFogfv(GLenum pname, const GLfloat *params);
+void Process_glFogf(GLenum pname, GLfloat param);

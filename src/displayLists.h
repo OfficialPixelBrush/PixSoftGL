@@ -26,6 +26,9 @@ struct DisplayListCommand {
         GLenum PARAM_glFrontFace;
         CMD_PARAM_glDrawArrays PARAM_glDrawArrays;
         CMD_PARAM_glTexCoord2f PARAM_glTexCoord2f;
+        CMD_PARAM_glFogi PARAM_glFogi;
+        CMD_PARAM_glFogfv PARAM_glFogfv;
+        CMD_PARAM_glFogf PARAM_glFogf;
     } data;
 };
 
@@ -58,3 +61,6 @@ void Record_glDisable(GLenum cap);
 void Record_glMatrixMode(GLenum mode);
 void Record_glFrontFace(GLenum mode);
 void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count);
+void Record_glFogi(GLenum pname, GLint param);
+void Record_glFogfv(GLenum pname, const GLfloat *params);
+void Record_glFogf(GLenum pname, GLfloat param);

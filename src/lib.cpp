@@ -590,10 +590,13 @@ extern "C" {
             }
             real_gl(pname,param);
         }
-        switch(pname) {
-            case GL_FOG_MODE:
-                fogMode = param;
-                break;
+        if (activeDisplayListIndex == 0) {
+            Process_glFogi(pname,param);
+        } else {
+            if (compileAndExecute) {
+                Process_glFogi(pname,param);
+            }
+            Record_glFogi(pname,param);
         }
         PrintInfo("\n");
     }
@@ -608,12 +611,13 @@ extern "C" {
             }
             real_gl(pname,params);
         }
-        switch(pname) {
-            case GL_FOG_COLOR:
-                fogColor = Col4{
-                    params[0], params[1], params[2], params[3]
-                };
-                break;
+        if (activeDisplayListIndex == 0) {
+            Process_glFogfv(pname,params);
+        } else {
+            if (compileAndExecute) {
+                Process_glFogfv(pname,params);
+            }
+            Record_glFogfv(pname,params);
         }
         PrintInfo("\n");
     }
@@ -628,13 +632,13 @@ extern "C" {
             }
             real_gl(pname,param);
         }
-        switch (pname) {
-            case GL_FOG_START:
-                fogStart = param;
-                break;
-            case GL_FOG_END:
-                fogEnd = param;
-                break;        
+        if (activeDisplayListIndex == 0) {
+            Process_glFogf(pname,param);
+        } else {
+            if (compileAndExecute) {
+                Process_glFogf(pname,param);
+            }
+            Record_glFogf(pname,param);
         }
         PrintInfo("\n");
     }

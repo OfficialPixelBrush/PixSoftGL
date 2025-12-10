@@ -32,9 +32,6 @@ float fogEnd = 0.0;
 // The current object rendering mode
 GLenum drawingMode = GL_POINTS;
 
-// The current projection mode
-GLenum projectionMode = 0;
-
 // The current matrix mode
 GLenum matrixMode = GL_MODELVIEW;
 
@@ -73,8 +70,8 @@ float* frameBufferDepth;
 // Display lists
 GLint activeDisplayListIndex = 0;
 // Currently active Display list is display List 0!!!
-DisplayList* activeDisplayList = nullptr;
-std::vector<DisplayList> displayLists = {};
+DisplayList displayListBuffer;
+std::vector<DisplayList> displayLists;
 // If false, only compile
 bool compileAndExecute = false;
 

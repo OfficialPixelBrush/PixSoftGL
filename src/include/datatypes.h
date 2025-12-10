@@ -89,16 +89,19 @@ struct Col4 {
 
 // 4x4 Matrix
 struct Mat4x4 {
-    Vec4 a,b,c,d;
+    Vec4 a, b, c, d; // columns
 
+    // matrix + matrix
     Mat4x4 operator+(const Mat4x4& o) const {
         return Mat4x4{a + o.a, b + o.b, c + o.c, d + o.d};
     }
-    
+
+    // matrix - matrix
     Mat4x4 operator-(const Mat4x4& o) const {
         return Mat4x4{a - o.a, b - o.b, c - o.c, d - o.d};
     }
 
+    // matrix * vector (column-major)
     Vec4 operator*(const Vec4& v) const {
         return Vec4{
             a.x*v.x + b.x*v.y + c.x*v.z + d.x*v.w,
@@ -108,20 +111,17 @@ struct Mat4x4 {
         };
     }
 
+    // matrix * matrix (column-major)
     Mat4x4 operator*(const Mat4x4& m) const {
-        Mat4x4 result;
-        result.a = (*this) * m.a;
-        result.b = (*this) * m.b;
-        result.c = (*this) * m.c;
-        result.d = (*this) * m.d;
-        return result;
+        return Mat4x4{
+            (*this) * m.a,
+            (*this) * m.b,
+            (*this) * m.c,
+            (*this) * m.d
+        };
     }
 
-
-    Mat4x4 operator/(const Mat4x4& o) const {
-        return Mat4x4{a / o.a, b / o.b, c / o.c, d / o.d};
-    }
-
+    // scalar multiply
     Mat4x4 operator*(float f) const {
         return Mat4x4{a*f, b*f, c*f, d*f};
     }

@@ -9,7 +9,9 @@ void ClearFramebuffers(GLenum mask) {
     if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
         PrintInfo("GL_COLOR_BUFFER_BIT ");
         for (int i = 0; i < renderAreaTotal; i++) {
-            frameBufferColor[i] = Col3ToPixelValue(Col3{clearColor.r,clearColor.g,clearColor.b});
+            Col3 fb = PixelValueToCol3(frameBufferColor[i]);
+            Col3 newColor = lerp(fb,Col3{clearColor.r,clearColor.g,clearColor.b}, clearColor.a);
+            frameBufferColor[i] = Col3ToPixelValue(newColor);
         }
     }
     // Clear depth

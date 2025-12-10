@@ -28,11 +28,11 @@ void init() {
     glEnable(GL_COLOR_MATERIAL);
 }
 
-void drawCube() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-    glTranslatef(0, 0, -5);
-    glRotatef(angle, 1, 1, 0);
+GLuint list;
+
+void InitCube() {
+    list = glGenLists(1);
+    glNewList(list, GL_COMPILE);
 
     glBegin(GL_QUADS);
     // Front face
@@ -72,6 +72,20 @@ void drawCube() {
     glColor3f(1,0,1); glVertex3f(-1,-1,1);
     glEnd();
 
+    glEndList();
+}
+
+void drawCube() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    glTranslatef(0, 0, -5);
+    glRotatef(angle, 1, 1, 0);
+    glCallList(list);
+    glLoadIdentity();
+    glTranslatef(-1, 0, -5);
+    glRotatef(angle+10, 1, 1, 0);
+    glCallList(list);
+
     glXSwapBuffers(dpy, win);
 }
 
@@ -104,6 +118,7 @@ int main() {
     glLoadIdentity();
     glFrustum(-0.75, 0.75, -0.5625, 0.5625, 1.0, 100.0); // 45° FOV ~ aspect 800/600
     glMatrixMode(GL_MODELVIEW);
+    InitCube();
 
     while (true) {
         while (XPending(dpy)) {

@@ -37,9 +37,6 @@ extern float fogEnd;
 // The current object rendering mode
 extern GLenum drawingMode;
 
-// The current projection mode
-extern GLenum projectionMode;
-
 // The current matrix mode
 extern GLenum matrixMode;
 
@@ -78,6 +75,7 @@ extern float* frameBufferDepth;
 // Display lists
 extern GLint activeDisplayListIndex;
 // Currently active Display list is display List 0!!!
+extern DisplayList displayListBuffer;
 extern std::vector<DisplayList> displayLists;
 // If false, only compile
 extern bool compileAndExecute;

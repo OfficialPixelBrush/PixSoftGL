@@ -277,12 +277,10 @@ void Process_glPopMatrix() {
 }
 
 void Process_glNewList(GLuint list, GLenum mode) {
-    // List 0 is the global scope
     if (list == 0) {
         errorState = GL_INVALID_VALUE;
         return;
     }
-    // We're already making a display list, we can't nest them!
     if (activeDisplayListIndex != 0) {
         errorState = GL_INVALID_OPERATION;
         return;
@@ -292,21 +290,25 @@ void Process_glNewList(GLuint list, GLenum mode) {
         PrintInfo("COMPILE_AND_EXECUTE");
     else
         PrintInfo("COMPILE");
+
     activeDisplayListIndex = list;
-    displayLists[0].commands.clear();
+    displayListBuffer.commands.clear();
 }
 
 void Process_glEndList() {
-    // List 0 is the global scope and can't be ended
     if (activeDisplayListIndex == 0) {
-        displayLists[activeDisplayListIndex].commands.clear();
         errorState = GL_INVALID_OPERATION;
         return;
     }
-    if (activeDisplayListIndex >= displayLists.size()) {
-        displayLists.resize(activeDisplayListIndex + 1);
-    }
-    displayLists[activeDisplayListIndex] = displayLists[0];
+
+    const GLuint idx = activeDisplayListIndex - 1;
+
+    if (activeDisplayListIndex > displayLists.size())
+        displayLists.resize(activeDisplayListIndex);
+
+    displayLists[idx] = displayListBuffer;
+    displayLists[idx].commands = displayListBuffer.commands;
+
     activeDisplayListIndex = 0;
 }
 
@@ -315,19 +317,19 @@ void Process_glCallList(GLuint list) {
         errorState = GL_INVALID_VALUE;
         return;
     }
-    ExecuteDisplayList(displayLists[list]);
+    ExecuteDisplayList(displayLists[list - 1]);
 }
 
 GLuint Process_glGenLists(GLsizei range) {
     if (range <= 0) return 0;
-    GLuint firstID = displayLists.size(); // zero-based
+    GLuint firstID = displayLists.size();
     displayLists.resize(displayLists.size() + range);
-    return firstID + 1; // return non-zero ID
+    return firstID + 1;
 }
 
 GLboolean Process_IsList(GLuint list) {
-    if (list > displayLists.size()) return false;
-    return (displayLists[list].commands.size() > 0);
+    if (list == 0 || list > displayLists.size()) return false;
+    return displayLists[list - 1].commands.size() > 0;
 }
 
 void Process_glDeleteLists(GLuint list, GLsizei range) {
@@ -336,39 +338,45 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
     if (list + range - 1 > displayLists.size())
         range = displayLists.size() - list + 1;
 
-    for (GLuint i = 0; i < range; ++i) {
+    for (GLuint i = 0; i < range; ++i)
         displayLists[list - 1 + i].commands.clear();
-    }
 }
 
 void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
     if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer)
         return;
 
-    const uint8_t* BASE = (const uint8_t*)vertexArrayBasePointer;
-
     // Each array needs its OWN stride!
-    int vStride = vertexArrayStride > 0 ? vertexArrayStride : 3 * sizeof(float);
-    int cStride = colorArrayStride > 0 ? colorArrayStride : 4 * sizeof(uint8_t);
-    int tStride = textureArrayStride > 0 ? textureArrayStride : 2 * sizeof(float);
-
-    int posOff = vertexArrayPointer ? (uint8_t*)vertexArrayPointer - BASE : 0;
-    int colOff = colorArrayPointer   ? (uint8_t*)colorArrayPointer   - BASE : -1;
-    int uvOff  = textureArrayPointer ? (uint8_t*)textureArrayPointer - BASE : -1;
-
     auto fetchPos = [&](int i) -> Vec3 {
         if (!vertexArrayPointer) return Vec3{0,0,0};
-        const float* p = (const float*)(BASE + i * vStride + posOff);
+        const uint8_t* base;
+        if (vertexArrayStride > 0) 
+            base = (const uint8_t*)vertexArrayPointer + (i*vertexArrayStride);
+        else
+            base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*3));
+        const float* p = (const float*)base;
         return Vec3{p[0], p[1], p[2]};
     };
+
     auto fetchCol = [&](int i) -> Col4 {
-        if (colOff < 0) return Col4{1,1,1,1};
-        const uint8_t* c = BASE + i * cStride + colOff;
+        if (!colorArrayPointer) return Col4{1,1,1,1};
+        const uint8_t* base;
+        if (colorArrayStride > 0) 
+            base = (const uint8_t*)colorArrayPointer + (i*colorArrayStride);
+        else
+            base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*4));
+        const uint8_t* c = base;
         return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
     };
+
     auto fetchUV = [&](int i) -> Vec2 {
-        if (uvOff < 0) return Vec2{0,0};
-        const float* t = (const float*)(BASE + i * tStride + uvOff);
+        if (!textureArrayPointer) return Vec2{0,0};
+        const uint8_t* base;
+        if (textureArrayStride > 0) 
+            base = (const uint8_t*)textureArrayPointer + (i*textureArrayStride);
+        else
+            base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*2));
+        const float* t = (const float*)base;
         return Vec2{t[0], t[1]};
     };
 
@@ -406,21 +414,39 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
     if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer || !indices)
         return;
 
+    // We don't have to figure out the offsets for interleaved data, because 
+    // The pointer to that data should already give us that offset. All we need to add
+    // Is the stride
     auto fetchPos = [&](int i) -> Vec3 {
         if (!vertexArrayPointer) return Vec3{0,0,0};
-        const float* p = (const float*)(vertexArrayPointer) + i * vertexArrayStride;
+        const uint8_t* base;
+        if (vertexArrayStride > 0) 
+            base = (const uint8_t*)vertexArrayPointer + (i*vertexArrayStride);
+        else
+            base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*3));
+        const float* p = (const float*)base;
         return Vec3{p[0], p[1], p[2]};
     };
 
     auto fetchCol = [&](int i) -> Col4 {
         if (!colorArrayPointer) return Col4{1,1,1,1};
-        const uint8_t* c = (const uint8_t*)(colorArrayPointer) + i * colorArrayStride;
+        const uint8_t* base;
+        if (colorArrayStride > 0) 
+            base = (const uint8_t*)colorArrayPointer + (i*colorArrayStride);
+        else
+            base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*4));
+        const uint8_t* c = base;
         return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
     };
 
     auto fetchUV = [&](int i) -> Vec2 {
         if (!textureArrayPointer) return Vec2{0,0};
-        const float* t = (const float*)(textureArrayPointer) + i * textureArrayStride;
+        const uint8_t* base;
+        if (textureArrayStride > 0) 
+            base = (const uint8_t*)textureArrayPointer + (i*textureArrayStride);
+        else
+            base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*2));
+        const float* t = (const float*)base;
         return Vec2{t[0], t[1]};
     };
 
@@ -601,7 +627,6 @@ void Process_glMatrixMode(GLenum mode) {
     switch(matrixMode) {
         case GL_PROJECTION:
             PrintInfo("GL_PROJECTION");
-            projectionMode = GL_PROJECTION;
             lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
@@ -619,5 +644,34 @@ void Process_glFrontFace(GLenum mode) {
         case GL_CW:
             counterClockWiseWindingActive = false;
             break;
+    }
+}
+
+void Process_glFogi(GLenum pname, GLint param) {
+    switch(pname) {
+        case GL_FOG_MODE:
+            fogMode = param;
+            break;
+    }
+}
+
+void Process_glFogfv(GLenum pname, const GLfloat *params) {
+    switch(pname) {
+        case GL_FOG_COLOR:
+            fogColor = Col4{
+                params[0], params[1], params[2], params[3]
+            };
+            break;
+    }
+}
+
+void Process_glFogf(GLenum pname, GLfloat param) {
+    switch (pname) {
+        case GL_FOG_START:
+            fogStart = param;
+            break;
+        case GL_FOG_END:
+            fogEnd = param;
+            break;        
     }
 }

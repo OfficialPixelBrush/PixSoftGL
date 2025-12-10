@@ -110,3 +110,18 @@ struct CMD_PARAM_glTexCoord2f {
     GLfloat s;
     GLfloat t;
 };
+
+struct CMD_PARAM_glFogi {
+    GLenum pname;
+    GLint param;
+};
+
+struct CMD_PARAM_glFogfv {
+    GLenum pname;
+    const GLfloat *params;
+};
+
+struct CMD_PARAM_glFogf {
+    GLenum pname;
+    GLfloat param;
+};
