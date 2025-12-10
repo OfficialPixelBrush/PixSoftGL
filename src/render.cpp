@@ -124,6 +124,9 @@ void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
 
 // Render triangle to framebuffer
 void RenderTriangle(Triangle tri) {
+    // Just ignore tris behind our camera
+    if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
+    // Determine bounding area
     int xMin = renderAreaWidth;
     int yMin = renderAreaHeight;
     int xMax = 0;

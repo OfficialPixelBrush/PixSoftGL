@@ -81,8 +81,8 @@ void drawCube() {
     glTranslatef(0, 0, -5);
     glRotatef(angle, 1, 1, 0);
     glCallList(list);
-    glLoadIdentity();
-    glTranslatef(-1, 0, -5);
+    //glLoadIdentity();
+    glTranslatef(-2, 0, -5);
     glRotatef(angle+10, 1, 1, 0);
     glCallList(list);
 
