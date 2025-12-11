@@ -37,26 +37,31 @@ Mat4x4 Vec3ToMat4x4(Vec3 pos) {
 }
 
 // Project world-space position to screen, return eye-space distance in z
-Vec3 ProjectPosition(Vec3 pos) {
+Vec4 ProjectPosition(Vec3 pos) {
     Vec4 eye = modelMatrices[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
     float eyeDist = -eye.z;
 
     Vec4 clip = projMatrices[projMatrixPtr] * eye;
     Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
 
-    return Vec3{
+    return Vec4{
         (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
         (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaHeight,
-        eyeDist
+        eyeDist,
+        clip.w
     };
 }
 
 // Project triangle to screen
 Triangle ProjectTriangle(Triangle tri) {
+    Vec4 p0 = ProjectPosition(tri.a.pos);
+    Vec4 p1 = ProjectPosition(tri.b.pos);
+    Vec4 p2 = ProjectPosition(tri.c.pos);
+
     return Triangle{
-        Vertex { ProjectPosition(tri.a.pos), tri.a.col, tri.a.uv },
-        Vertex { ProjectPosition(tri.b.pos), tri.b.col, tri.b.uv },
-        Vertex { ProjectPosition(tri.c.pos), tri.c.col, tri.c.uv },
+        Vertex{ Vec3{p0.x, p0.y, p0.z}, p0.w, tri.a.col, tri.a.uv },
+        Vertex{ Vec3{p1.x, p1.y, p1.z}, p1.w, tri.b.col, tri.b.uv },
+        Vertex{ Vec3{p2.x, p2.y, p2.z}, p2.w, tri.c.col, tri.c.uv }
     };
 }
 
@@ -134,76 +139,118 @@ bool PointInTriangle(Triangle tri, Vec3 p) {
     return inTri && totalArea > 0;
 }
 
-// Simple barycentric color interpolation
 Col4 BarycentricColor(Triangle tri, Vec3& p) {
     Vec3 a = tri.a.pos;
     Vec3 b = tri.b.pos;
     Vec3 c = tri.c.pos;
 
     float det = (b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y);
+    if (fabs(det) < 1e-9f) {
+        // Degenerate triangle: return first vertex color
+        p.z = tri.a.pos.z;
+        return tri.a.col;
+    }
+
     float w1 = ((b.y - c.y)*(p.x - c.x) + (c.x - b.x)*(p.y - c.y)) / det;
     float w2 = ((c.y - a.y)*(p.x - c.x) + (a.x - c.x)*(p.y - c.y)) / det;
     float w3 = 1.0f - w1 - w2;
-    //w1 = std::clamp(w1, 0.0f, 1.0f);
-    //w2 = std::clamp(w2, 0.0f, 1.0f);
-    //w3 = std::clamp(w3, 0.0f, 1.0f);
 
-    // Calulate depth too
-    p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
+    // Perspective-correct interpolation:
+    // each vertex has tri.*.w = original clip.w
+    float invWA = (tri.a.w == 0.0f) ? 0.0f : 1.0f / tri.a.w;
+    float invWB = (tri.b.w == 0.0f) ? 0.0f : 1.0f / tri.b.w;
+    float invWC = (tri.c.w == 0.0f) ? 0.0f : 1.0f / tri.c.w;
 
-    return Col4{
-        w1*tri.a.col.r + w2*tri.b.col.r + w3*tri.c.col.r,
-        w1*tri.a.col.g + w2*tri.b.col.g + w3*tri.c.col.g,
-        w1*tri.a.col.b + w2*tri.b.col.b + w3*tri.c.col.b,
-        w1*tri.a.col.a + w2*tri.b.col.a + w3*tri.c.col.a
+    float invW_interp = w1 * invWA + w2 * invWB + w3 * invWC;
+    if (invW_interp == 0.0f) invW_interp = 1e-9f;
+    float W = 1.0f / invW_interp;
+
+    // Interpolate color components divided by clip.w, then multiply by W
+    float r_over_w = w1 * (tri.a.col.r * invWA) + w2 * (tri.b.col.r * invWB) + w3 * (tri.c.col.r * invWC);
+    float g_over_w = w1 * (tri.a.col.g * invWA) + w2 * (tri.b.col.g * invWB) + w3 * (tri.c.col.g * invWC);
+    float b_over_w = w1 * (tri.a.col.b * invWA) + w2 * (tri.b.col.b * invWB) + w3 * (tri.c.col.b * invWC);
+    float a_over_w = w1 * (tri.a.col.a * invWA) + w2 * (tri.b.col.a * invWB) + w3 * (tri.c.col.a * invWC);
+
+    Col4 outCol = Col4{
+        r_over_w * W,
+        g_over_w * W,
+        b_over_w * W,
+        a_over_w * W
     };
+
+    // Interpolate depth (tri.*.pos.z is NDC z already)
+    float z_over_w = w1 * (tri.a.pos.z * invWA) + w2 * (tri.b.pos.z * invWB) + w3 * (tri.c.pos.z * invWC);
+    p.z = z_over_w * W;
+
+    return outCol;
 }
 
+// Perspective-correct texture lookup (returns sampled color)
+// Uses same barycentric weights; sets p.z as well (keeps consistent with BarycentricColor)
 Col4 BarycentricTexture(Triangle tri, Vec3& p) {
     Vec3 a = tri.a.pos;
     Vec3 b = tri.b.pos;
     Vec3 c = tri.c.pos;
 
-    // Compute barycentric coordinates
     float det = (b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y);
+    if (fabs(det) < 1e-9f) {
+        // Degenerate triangle: sample at vertex A
+        int tx = 0, ty = 0;
+        if (!lastAccessedTexture) return Col4{1,1,1,1};
+        tx = std::clamp(int(tri.a.uv.x * (lastAccessedTexture->texture2D.width - 1)), 0, lastAccessedTexture->texture2D.width - 1);
+        ty = std::clamp(int(tri.a.uv.y * (lastAccessedTexture->texture2D.height - 1)), 0, lastAccessedTexture->texture2D.height - 1);
+        return lastAccessedTexture->texture2D.textureData[ty * lastAccessedTexture->texture2D.width + tx];
+    }
+
     float w1 = ((b.y - c.y)*(p.x - c.x) + (c.x - b.x)*(p.y - c.y)) / det;
     float w2 = ((c.y - a.y)*(p.x - c.x) + (a.x - c.x)*(p.y - c.y)) / det;
     float w3 = 1.0f - w1 - w2;
 
-    // Clamp weights to [0,1] to avoid sampling outside
-    //w1 = std::clamp(w1, 0.0f, 1.0f);
-    //w2 = std::clamp(w2, 0.0f, 1.0f);
-    //w3 = std::clamp(w3, 0.0f, 1.0f);
+    float invWA = (tri.a.w == 0.0f) ? 0.0f : 1.0f / tri.a.w;
+    float invWB = (tri.b.w == 0.0f) ? 0.0f : 1.0f / tri.b.w;
+    float invWC = (tri.c.w == 0.0f) ? 0.0f : 1.0f / tri.c.w;
 
-    // Depth (optional)
-    //p.z = w1*tri.a.pos.z + w2*tri.b.pos.z + w3*tri.c.pos.z;
+    float invW_interp = w1 * invWA + w2 * invWB + w3 * invWC;
+    if (invW_interp == 0.0f) invW_interp = 1e-9f;
+    float W = 1.0f / invW_interp;
 
-    // Interpolate UVs
-    float u = w1*tri.a.uv.x + w2*tri.b.uv.x + w3*tri.c.uv.x;
-    float v = w1*tri.a.uv.y + w2*tri.b.uv.y + w3*tri.c.uv.y;
+    // Interpolate u/v divided by clip.w, then divide by invW_interp
+    float u_over_w = w1 * (tri.a.uv.x * invWA) + w2 * (tri.b.uv.x * invWB) + w3 * (tri.c.uv.x * invWC);
+    float v_over_w = w1 * (tri.a.uv.y * invWA) + w2 * (tri.b.uv.y * invWB) + w3 * (tri.c.uv.y * invWC);
+
+    float u = u_over_w * W;
+    float v = v_over_w * W;
+
+    // Interpolate depth as well to keep p.z consistent with BarycentricColor
+    float z_over_w = w1 * (tri.a.pos.z * invWA) + w2 * (tri.b.pos.z * invWB) + w3 * (tri.c.pos.z * invWC);
+    p.z = z_over_w * W;
+
+    // Sample texture with wrap/clamp logic
+    if (!lastAccessedTexture) return Col4{1,1,1,1};
 
     int tx, ty;
+    int tw = lastAccessedTexture->texture2D.width;
+    int th = lastAccessedTexture->texture2D.height;
 
-    // clamp
+    // S (u)
     if (lastAccessedTexture->texture2D.textureWrapS == GL_CLAMP || lastAccessedTexture->texture2D.textureWrapS == GL_CLAMP_TO_EDGE) {
-        tx = std::clamp(int(u * (lastAccessedTexture->texture2D.width - 1)), 0, lastAccessedTexture->texture2D.width - 1);
-    } 
-    // repeat
-    else {
-        int i = int(std::floor(u * lastAccessedTexture->texture2D.width));
-        tx = i % lastAccessedTexture->texture2D.width;
-        if (tx < 0) tx += lastAccessedTexture->texture2D.width;
-    }
-
-    if (lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP || lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP_TO_EDGE) {
-        ty = std::clamp(int(v * (lastAccessedTexture->texture2D.height - 1)), 0, lastAccessedTexture->texture2D.height - 1);
+        tx = std::clamp(int(u * (tw - 1)), 0, tw - 1);
     } else {
-        int j = int(std::floor(v * lastAccessedTexture->texture2D.height));
-        ty = j % lastAccessedTexture->texture2D.height;
-        if (ty < 0) ty += lastAccessedTexture->texture2D.height;
+        int i = int(std::floor(u * tw));
+        tx = i % tw;
+        if (tx < 0) tx += tw;
     }
 
-    return lastAccessedTexture->texture2D.textureData[ty * lastAccessedTexture->texture2D.width + tx];
+    // T (v)
+    if (lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP || lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP_TO_EDGE) {
+        ty = std::clamp(int(v * (th - 1)), 0, th - 1);
+    } else {
+        int j = int(std::floor(v * th));
+        ty = j % th;
+        if (ty < 0) ty += th;
+    }
+
+    return lastAccessedTexture->texture2D.textureData[ty * tw + tx];
 }
 
 bool DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax) {

@@ -6,6 +6,7 @@
 
 void ClearFramebuffers(GLenum mask) {
     // Clear color
+    /*
     if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
         PrintInfo("GL_COLOR_BUFFER_BIT ");
         for (int i = 0; i < renderAreaTotal; i++) {
@@ -14,6 +15,7 @@ void ClearFramebuffers(GLenum mask) {
             frameBufferColor[i] = Col3ToPixelValue(newColor);
         }
     }
+    */
     // Clear depth
     if ((mask & GL_DEPTH_BUFFER_BIT) && frameBufferDepth) {
         PrintInfo("GL_DEPTH_BUFFER_BIT ");
@@ -53,19 +55,18 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
 
     // Apply fog (if active)
     if (fogActive && screenPos.z > fogStart) {
-        Col4 fogCol = Col4{fogColor.r, fogColor.g, fogColor.b, fogColor.a};
         switch(fogMode) {
-            case GL_LINEAR:
+            case GL_LINEAR: {
                 float fogFactor = (screenPos.z - fogStart) / (fogEnd - fogStart);
                 fogFactor = std::clamp(fogFactor, 0.0f, 1.0f);
-
                 color = Col4{
                     color.r * (1.0f - fogFactor) + fogColor.r * fogFactor,
                     color.g * (1.0f - fogFactor) + fogColor.g * fogFactor,
                     color.b * (1.0f - fogFactor) + fogColor.b * fogFactor,
                     color.a * (1.0f - fogFactor) + fogColor.a * fogFactor
                 };
-                break;
+            } break;
+            default: break;
         }
     }
 
@@ -90,7 +91,7 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
     */
 }
 
-// Render Line to Framebuffer
+// Render Line to Framebuffer (linear interpolation in screen-space; depth is NDC z)
 void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
     float x0 = posA.x, y0 = posA.y;
     float x1 = posB.x, y1 = posB.y;
@@ -110,46 +111,60 @@ void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
 
     float dx = x1 - x0;
     float dy = y1 - y0;
-    float gradient = dx == 0 ? 0 : dy / dx;
+    float gradient = dx == 0 ? 0.f : dy / dx;
 
     for (float x = x0; x <= x1; x += 1.0f) {
         float t = dx == 0 ? 0.0f : (x - x0) / dx;
         float y = y0 + gradient * (x - x0);
-        Vec3 screenPos = steep ? Vec3{y, x, lerp(posA.z, posB.z, t)}
-                               : Vec3{x, y, lerp(posA.z, posB.z, t)};
+        // posA.z and posB.z are expected to be NDC depths (z = clip.z/clip.w)
+        float interpolatedZ = lerp(posA.z, posB.z, t);
+        Vec3 screenPos = steep ? Vec3{y, x, interpolatedZ}
+                               : Vec3{x, y, interpolatedZ};
         Col4 color = lerp(c0, c1, t);
         RenderPixel(screenPos, color);
     }
 }
 
 // Render triangle to framebuffer
-void RenderTriangle(Triangle tri) {
-    // Just ignore tris behind our camera
-    if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
+void RenderTriangle(Triangle rawTri) {
+    Triangle tri = ProjectTriangle(rawTri);
     // Determine bounding area
     int xMin = renderAreaWidth;
     int yMin = renderAreaHeight;
     int xMax = 0;
     int yMax = 0;
-    if (!DetermineBounding(tri,xMin,yMin,xMax,yMax)) return;
+
+    if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
+
+    if (!DetermineBounding(tri, xMin, yMin, xMax, yMax)) return;
+
     for (int y = yMin; y <= yMax; y++) {
         for (int x = xMin; x <= xMax; x++) {
-            Vec3 point = Vec3{float(x)+0.5, float(y)+0.5, 0.0f};
+            // sample at pixel center
+            Vec3 point = Vec3{float(x) + 0.5f, float(y) + 0.5f, 0.0f};
             if (PointInTriangle(tri, point)) {
+                // BarycentricColor will compute perspective-correct color and also set point.z to interpolated depth
                 Col4 color = BarycentricColor(tri, point);
                 if (lastAccessedTexture) {
-                    color = color * BarycentricTexture(tri,point);
+                    // BarycentricTexture will perform perspective-correct UV sampling
+                    Col4 texcol = BarycentricTexture(tri, point);
+                    // combine (multiply modulate)
+                    color.r *= texcol.r;
+                    color.g *= texcol.g;
+                    color.b *= texcol.b;
+                    color.a *= texcol.a;
                 }
                 if (lightingActive) {
                     Vec3 normal = CalculateNormal(tri);
-                    Vec3 lightDir = Normalize(lights[0].pos - point);
+                    // lightDir should be in the same space as the sampled point; this is a simple approximation
+                    Vec3 lightDir = Normalize(lights[0].pos - Vec3{float(x), float(y), point.z});
                     float brightness = Dot3D(normal, lightDir);
-                    brightness *= 3.0;
+                    brightness *= 3.0f;
                     color.r *= brightness;
                     color.g *= brightness;
                     color.b *= brightness;
                 }
-                RenderPixel(point, color);
+                RenderPixel(point, color); // point.z contains perspective-correct depth (NDC z)
             }
         }
     }

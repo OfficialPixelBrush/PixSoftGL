@@ -134,6 +134,7 @@ struct Mat4x4 {
 // Vertex
 struct Vertex {
     Vec3 pos;
+    double w;
     Col4 col = Col4{1,0,1,1};
     Vec2 uv;
 };

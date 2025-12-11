@@ -8,7 +8,7 @@ Col4 lerp(Col4 a, Col4 b, float t);
 Col3 lerp(Col3 a, Col3 b, float t);
 float lerp(float a, float b, float t);
 Mat4x4 Vec3ToMat4x4(Vec3 pos);
-Vec3 ProjectPosition(Vec3 pos);
+Vec4 ProjectPosition(Vec3 pos);
 Triangle ProjectTriangle(Triangle tri);
 PixelValue Col3ToPixelValue(Col3 color);
 Col3 PixelValueToCol3(PixelValue color);

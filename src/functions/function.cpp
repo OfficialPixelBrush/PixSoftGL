@@ -92,79 +92,67 @@ void Process_glEnd() {
     switch(drawingMode) {
         case GL_POINTS:
             for (int i = 0; i < vertexIndex; i++) {
-                Vec3 screenPos = ProjectPosition(vertices[i].pos);
-                RenderPixel(screenPos, vertices[i].col);
+                Vec4 screenPos = ProjectPosition(vertices[i].pos);
+                RenderPixel(Vec3{screenPos.x, screenPos.y, screenPos.z}, vertices[i].col);
             }
             break;
         case GL_LINES:
             for (int i = 0; i + 1 < vertexIndex; i+=2) {
-                Vec3 screenPosA = ProjectPosition(vertices[i].pos);
-                Vec3 screenPosB = ProjectPosition(vertices[i+1].pos);
-                RenderLine(screenPosA, vertices[i].col, screenPosB, vertices[i+1].col);
+                Vec4 screenPosA = ProjectPosition(vertices[i].pos);
+                Vec4 screenPosB = ProjectPosition(vertices[i+1].pos);
+                RenderLine(Vec3{screenPosA.x, screenPosA.y, screenPosA.z}, vertices[i].col, Vec3{screenPosB.x, screenPosB.y, screenPosB.z}, vertices[i+1].col);
             }
             break;
         case GL_TRIANGLE_FAN:
             for (int i = 1; i + 1 < vertexIndex; i++) {
-                Triangle screenTri = ProjectTriangle(
-                    Triangle{
-                        vertices[0], 
-                        vertices[i], 
-                        vertices[i+1],
-                    }
-                );
-                RenderTriangle(screenTri);
+                Triangle tri = Triangle{
+                    vertices[0], 
+                    vertices[i], 
+                    vertices[i+1],
+                };
+                RenderTriangle(tri);
             }
             break;
         case GL_TRIANGLES:
             for (int i = 0; i + 2 < vertexIndex; i+=3) {
-                Triangle screenTri = ProjectTriangle(
-                    Triangle{
-                        vertices[i], 
-                        vertices[i+1], 
-                        vertices[i+2],
-                    }
-                );
-                RenderTriangle(screenTri);
+                Triangle tri = Triangle{
+                    vertices[i], 
+                    vertices[i+1], 
+                    vertices[i+2],
+                };
+                RenderTriangle(tri);
             }
             break;
         case GL_QUADS:
             for (int i = 0; i + 3 < vertexIndex; i+=4) {
-                Triangle screenTriA = ProjectTriangle(
-                    Triangle{
-                        vertices[i], 
-                        vertices[i+1], 
-                        vertices[i+2],
-                    }
-                );
-                Triangle screenTriB = ProjectTriangle(
-                    Triangle{
-                        vertices[i],
-                        vertices[i+2], 
-                        vertices[i+3],
-                    }
-                );
-                RenderTriangle(screenTriA);
-                RenderTriangle(screenTriB);
+                Triangle triA = Triangle{
+                    vertices[i], 
+                    vertices[i+1], 
+                    vertices[i+2],
+                };
+                Triangle triB = Triangle{
+                    vertices[i],
+                    vertices[i+2], 
+                    vertices[i+3],
+                };
+                RenderTriangle(triA);
+                RenderTriangle(triB);
             } 
             break;
         case GL_QUAD_STRIP:
             for (int i = 0; i + 3 < vertexIndex; i+=2) {
-                Triangle screenTriA = ProjectTriangle(
-                    Triangle{
-                        vertices[i],
-                        vertices[i+1],
-                        vertices[i+2],
-                    }
-                );
-                Triangle screenTriB = ProjectTriangle(
-                    Triangle{
-                        vertices[i+1],
-                        vertices[i+3],
-                        vertices[i+2],
-                    }
-                );
-                RenderTriangle(screenTriA);
-                RenderTriangle(screenTriB);
+                Triangle triA = Triangle{
+                    vertices[i],
+                    vertices[i+1],
+                    vertices[i+2],
+                };
+                Triangle triB = Triangle{
+                    vertices[i+1],
+                    vertices[i+3],
+                    vertices[i+2],
+                };
+                RenderTriangle(triA);
+                RenderTriangle(triB);
             } 
             break;
     }
