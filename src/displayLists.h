@@ -66,4 +66,5 @@ void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count);
 void Record_glFogi(GLenum pname, GLint param);
 void Record_glFogfv(GLenum pname, const GLfloat *params);
 void Record_glFogf(GLenum pname, GLfloat param);
+void Record_glLoadMatrixf(const GLfloat *m);
 void Record_glDepthFunc(GLenum func);

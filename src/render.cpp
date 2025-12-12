@@ -50,19 +50,19 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
     if (depthTestActive && frameBufferDepth) {
         switch(depthFunction) {
             case GL_LESS:
-                if (screenPos.z >= frameBufferDepth[index]) return;
+                if (screenPos.z < frameBufferDepth[index]) return;
                 break;
             case GL_LEQUAL:
-                if (screenPos.z > frameBufferDepth[index]) return;
+                if (screenPos.z <= frameBufferDepth[index]) return;
                 break;
             case GL_EQUAL:
                 if (screenPos.z == frameBufferDepth[index]) return;
                 break;
             case GL_GEQUAL:
-                if (screenPos.z <= frameBufferDepth[index]) return;
+                if (screenPos.z >= frameBufferDepth[index]) return;
                 break;
             case GL_GREATER:
-                if (screenPos.z < frameBufferDepth[index]) return;
+                if (screenPos.z > frameBufferDepth[index]) return;
                 break;
         }
     }
@@ -89,9 +89,22 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
         std::cout << "Missing framebuffer" << std::endl;
         return;
     }
-    Col3 fb = PixelValueToCol3(frameBufferColor[index]);
-    Col3 newColor = lerp(fb,Col3{color.r,color.g,color.b}, color.a);
-    frameBufferColor[index] = Col3ToPixelValue(newColor);
+    if (blendActive) {
+        // Proper alpha blending
+        float srcA = color.a;
+        float dstA = 1.0f - color.a;
+        
+        Col3 fb = PixelValueToCol3(frameBufferColor[index]);
+        Col3 newColor = Col3{
+            color.r * srcA + fb.r * dstA,
+            color.g * srcA + fb.g * dstA,
+            color.b * srcA + fb.b * dstA
+        };
+        frameBufferColor[index] = Col3ToPixelValue(newColor);
+    } else {
+        // No blending
+        frameBufferColor[index] = Col3ToPixelValue(Col3{color.r, color.g, color.b});
+    }
 
     if (!frameBufferDepth || !depthWriteActive) return;
     frameBufferDepth[index] = screenPos.z;
@@ -148,7 +161,7 @@ void RenderTriangle(Triangle rawTri) {
     int xMax = 0;
     int yMax = 0;
 
-    //if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
+    if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
 
     if (!DetermineBounding(tri, xMin, yMin, xMax, yMax)) return;
 

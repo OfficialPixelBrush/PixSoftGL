@@ -97,7 +97,5 @@ bool textureArrayActive = false;
 const GLvoid *textureArrayPointer = nullptr;
 GLint textureArrayStride =  0;
 
-const GLvoid *vertexArrayBasePointer = nullptr;
-
 // GL error global
 GLenum errorState = 0;

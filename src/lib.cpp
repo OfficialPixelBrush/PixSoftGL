@@ -821,7 +821,6 @@ extern "C" {
         }
         vertexArrayPointer = ptr;
         vertexArrayStride = stride;
-        RecomputeBase();
         PrintInfo("\n");
     }
     
@@ -836,7 +835,6 @@ extern "C" {
         }
         colorArrayPointer = ptr;
         colorArrayStride = stride;
-        RecomputeBase();
         PrintInfo("\n");
     }
 
@@ -851,7 +849,6 @@ extern "C" {
         }
         textureArrayPointer = ptr;
         textureArrayStride = stride;
-        RecomputeBase();
         PrintInfo("\n");
     }
 

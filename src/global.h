@@ -102,7 +102,6 @@ extern GLint colorArrayStride;
 extern bool textureArrayActive;
 extern const GLvoid *textureArrayPointer;
 extern GLint textureArrayStride;
-extern const GLvoid *vertexArrayBasePointer;
 
 // GL error global
 extern GLenum errorState;

@@ -331,7 +331,7 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
 }
 
 void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
-    if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer)
+    if ((mode != GL_TRIANGLES && mode != GL_QUADS))
         return;
 
     // Each array needs its OWN stride!
@@ -399,7 +399,7 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
 
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
 {
-    if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !vertexArrayBasePointer || !indices)
+    if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !indices)
         return;
 
     // We don't have to figure out the offsets for interleaved data, because 
