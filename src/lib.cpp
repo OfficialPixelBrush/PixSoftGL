@@ -331,15 +331,36 @@ extern "C" {
             real_gl(m);
         }
         PrintInfo("glLoadMatrixf");
-        if (!lastAccessedMatrix) return;
-        *lastAccessedMatrix = Mat4x4{
-            Vec4{m[0],m[1],m[2],m[3]},
-            Vec4{m[4],m[5],m[6],m[7]},
-            Vec4{m[8],m[9],m[10],m[11]},
-            Vec4{m[12],m[13],m[14],m[15]}
-        };
+        if (activeDisplayListIndex == 0) {
+            Process_glLoadMatrixf(m);
+        } else {
+            if (compileAndExecute) {
+                Process_glLoadMatrixf(m);
+            }
+            Record_glLoadMatrixf(m);
+        }
         PrintInfo("\n");
 
+    }
+
+    void glDepthFunc(GLenum func) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum)) dlsym(RTLD_NEXT, "glDepthFunc");
+            }
+            real_gl(func);
+        }
+        PrintInfo("glDepthFunc");
+        if (activeDisplayListIndex == 0) {
+            Process_glDepthFunc(func);
+        } else {
+            if (compileAndExecute) {
+                Process_glDepthFunc(func);
+            }
+            Record_glDepthFunc(func);
+        }
+        PrintInfo("\n");
     }
 
     void glDepthMask(GLboolean flag) {

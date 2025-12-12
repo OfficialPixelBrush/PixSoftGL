@@ -6,7 +6,6 @@
 
 void ClearFramebuffers(GLenum mask) {
     // Clear color
-    /*
     if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
         PrintInfo("GL_COLOR_BUFFER_BIT ");
         for (int i = 0; i < renderAreaTotal; i++) {
@@ -15,12 +14,11 @@ void ClearFramebuffers(GLenum mask) {
             frameBufferColor[i] = Col3ToPixelValue(newColor);
         }
     }
-    */
     // Clear depth
     if ((mask & GL_DEPTH_BUFFER_BIT) && frameBufferDepth) {
         PrintInfo("GL_DEPTH_BUFFER_BIT ");
         for (int i = 0; i < renderAreaTotal; i++) {
-            frameBufferDepth[i] = INFINITY;
+            frameBufferDepth[i] = 1.0f;
         }
     }
 }
@@ -49,8 +47,24 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
 
 
     // If the new pixel is behind the old one, skip
-    if (depthTestActive && frameBufferDepth && screenPos.z >= frameBufferDepth[index]) {
-        return;
+    if (depthTestActive && frameBufferDepth) {
+        switch(depthFunction) {
+            case GL_LESS:
+                if (screenPos.z >= frameBufferDepth[index]) return;
+                break;
+            case GL_LEQUAL:
+                if (screenPos.z > frameBufferDepth[index]) return;
+                break;
+            case GL_EQUAL:
+                if (screenPos.z == frameBufferDepth[index]) return;
+                break;
+            case GL_GEQUAL:
+                if (screenPos.z <= frameBufferDepth[index]) return;
+                break;
+            case GL_GREATER:
+                if (screenPos.z < frameBufferDepth[index]) return;
+                break;
+        }
     }
 
     // Apply fog (if active)
@@ -134,7 +148,7 @@ void RenderTriangle(Triangle rawTri) {
     int xMax = 0;
     int yMax = 0;
 
-    if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
+    //if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
 
     if (!DetermineBounding(tri, xMin, yMin, xMax, yMax)) return;
 
@@ -145,7 +159,7 @@ void RenderTriangle(Triangle rawTri) {
             if (PointInTriangle(tri, point)) {
                 // BarycentricColor will compute perspective-correct color and also set point.z to interpolated depth
                 Col4 color = BarycentricColor(tri, point);
-                if (lastAccessedTexture) {
+                if (lastAccessedTexture && texture2dActive) {
                     // BarycentricTexture will perform perspective-correct UV sampling
                     Col4 texcol = BarycentricTexture(tri, point);
                     // combine (multiply modulate)

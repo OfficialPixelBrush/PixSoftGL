@@ -34,3 +34,5 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count);
 void Process_glFogi(GLenum pname, GLint param);
 void Process_glFogfv(GLenum pname, const GLfloat *params);
 void Process_glFogf(GLenum pname, GLfloat param);
+void Process_glLoadMatrixf(const GLfloat *m);
+void Process_glDepthFunc(GLenum func);

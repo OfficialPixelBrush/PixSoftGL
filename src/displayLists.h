@@ -29,6 +29,8 @@ struct DisplayListCommand {
         CMD_PARAM_glFogi PARAM_glFogi;
         CMD_PARAM_glFogfv PARAM_glFogfv;
         CMD_PARAM_glFogf PARAM_glFogf;
+        CMD_PARAM_glLoadMatrixf PARAM_glLoadMatrixf;
+        GLenum PARAM_glDepthFunc;
     } data;
 };
 
@@ -64,3 +66,4 @@ void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count);
 void Record_glFogi(GLenum pname, GLint param);
 void Record_glFogfv(GLenum pname, const GLfloat *params);
 void Record_glFogf(GLenum pname, GLfloat param);
+void Record_glDepthFunc(GLenum func);

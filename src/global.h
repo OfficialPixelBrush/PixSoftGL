@@ -23,6 +23,9 @@ extern bool normalizeActive;
 extern bool scissorTestActive;
 extern bool depthWriteActive;
 extern bool alphaTestActive;
+extern bool texture2dActive;
+
+extern GLenum depthFunction;
 
 // Lights
 extern bool lightActive[MAX_LIGHTS];
@@ -33,6 +36,7 @@ extern int fogMode;
 extern Col4 fogColor;
 extern float fogStart;
 extern float fogEnd;
+extern float fogDensity;
 
 // The current object rendering mode
 extern GLenum drawingMode;

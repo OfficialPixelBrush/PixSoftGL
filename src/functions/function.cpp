@@ -382,7 +382,7 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
         tri.b.uv = fetchUV(b);
         tri.c.uv = fetchUV(c);
 
-        RenderTriangle(ProjectTriangle(tri));
+        RenderTriangle(tri);
     };
 
     if (mode == GL_QUADS) {
@@ -452,7 +452,7 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
         tri.b.uv = fetchUV(b);
         tri.c.uv = fetchUV(c);
 
-        RenderTriangle(ProjectTriangle(tri));
+        RenderTriangle(tri);
     };
 
     if (type == GL_UNSIGNED_SHORT) {
@@ -518,7 +518,7 @@ void Process_glEnable(GLenum cap) {
             break;
         case GL_TEXTURE_2D:
             PrintInfo("GL_TEXTURE_2D");
-            textureType = GL_TEXTURE_2D;
+            texture2dActive = true;
             break;
         case GL_LIGHTING:
             PrintInfo("GL_LIGHTING");
@@ -572,7 +572,7 @@ void Process_glDisable(GLenum cap) {
             break;
         case GL_TEXTURE_2D:
             PrintInfo("GL_TEXTURE_2D");
-            textureType = 0;
+            texture2dActive = false;
             break;
         case GL_LIGHTING:
             PrintInfo("GL_LIGHTING");
@@ -661,5 +661,21 @@ void Process_glFogf(GLenum pname, GLfloat param) {
         case GL_FOG_END:
             fogEnd = param;
             break;        
+        case GL_FOG_DENSITY:
+            fogDensity = param;
+            break;
     }
+}
+
+void Process_glLoadMatrixf(const GLfloat *m) {
+    *lastAccessedMatrix = Mat4x4{
+        Vec4{m[0],m[1],m[2],m[3]},
+        Vec4{m[4],m[5],m[6],m[7]},
+        Vec4{m[8],m[9],m[10],m[11]},
+        Vec4{m[12],m[13],m[14],m[15]}
+    };
+}
+
+void Process_glDepthFunc(GLenum func) {
+    depthFunction = func;
 }

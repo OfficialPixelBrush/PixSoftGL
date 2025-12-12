@@ -43,6 +43,7 @@ enum CommandType {
     CMD_glDrawElements,
     CMD_glMaterialfv,
     CMD_glDrawArrays,
+    CMD_glDepthFunc,
 };
 
 struct CMD_PARAM_glVertex2f {
@@ -124,4 +125,8 @@ struct CMD_PARAM_glFogfv {
 struct CMD_PARAM_glFogf {
     GLenum pname;
     GLfloat param;
+};
+
+struct CMD_PARAM_glLoadMatrixf {
+    const GLfloat *m;
 };

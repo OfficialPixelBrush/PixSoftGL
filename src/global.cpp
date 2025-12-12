@@ -18,6 +18,9 @@ bool scissorTestActive = false;
 bool counterClockWiseWindingActive = true;
 bool depthWriteActive = true;
 bool alphaTestActive = false;
+bool texture2dActive = false;
+
+GLenum depthFunction = GL_GEQUAL;
 
 // Lights
 bool lightActive[MAX_LIGHTS];
@@ -28,6 +31,7 @@ int fogMode = 0;
 Col4 fogColor = Col4{0,0,0,1};
 float fogStart = 0.0;
 float fogEnd = 0.0;
+float fogDensity = 0.0;
 
 // The current object rendering mode
 GLenum drawingMode = GL_POINTS;
@@ -36,7 +40,7 @@ GLenum drawingMode = GL_POINTS;
 GLenum matrixMode = GL_MODELVIEW;
 
 // Currently active color
-Col4 currentColor = Col4{1,0,1,1};
+Col4 currentColor = Col4{1,1,1,1};
 Col4 clearColor = Col4{0,0,0,1};
 
 // Matrices
@@ -77,7 +81,6 @@ bool compileAndExecute = false;
 
 // Textures
 Vec2 currentTextureUV = Vec2{0,0};
-GLenum textureType = 0;
 TextureSlot* lastAccessedTexture = nullptr;
 std::vector<TextureSlot> textureArray;
 

@@ -121,23 +121,31 @@ void DrawPixel(PixelValue p, int x, int y) {
 
 // Draw the framebuffer colors to the SDL Window
 void UpdateScreen() {
-    if (!frameBufferColor) return;
-    //PrintInfo("\033[H");
+    if (!frameBufferColor || !surf) return;
+    
+    bool needs_lock = SDL_MUSTLOCK(surf);
+    if (needs_lock && SDL_LockSurface(surf) != 0) return;
+    
+    // Assuming 32-bit RGBA format (verify this matches your surface!)
+    uint32_t *pixels = (uint32_t*)surf->pixels;
+    int pitch_in_pixels = surf->pitch / 4;  // Convert byte pitch to pixel pitch
+    
     for (int y = 0; y < renderAreaHeight; y++) {
         for (int x = 0; x < renderAreaWidth; x++) {
-            int index = x + y * renderAreaWidth;
-            if (index < 0 || index >= renderAreaTotal) continue;
-            //std::cout << frameBufferColor << ": " << index << "/" << renderAreaTotal << std::endl;
-            PixelValue p = frameBufferColor[index];
-            DrawPixel(p,x,y);
+            int src_index = x + y * renderAreaWidth;
+            int dst_index = x + y * pitch_in_pixels;
+            
+            if (src_index >= renderAreaTotal) break;
+            
+            PixelValue p = frameBufferColor[src_index];
+            
+            // Direct pixel write (assumes RGBA8888 or BGRA8888)
+            // Adjust byte order based on your surface format
+            pixels[dst_index] = (255 << 24) | (p.r << 16) | (p.g << 8) | p.b;
+            // OR for RGBA: pixels[dst_index] = (p.r << 24) | (p.g << 16) | (p.b << 8) | 255;
         }
-        //PrintInfo("\n");;
     }
-    // Poll to make not crash
+    
+    if (needs_lock) SDL_UnlockSurface(surf);
     SDL_KeepAliveAndUpdate();
-    if (pauseForEveryRefresh) {
-        std::cout << "Waiting for input... ";
-        int test;
-        std::cin >> test;
-    }
 }

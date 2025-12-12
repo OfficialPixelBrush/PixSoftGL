@@ -39,15 +39,15 @@ Mat4x4 Vec3ToMat4x4(Vec3 pos) {
 // Project world-space position to screen, return eye-space distance in z
 Vec4 ProjectPosition(Vec3 pos) {
     Vec4 eye = modelMatrices[modelMatrixPtr] * Vec4{pos.x, pos.y, pos.z, 1.0};
-    float eyeDist = -eye.z;
-
     Vec4 clip = projMatrices[projMatrixPtr] * eye;
+    
+    // Perspective divide
     Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
-
+    
     return Vec4{
-        (ndc.x + 1.0f) * 0.5f * renderAreaWidth,
-        (1.0f - (ndc.y + 1.0f) * 0.5f) * renderAreaHeight,
-        eyeDist,
+        (ndc.x + 1.0f) * 0.5f * viewportAreaWidth,
+        (1.0f - (ndc.y + 1.0f) * 0.5f) * viewportAreaHeight,
+        ndc.z,
         clip.w
     };
 }

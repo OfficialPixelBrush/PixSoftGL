@@ -63,6 +63,7 @@ void ExecuteDisplayList(const DisplayList& dl) {
                 Process_glFrontFace(c.data.PARAM_glFrontFace);
                 break;
             case CMD_glLoadMatrixf:
+                Process_glLoadMatrixf(c.data.PARAM_glLoadMatrixf.m);
                 break;
             case CMD_glDepthMask:
                 break;
@@ -182,6 +183,9 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glDrawArrays.first,
                     c.data.PARAM_glDrawArrays.count
                 );
+                break;
+            case CMD_glDepthFunc:
+                Process_glDepthFunc(c.data.PARAM_glDepthFunc);
                 break;
             }
     }
@@ -388,5 +392,21 @@ void Record_glFogf(GLenum pname, GLfloat param) {
     DisplayListCommand c;
     c.type = CMD_glFogf;
     c.data.PARAM_glFogf = {pname, param};
+    displayListBuffer.commands.push_back(c);
+}
+
+void Record_glLoadMatrixf(const GLfloat *m) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glLoadMatrixf;
+    c.data.PARAM_glLoadMatrixf = {m};
+    displayListBuffer.commands.push_back(c);
+}
+
+void Record_glDepthFunc(GLenum func) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glDepthFunc;
+    c.data.PARAM_glDepthFunc = {func};
     displayListBuffer.commands.push_back(c);
 }
