@@ -32,7 +32,7 @@ extern bool lightActive[MAX_LIGHTS];
 extern Light lights[MAX_LIGHTS];
 
 // Fog variables
-extern int fogMode;
+extern GLenum fogMode;
 extern Col4 fogColor;
 extern float fogStart;
 extern float fogEnd;

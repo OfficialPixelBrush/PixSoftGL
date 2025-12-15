@@ -27,11 +27,11 @@ bool lightActive[MAX_LIGHTS];
 Light lights[MAX_LIGHTS];
 
 // Fog variables
-int fogMode = 0;
-Col4 fogColor = Col4{0,0,0,1};
-float fogStart = 0.0;
-float fogEnd = 0.0;
-float fogDensity = 0.0;
+GLenum fogMode = GL_EXP;
+Col4 fogColor = Col4{0,0,0,0};
+float fogStart = 0.0f;
+float fogEnd = 1.0f;
+float fogDensity = 1.0f;
 
 // The current object rendering mode
 GLenum drawingMode = GL_POINTS;

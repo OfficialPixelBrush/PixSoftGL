@@ -65,6 +65,9 @@ void ExecuteDisplayList(const DisplayList& dl) {
             case CMD_glLoadMatrixf:
                 Process_glLoadMatrixf(c.data.PARAM_glLoadMatrixf.m);
                 break;
+            case CMD_glMultMatrixf:
+                Process_glMultMatrixf(c.data.PARAM_glMultMatrixf.m);
+                break;
             case CMD_glDepthMask:
                 break;
             case CMD_glEnable:
@@ -126,6 +129,12 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glOrtho.t,
                     c.data.PARAM_glOrtho.n,
                     c.data.PARAM_glOrtho.f
+                );
+                break;
+            case CMD_glFogiv:
+                Process_glFogiv(
+                    c.data.PARAM_glFogiv.pname,
+                    c.data.PARAM_glFogiv.params
                 );
                 break;
             case CMD_glFogi:
@@ -371,6 +380,14 @@ void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
     displayListBuffer.commands.push_back(c);
 }
 
+void Record_glFogiv(GLenum pname, const GLint *params) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glFogiv;
+    c.data.PARAM_glFogiv = {pname, params};
+    displayListBuffer.commands.push_back(c);
+}
+
 void Record_glFogi(GLenum pname, GLint param) {
     if (activeDisplayListIndex == 0) return;
     DisplayListCommand c;
@@ -400,6 +417,14 @@ void Record_glLoadMatrixf(const GLfloat *m) {
     DisplayListCommand c;
     c.type = CMD_glLoadMatrixf;
     c.data.PARAM_glLoadMatrixf = {m};
+    displayListBuffer.commands.push_back(c);
+}
+
+void Record_glMultMatrixf(const GLfloat *m) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glMultMatrixf;
+    c.data.PARAM_glMultMatrixf = {m};
     displayListBuffer.commands.push_back(c);
 }
 

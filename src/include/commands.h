@@ -19,6 +19,7 @@ enum CommandType {
     CMD_glMatrixMode,
     CMD_glFrontFace,
     CMD_glLoadMatrixf,
+    CMD_glMultMatrixf,
     CMD_glDepthMask,
     CMD_glEnable,
     CMD_glDisable,
@@ -32,6 +33,7 @@ enum CommandType {
     CMD_glScalef,
     CMD_glFrustum,
     CMD_glOrtho,
+    CMD_glFogiv,
     CMD_glFogi,
     CMD_glFogfv,
     CMD_glFogf,
@@ -112,6 +114,11 @@ struct CMD_PARAM_glTexCoord2f {
     GLfloat t;
 };
 
+struct CMD_PARAM_glFogiv {
+    GLenum pname;
+    const GLint *params;
+};
+
 struct CMD_PARAM_glFogi {
     GLenum pname;
     GLint param;
@@ -128,5 +135,9 @@ struct CMD_PARAM_glFogf {
 };
 
 struct CMD_PARAM_glLoadMatrixf {
+    const GLfloat *m;
+};
+
+struct CMD_PARAM_glMultMatrixf {
     const GLfloat *m;
 };

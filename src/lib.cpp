@@ -340,7 +340,26 @@ extern "C" {
             Record_glLoadMatrixf(m);
         }
         PrintInfo("\n");
+    }
 
+    void glMultMatrixf(const GLfloat *m) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(const GLfloat *m) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(const GLfloat *m)) dlsym(RTLD_NEXT, "glMultMatrixf");
+            }
+            real_gl(m);
+        }
+        PrintInfo("glMultMatrixf");
+        if (activeDisplayListIndex == 0) {
+            Process_glMultMatrixf(m);
+        } else {
+            if (compileAndExecute) {
+                Process_glMultMatrixf(m);
+            }
+            Record_glMultMatrixf(m);
+        }
+        PrintInfo("\n");
     }
 
     void glDepthFunc(GLenum func) {
@@ -618,6 +637,27 @@ extern "C" {
                 Process_glFogi(pname,param);
             }
             Record_glFogi(pname,param);
+        }
+        PrintInfo("\n");
+    }
+
+    // Set fog integer
+    void glFogiv(GLenum pname, const GLint *params) {
+        PrintInfo("glFogiv");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum,const GLint *) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum,const GLint *)) dlsym(RTLD_NEXT, "glFogiv");
+            }
+            real_gl(pname,params);
+        }
+        if (activeDisplayListIndex == 0) {
+            Process_glFogiv(pname,params);
+        } else {
+            if (compileAndExecute) {
+                Process_glFogiv(pname,params);
+            }
+            Record_glFogiv(pname,params);
         }
         PrintInfo("\n");
     }

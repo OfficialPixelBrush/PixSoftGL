@@ -248,6 +248,11 @@ void Process_glPushMatrix() {
             modelMatrixPtr++;
             lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
+        case GL_TEXTURE:
+            texMatrices[modelMatrixPtr + 1] = texMatrices[texMatrixPtr];
+            texMatrixPtr++;
+            lastAccessedMatrix = &texMatrices[texMatrixPtr];
+            break;
     }
 }
 
@@ -260,6 +265,10 @@ void Process_glPopMatrix() {
         case GL_MODELVIEW:
             modelMatrixPtr--;
             lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
+            break;
+        case GL_TEXTURE:
+            texMatrixPtr--;
+            lastAccessedMatrix = &texMatrices[texMatrixPtr];
             break;
     }
 }
@@ -635,6 +644,11 @@ void Process_glFrontFace(GLenum mode) {
     }
 }
 
+void Process_glFogiv(GLenum pname, const GLint *params) {
+    switch(pname) {
+    }
+}
+
 void Process_glFogi(GLenum pname, GLint param) {
     switch(pname) {
         case GL_FOG_MODE:
@@ -669,6 +683,15 @@ void Process_glFogf(GLenum pname, GLfloat param) {
 
 void Process_glLoadMatrixf(const GLfloat *m) {
     *lastAccessedMatrix = Mat4x4{
+        Vec4{m[0],m[1],m[2],m[3]},
+        Vec4{m[4],m[5],m[6],m[7]},
+        Vec4{m[8],m[9],m[10],m[11]},
+        Vec4{m[12],m[13],m[14],m[15]}
+    };
+}
+
+void Process_glMultMatrixf(const GLfloat *m) {
+    *lastAccessedMatrix = *lastAccessedMatrix * Mat4x4{
         Vec4{m[0],m[1],m[2],m[3]},
         Vec4{m[4],m[5],m[6],m[7]},
         Vec4{m[8],m[9],m[10],m[11]},

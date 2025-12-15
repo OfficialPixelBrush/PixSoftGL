@@ -69,19 +69,31 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
 
     // Apply fog (if active)
     if (fogActive && screenPos.z > fogStart) {
-        switch(fogMode) {
-            case GL_LINEAR: {
-                float fogFactor = (screenPos.z - fogStart) / (fogEnd - fogStart);
-                fogFactor = std::clamp(fogFactor, 0.0f, 1.0f);
-                color = Col4{
-                    color.r * (1.0f - fogFactor) + fogColor.r * fogFactor,
-                    color.g * (1.0f - fogFactor) + fogColor.g * fogFactor,
-                    color.b * (1.0f - fogFactor) + fogColor.b * fogFactor,
-                    color.a * (1.0f - fogFactor) + fogColor.a * fogFactor
-                };
+        float f = 1.0f;
+
+        switch (fogMode) {
+            case GL_EXP:
+                f = std::exp(-fogDensity * screenPos.z);
+                break;
+
+            case GL_EXP2: {
+                float d = fogDensity * screenPos.z;
+                f = std::exp(-(d * d));
             } break;
-            default: break;
+
+            case GL_LINEAR:
+                f = (fogEnd - screenPos.z) / (fogEnd - fogStart);
+                break;
         }
+
+        f = std::clamp(f, 0.0f, 1.0f);
+
+        color = Col4{
+            fogColor.r * (1.0f - f) + color.r * f,
+            fogColor.g * (1.0f - f) + color.g * f,
+            fogColor.b * (1.0f - f) + color.b * f,
+            fogColor.a * (1.0f - f) + color.a * f
+        };
     }
 
     // Write new values to buffers
