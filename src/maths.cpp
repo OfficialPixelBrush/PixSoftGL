@@ -45,8 +45,8 @@ Vec4 ProjectPosition(Vec3 pos) {
     Vec3 ndc = { clip.x / clip.w, clip.y / clip.w, clip.z / clip.w };
     
     return Vec4{
-        (ndc.x + 1.0f) * 0.5f * viewportAreaWidth,
-        (1.0f - (ndc.y + 1.0f) * 0.5f) * viewportAreaHeight,
+        viewportOffsetX + (ndc.x + 1.0f) * 0.5f * viewportAreaWidth,
+        viewportOffsetY + (1.0f - (ndc.y + 1.0f) * 0.5f) * viewportAreaHeight,
         ndc.z,
         clip.w
     };
@@ -99,6 +99,15 @@ float Dot3D(Vec3 a, Vec3 b) {
 // 2D Dot Product
 float Dot2D(Vec3 a, Vec3 b) {
     return a.x * b.x + a.y * b.y;
+}
+
+// 3D Cross Product
+Vec3 Cross3D(Vec3 a, Vec3 b) {
+    return Vec3{
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    };
 }
 
 // 2D Cross Product
@@ -280,4 +289,9 @@ Vec3 CalculateNormal(Triangle& tri) {
         A.z * B.x - A.x * B.z,
         A.x * B.y - A.y * B.x
     });
+}
+
+float LinearizeDepth(float ndcZ, float near, float far) {
+    // ndcZ assumed in [0,1], convert back to view-space distance
+    return (2.0f * near * far) / (far + near - ndcZ * (far - near));
 }

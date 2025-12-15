@@ -194,16 +194,23 @@ void RenderTriangle(Triangle rawTri) {
                     color.a *= texcol.a;
                 }
                 if (lightingActive) {
-                    Vec3 normal = CalculateNormal(tri);
-                    // lightDir should be in the same space as the sampled point; this is a simple approximation
-                    Vec3 lightDir = Normalize(lights[0].pos - Vec3{float(x), float(y), point.z});
-                    float brightness = Dot3D(normal, lightDir);
-                    brightness *= 3.0f;
+                    // This is some of the ugliest code ever conceived by man
+                    Vec4 eyeA4 = (modelMatrices[modelMatrixPtr] * Vec4{rawTri.a.pos.x, rawTri.a.pos.y, rawTri.a.pos.z, 1});
+                    Vec3 eyeA = Vec3{eyeA4.x,eyeA4.y,eyeA4.z};
+                    Vec4 eyeB4 = (modelMatrices[modelMatrixPtr] * Vec4{rawTri.b.pos.x, rawTri.b.pos.y, rawTri.b.pos.z, 1});
+                    Vec3 eyeB = Vec3{eyeB4.x,eyeB4.y,eyeB4.z};
+                    Vec4 eyeC4 = (modelMatrices[modelMatrixPtr] * Vec4{rawTri.c.pos.x, rawTri.c.pos.y, rawTri.c.pos.z, 1});
+                    Vec3 eyeC = Vec3{eyeC4.x,eyeC4.y,eyeC4.z};
+
+                    Vec3 normal = Normalize(Cross3D(eyeB - eyeA, eyeC - eyeA));
+                    Vec3 lightDir = Normalize(lights[0].pos - eyeA);
+                    float brightness = std::max(0.0f, Dot3D(normal, lightDir));
+
                     color.r *= brightness;
                     color.g *= brightness;
                     color.b *= brightness;
                 }
-                RenderPixel(point, color); // point.z contains perspective-correct depth (NDC z)
+                RenderPixel(point, color);
             }
         }
     }

@@ -94,14 +94,20 @@ extern std::vector<TextureSlot> textureArray;
 extern bool vertexArrayActive;
 extern const GLvoid *vertexArrayPointer;
 extern GLint vertexArrayStride;
+extern GLenum vertexArrayType;
+extern GLenum vertexArrayTypeSize;
 
 extern bool colorArrayActive;
 extern const GLvoid *colorArrayPointer;
 extern GLint colorArrayStride;
+extern GLenum colorArrayType;
+extern GLenum colorArrayTypeSize;
 
 extern bool textureArrayActive;
 extern const GLvoid *textureArrayPointer;
 extern GLint textureArrayStride;
+extern GLenum textureArrayType;
+extern GLenum textureArrayTypeSize;
 
 // GL error global
 extern GLenum errorState;

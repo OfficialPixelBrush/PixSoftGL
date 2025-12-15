@@ -9,8 +9,13 @@ SDL_Window *win;
 SDL_Surface *surf;
 bool running = true;
 
-bool printInfo = false;
+bool printInfo = true;
 bool pauseForEveryRefresh = false;
+
+void PrintInfoAddr(void* s) {
+    if (!printInfo) return;
+    std::cout << std::hex << s << std::dec;
+}
 
 void PrintInfoHex(int s) {
     if (!printInfo) return;
@@ -148,4 +153,8 @@ void UpdateScreen() {
     
     if (needs_lock) SDL_UnlockSurface(surf);
     SDL_KeepAliveAndUpdate();
+    if (pauseForEveryRefresh) {
+        char x;
+        std::cin >> x;
+    }
 }

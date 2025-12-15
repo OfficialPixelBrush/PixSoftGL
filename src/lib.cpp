@@ -178,7 +178,7 @@ extern "C" {
     }
 
     void glBindTexture(GLenum target, GLuint texture) {
-        PrintInfo("glBindTexture ");
+        //PrintInfo("glBindTexture ");
         if (forwardToSystemGl) {
             static void (*real_gl)(GLenum,GLuint) = NULL;
             if (!real_gl) {
@@ -194,8 +194,7 @@ extern "C" {
             }
             Record_glBindTexture(target,texture);
         }
-
-        PrintInfo("\n");
+        //PrintInfo("\n");
     }
 
     void glDeleteLists(GLuint list, GLsizei range) {
@@ -251,7 +250,8 @@ extern "C" {
     }
 
     void glCallList(GLuint list) {
-        PrintInfo("glCallList");
+        PrintInfo("glCallList ");
+        PrintInfo(list);
         if (forwardToSystemGl) {
             static void (*real_gl)(GLuint) = NULL;
             if (!real_gl) {
@@ -714,12 +714,15 @@ extern "C" {
         }
         PrintInfo("glReadPixels ");
         if (!pixels) return;
+
+        int xEnd = std::min(x + width, renderAreaWidth);
+        int yEnd = std::min(y + height, renderAreaHeight);
         // Assume format is always RGBA
         // Assume format is always unsigned Byte
         uint8_t* pix = static_cast<uint8_t*>(pixels);
-        for (int iy = y; iy < y + height; iy++) {
-            for (int ix = x; ix < x+width; ix++) {
-                int srcY = (renderAreaHeight - 1 - iy);
+        for (int iy = y; iy < yEnd; iy++) {
+            int srcY = (renderAreaHeight - 1 - iy);
+            for (int ix = x; ix < xEnd; ix++) {
                 PixelValue c = frameBufferColor[ix + srcY * renderAreaWidth];
                 *pix++ = c.r;
                 *pix++ = c.g;
@@ -852,6 +855,13 @@ extern "C" {
 
     void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
         PrintInfo("glVertexPointer ");
+        PrintInfo(size);
+        PrintInfo(" - ");
+        PrintInfoHex(type);
+        PrintInfo(" - ");
+        PrintInfo(stride);
+        PrintInfo(" - ");
+        PrintInfoAddr((void*)ptr);
         if (forwardToSystemGl) {
             static void (*real_gl)(GLint,GLenum,GLsizei,const GLvoid*) = NULL;
             if (!real_gl) {
@@ -861,11 +871,20 @@ extern "C" {
         }
         vertexArrayPointer = ptr;
         vertexArrayStride = stride;
+        vertexArrayType = type;
+        vertexArrayTypeSize = size;
         PrintInfo("\n");
     }
     
     void glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
         PrintInfo("glColorPointer ");
+        PrintInfo(size);
+        PrintInfo(" - ");
+        PrintInfoHex(type);
+        PrintInfo(" - ");
+        PrintInfo(stride);
+        PrintInfo(" - ");
+        PrintInfoAddr((void*)ptr);
         if (forwardToSystemGl) {
             static void (*real_gl)(GLint,GLenum,GLsizei,const GLvoid*) = NULL;
             if (!real_gl) {
@@ -875,11 +894,20 @@ extern "C" {
         }
         colorArrayPointer = ptr;
         colorArrayStride = stride;
+        colorArrayType = type;
+        colorArrayTypeSize = size;
         PrintInfo("\n");
     }
 
     void glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *ptr) {
         PrintInfo("glTexCoordPointer ");
+        PrintInfo(size);
+        PrintInfo(" - ");
+        PrintInfoHex(type);
+        PrintInfo(" - ");
+        PrintInfo(stride);
+        PrintInfo(" - ");
+        PrintInfoAddr((void*)ptr);
         if (forwardToSystemGl) {
             static void (*real_gl)(GLint,GLenum,GLsizei,const GLvoid*) = NULL;
             if (!real_gl) {
@@ -889,6 +917,8 @@ extern "C" {
         }
         textureArrayPointer = ptr;
         textureArrayStride = stride;
+        textureArrayType = type;
+        textureArrayTypeSize = size;
         PrintInfo("\n");
     }
 
@@ -917,7 +947,7 @@ extern "C" {
         PrintInfo("glDrawElements ");
         PrintInfoHex(mode);
         PrintInfo(" - ");
-        PrintInfoHex(count);
+        PrintInfo(count);
         PrintInfo(" - ");
         PrintInfoHex(type);
         PrintInfo("\n");

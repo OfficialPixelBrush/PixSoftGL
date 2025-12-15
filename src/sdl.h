@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <string>
 
+void PrintInfoAddr(void* s);
 void PrintInfoHex(int s);
 void PrintInfo(int s);
 void PrintInfo(const std::string& s);

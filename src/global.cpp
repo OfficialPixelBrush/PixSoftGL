@@ -88,14 +88,20 @@ std::vector<TextureSlot> textureArray;
 bool vertexArrayActive = false;
 const GLvoid *vertexArrayPointer = nullptr;
 GLint vertexArrayStride = 0;
+GLenum vertexArrayType = 0;
+GLenum vertexArrayTypeSize = 0;
 
 bool colorArrayActive = false;
 const GLvoid *colorArrayPointer = nullptr;
 GLint colorArrayStride = 0;
+GLenum colorArrayType = 0;
+GLenum colorArrayTypeSize = 0;
 
 bool textureArrayActive = false;
 const GLvoid *textureArrayPointer = nullptr;
-GLint textureArrayStride =  0;
+GLint textureArrayStride = 0;
+GLenum textureArrayType = 0;
+GLenum textureArrayTypeSize = 0;
 
 // GL error global
 GLenum errorState = 0;

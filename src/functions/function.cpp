@@ -350,7 +350,7 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
         if (vertexArrayStride > 0) 
             base = (const uint8_t*)vertexArrayPointer + (i*vertexArrayStride);
         else
-            base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*3));
+            base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*vertexArrayTypeSize));
         const float* p = (const float*)base;
         return Vec3{p[0], p[1], p[2]};
     };
@@ -361,7 +361,7 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
         if (colorArrayStride > 0) 
             base = (const uint8_t*)colorArrayPointer + (i*colorArrayStride);
         else
-            base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*4));
+            base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*colorArrayTypeSize));
         const uint8_t* c = base;
         return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
     };
@@ -372,7 +372,7 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
         if (textureArrayStride > 0) 
             base = (const uint8_t*)textureArrayPointer + (i*textureArrayStride);
         else
-            base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*2));
+            base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*textureArrayTypeSize));
         const float* t = (const float*)base;
         return Vec2{t[0], t[1]};
     };
