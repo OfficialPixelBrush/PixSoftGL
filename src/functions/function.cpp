@@ -231,17 +231,29 @@ void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n,
 void Process_glPushMatrix() {
     switch(matrixMode) {
         case GL_PROJECTION:
+            if (projMatrixPtr >= MAX_PROJECTION_STACK_DEPTH - 1) {
+                errorState = GL_STACK_OVERFLOW;
+                return;
+            }
             projMatrices[projMatrixPtr + 1] = projMatrices[projMatrixPtr];
             projMatrixPtr++;
             lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
+            if (modelMatrixPtr >= MAX_MODELVIEW_STACK_DEPTH - 1) {
+                errorState = GL_STACK_OVERFLOW;
+                return;
+            }
             modelMatrices[modelMatrixPtr + 1] = modelMatrices[modelMatrixPtr];
             modelMatrixPtr++;
             lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
         case GL_TEXTURE:
-            texMatrices[modelMatrixPtr + 1] = texMatrices[texMatrixPtr];
+            if (texMatrixPtr >= MAX_TEXTURE_STACK_DEPTH - 1) {
+                errorState = GL_STACK_OVERFLOW;
+                return;
+            }
+            texMatrices[texMatrixPtr + 1] = texMatrices[texMatrixPtr];
             texMatrixPtr++;
             lastAccessedMatrix = &texMatrices[texMatrixPtr];
             break;
@@ -251,14 +263,20 @@ void Process_glPushMatrix() {
 void Process_glPopMatrix() {
     switch(matrixMode) {
         case GL_PROJECTION:
+            if (projMatrixPtr-1 < 0) 
+                errorState = GL_STACK_UNDERFLOW; return;
             projMatrixPtr--;
             lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
+            if (modelMatrixPtr-1 < 0) 
+                errorState = GL_STACK_UNDERFLOW; return;
             modelMatrixPtr--;
             lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
         case GL_TEXTURE:
+            if (texMatrixPtr-1 < 0) 
+                errorState = GL_STACK_UNDERFLOW; return;
             texMatrixPtr--;
             lastAccessedMatrix = &texMatrices[texMatrixPtr];
             break;
