@@ -3,6 +3,7 @@
 
 void Process_glVertex2f(GLfloat x, GLfloat y);
 void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z);
+void Process_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 void Process_glColor3f(GLfloat red, GLfloat green, GLfloat blue);
 void Process_glTexCoord2f(GLfloat s, GLfloat t);
 void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height);

@@ -50,19 +50,19 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
     if (depthTestActive && frameBufferDepth) {
         switch(depthFunction) {
             case GL_LESS:
-                if (screenPos.z > frameBufferDepth[index]) return;
+                if (screenPos.z < frameBufferDepth[index]) return;
                 break;
             case GL_LEQUAL:
-                if (screenPos.z >= frameBufferDepth[index]) return;
+                if (screenPos.z <= frameBufferDepth[index]) return;
                 break;
             case GL_EQUAL:
                 if (screenPos.z == frameBufferDepth[index]) return;
                 break;
             case GL_GEQUAL:
-                if (screenPos.z <= frameBufferDepth[index]) return;
+                if (screenPos.z >= frameBufferDepth[index]) return;
                 break;
             case GL_GREATER:
-                if (screenPos.z < frameBufferDepth[index]) return;
+                if (screenPos.z > frameBufferDepth[index]) return;
                 break;
         }
     }

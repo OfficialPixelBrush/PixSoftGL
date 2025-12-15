@@ -21,6 +21,10 @@ void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
     vertexIndex++;
 }
 
+void Process_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+    currentColor = Col4{red,green,blue, alpha};
+}
+
 void Process_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
     currentColor = Col4{red,green,blue, 1.0};
 }
@@ -417,86 +421,71 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
 
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
 {
-    if ((mode != GL_TRIANGLES && mode != GL_QUADS) || !indices)
+    if (!vertexArrayPointer) {
+        errorState = GL_INVALID_OPERATION;
+        return;
+    }
+
+    if (count < 0) {
+        errorState = GL_INVALID_VALUE;
+        return;
+    }
+
+    if (!indices)
         return;
 
-    // We don't have to figure out the offsets for interleaved data, because 
-    // The pointer to that data should already give us that offset. All we need to add
-    // Is the stride
+    const uint8_t* indicesUByte = nullptr;
+    const uint16_t* indicesUShort = nullptr;
+    const uint32_t* indicesUInt = nullptr;
+
+    switch (type) {
+        case GL_UNSIGNED_BYTE:    indicesUByte = (const uint8_t*)indices; break;
+        case GL_UNSIGNED_SHORT:   indicesUShort = (const uint16_t*)indices; break;
+        case GL_UNSIGNED_INT:     indicesUInt = (const uint32_t*)indices; break;
+        default:
+            errorState = GL_INVALID_ENUM;
+            return;
+    }
+
     auto fetchPos = [&](int i) -> Vec3 {
         if (!vertexArrayPointer) return Vec3{0,0,0};
-        const uint8_t* base;
-        if (vertexArrayStride > 0)
-            base = (const uint8_t*)vertexArrayPointer + (i * vertexArrayStride);
-        else
-            base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*3));
+        const uint8_t* base = (const uint8_t*)vertexArrayPointer + i * (vertexArrayStride > 0 ? vertexArrayStride : sizeof(GLfloat)*3);
         const GLfloat* p = (const GLfloat*)base;
-        return Vec3{ p[0], p[1], p[2] };
+        return Vec3{p[0], p[1], p[2]};
     };
 
     auto fetchCol = [&](int i) -> Col4 {
         if (!colorArrayPointer) return Col4{1,1,1,1};
-        const uint8_t* base;
-        if (colorArrayStride > 0)
-            base = (const uint8_t*)colorArrayPointer + (i * colorArrayStride);
-        else
-            base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*4));
+        const uint8_t* base = (const uint8_t*)colorArrayPointer + i * (colorArrayStride > 0 ? colorArrayStride : sizeof(GLubyte)*4);
         const GLubyte* c = (const GLubyte*)base;
         return Col4{ c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f };
     };
 
     auto fetchUV = [&](int i) -> Vec2 {
         if (!textureArrayPointer) return Vec2{0,0};
-        const uint8_t* base;
-        if (textureArrayStride > 0)
-            base = (const uint8_t*)textureArrayPointer + (i * textureArrayStride);
-        else
-            base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*2));
+        const uint8_t* base = (const uint8_t*)textureArrayPointer + i * (textureArrayStride > 0 ? textureArrayStride : sizeof(GLfloat)*2);
         const GLfloat* t = (const GLfloat*)base;
-        return Vec2{ t[0], t[1] };
+        return Vec2{t[0], t[1]};
     };
 
-
-    auto drawTri = [&](int a, int b, int c){
-        Triangle tri;
-        tri.a.pos = fetchPos(a);
-        tri.b.pos = fetchPos(b);
-        tri.c.pos = fetchPos(c);
-
-        tri.a.col = fetchCol(a);
-        tri.b.col = fetchCol(b);
-        tri.c.col = fetchCol(c);
-
-        tri.a.uv = fetchUV(a);
-        tri.b.uv = fetchUV(b);
-        tri.c.uv = fetchUV(c);
-
-        RenderTriangle(tri);
-    };
-
-    if (type == GL_UNSIGNED_SHORT) {
-        const uint16_t* idx = (const uint16_t*)indices;
-        if (mode == GL_QUADS) {
-            for (int i = 0; i < count; i += 4) {
-                drawTri(idx[i], idx[i+1], idx[i+2]);
-                drawTri(idx[i], idx[i+2], idx[i+3]);
-            }
-        } else { // GL_TRIANGLES
-            for (int i = 0; i < count; i += 3)
-                drawTri(idx[i], idx[i+1], idx[i+2]);
+    Process_glBegin(mode);
+    for (int i = 0; i < count; i++) {
+        int index = indicesUByte ? indicesUByte[i] :
+            (indicesUShort ? indicesUShort[i] : indicesUInt[i]);
+        if (colorArrayPointer) {
+            Col4 col = fetchCol(index);
+            Process_glColor4f(col.r, col.g, col.b, col.a);
         }
-    } else if (type == GL_UNSIGNED_INT) {
-        const uint32_t* idx = (const uint32_t*)indices;
-        if (mode == GL_QUADS) {
-            for (int i = 0; i < count; i += 4) {
-                drawTri(idx[i], idx[i+1], idx[i+2]);
-                drawTri(idx[i], idx[i+2], idx[i+3]);
-            }
-        } else { // GL_TRIANGLES
-            for (int i = 0; i < count; i += 3)
-                drawTri(idx[i], idx[i+1], idx[i+2]);
+        if (textureArrayPointer) {
+            Vec2 uv = fetchUV(index);
+            Process_glTexCoord2f(uv.x, uv.y);
+        }
+        if (vertexArrayPointer) {
+            Vec3 pos = fetchPos(index);
+            Process_glVertex3f(pos.x, pos.y, pos.z);
         }
     }
+    Process_glEnd();
 }
 
 void Process_glGenTextures(GLsizei n, GLuint *textures) {

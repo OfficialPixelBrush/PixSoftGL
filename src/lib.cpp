@@ -818,12 +818,15 @@ extern "C" {
         }
         switch(cap) {
             case GL_VERTEX_ARRAY:
+                PrintInfo("GL_VERTEX_ARRAY ");
                 vertexArrayActive = true;
                 break;
             case GL_COLOR_ARRAY:
+                PrintInfo("GL_COLOR_ARRAY ");
                 colorArrayActive = true;
                 break;
             case GL_TEXTURE_COORD_ARRAY:
+                PrintInfo("GL_TEXTURE_COORD_ARRAY ");
                 textureArrayActive = true;
                 break;
         }
@@ -841,13 +844,19 @@ extern "C" {
         }
         switch(cap) {
             case GL_VERTEX_ARRAY:
+                PrintInfo("GL_VERTEX_ARRAY ");
                 vertexArrayActive = false;
+                vertexArrayPointer = nullptr;
                 break;
             case GL_COLOR_ARRAY:
+                PrintInfo("GL_COLOR_ARRAY ");
                 colorArrayActive = false;
+                colorArrayPointer = nullptr;
                 break;
             case GL_TEXTURE_COORD_ARRAY:
+                PrintInfo("GL_TEXTURE_COORD_ARRAY ");
                 textureArrayActive = false;
+                textureArrayPointer = nullptr;
                 break;
         }
         PrintInfo("\n");
