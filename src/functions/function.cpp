@@ -15,6 +15,10 @@ void Process_glVertex2f(GLfloat x, GLfloat y) {
 }
 
 void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
+    if (vertexIndex >= MAX_VERTICES) {
+        errorState = GL_OUT_OF_MEMORY;
+        return;
+    }
     vertices[vertexIndex].pos = Vec3{x,y,z};
     vertices[vertexIndex].col = currentColor;
     vertices[vertexIndex].uv = currentTextureUV;
@@ -267,20 +271,26 @@ void Process_glPushMatrix() {
 void Process_glPopMatrix() {
     switch(matrixMode) {
         case GL_PROJECTION:
-            if (projMatrixPtr-1 < 0) 
-                errorState = GL_STACK_UNDERFLOW; return;
+            if (projMatrixPtr-1 < 0) {
+                errorState = GL_STACK_UNDERFLOW;
+                return;
+            }
             projMatrixPtr--;
             lastAccessedMatrix = &projMatrices[projMatrixPtr];
             break;
         case GL_MODELVIEW:
-            if (modelMatrixPtr-1 < 0) 
-                errorState = GL_STACK_UNDERFLOW; return;
+            if (modelMatrixPtr-1 < 0) {
+                errorState = GL_STACK_UNDERFLOW;
+                return;
+            }
             modelMatrixPtr--;
             lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
         case GL_TEXTURE:
-            if (texMatrixPtr-1 < 0) 
-                errorState = GL_STACK_UNDERFLOW; return;
+            if (texMatrixPtr-1 < 0) {
+                errorState = GL_STACK_UNDERFLOW;
+                return;
+            }
             texMatrixPtr--;
             lastAccessedMatrix = &texMatrices[texMatrixPtr];
             break;
