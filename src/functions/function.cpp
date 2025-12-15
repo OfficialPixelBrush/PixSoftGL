@@ -159,7 +159,6 @@ void Process_glEnd() {
 }
 
 void Process_glLoadIdentity() {
-    if (!lastAccessedMatrix) return;
     *lastAccessedMatrix = Mat4x4 {
         Vec4 { 1, 0 ,0,0 },
         Vec4 { 0, 1 ,0,0 },
@@ -169,7 +168,6 @@ void Process_glLoadIdentity() {
 }
 
 void Process_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
-    if (!lastAccessedMatrix) return;
     Mat4x4 T = {
         Vec4{1, 0, 0, 0},
         Vec4{0, 1, 0, 0},
@@ -181,7 +179,6 @@ void Process_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
 }
 
 void Process_glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
-    if (!lastAccessedMatrix) return;
     // Convert to radians
     double angle = angleDeg * M_PI / 180.0;
 
@@ -201,7 +198,6 @@ void Process_glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
     *lastAccessedMatrix = (*lastAccessedMatrix) * R;
 }
 void Process_glScalef(GLfloat x, GLfloat y, GLfloat z) {
-    if (!lastAccessedMatrix) return;
     Mat4x4 S = {
         Vec4{double(x), 0, 0, 0},
         Vec4{0, double(y), 0, 0},
@@ -213,8 +209,6 @@ void Process_glScalef(GLfloat x, GLfloat y, GLfloat z) {
 }
 
 void Process_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
-    if (!lastAccessedMatrix) return;
-
     Mat4x4 F = Mat4x4{
         Vec4{ 2*n/(r-l), 0,            0,               0 },
         Vec4{ 0,         2*n/(t-b),    0,               0 },
@@ -225,8 +219,6 @@ void Process_glFrustum(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble 
 }
 
 void Process_glOrtho(GLdouble l, GLdouble r, GLdouble b, GLdouble t, GLdouble n, GLdouble f) {
-    if (!lastAccessedMatrix) return;
-
     Mat4x4 O = Mat4x4{
         Vec4{ 2.0/(r-l), 0,           0,           0 },
         Vec4{ 0,         2.0/(t-b),   0,           0 },
@@ -304,13 +296,12 @@ void Process_glEndList() {
         displayLists.resize(activeDisplayListIndex);
 
     displayLists[idx] = displayListBuffer;
-    displayLists[idx].commands = displayListBuffer.commands;
 
     activeDisplayListIndex = 0;
 }
 
 void Process_glCallList(GLuint list) {
-    if (list == 0 || list > displayLists.size()) {
+    if (list == 0 || list > displayLists.size() || displayLists[list - 1].commands.empty()) {
         errorState = GL_INVALID_VALUE;
         return;
     }
@@ -326,7 +317,7 @@ GLuint Process_glGenLists(GLsizei range) {
 
 GLboolean Process_IsList(GLuint list) {
     if (list == 0 || list > displayLists.size()) return false;
-    return displayLists[list - 1].commands.size() > 0;
+    return displayLists[list - 1].commands.empty();
 }
 
 void Process_glDeleteLists(GLuint list, GLsizei range) {
@@ -417,35 +408,36 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
     auto fetchPos = [&](int i) -> Vec3 {
         if (!vertexArrayPointer) return Vec3{0,0,0};
         const uint8_t* base;
-        if (vertexArrayStride > 0) 
-            base = (const uint8_t*)vertexArrayPointer + (i*vertexArrayStride);
+        if (vertexArrayStride > 0)
+            base = (const uint8_t*)vertexArrayPointer + (i * vertexArrayStride);
         else
             base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*3));
-        const float* p = (const float*)base;
-        return Vec3{p[0], p[1], p[2]};
+        const GLfloat* p = (const GLfloat*)base;
+        return Vec3{ p[0], p[1], p[2] };
     };
 
     auto fetchCol = [&](int i) -> Col4 {
         if (!colorArrayPointer) return Col4{1,1,1,1};
         const uint8_t* base;
-        if (colorArrayStride > 0) 
-            base = (const uint8_t*)colorArrayPointer + (i*colorArrayStride);
+        if (colorArrayStride > 0)
+            base = (const uint8_t*)colorArrayPointer + (i * colorArrayStride);
         else
             base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*4));
-        const uint8_t* c = base;
-        return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
+        const GLubyte* c = (const GLubyte*)base;
+        return Col4{ c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f };
     };
 
     auto fetchUV = [&](int i) -> Vec2 {
         if (!textureArrayPointer) return Vec2{0,0};
         const uint8_t* base;
-        if (textureArrayStride > 0) 
-            base = (const uint8_t*)textureArrayPointer + (i*textureArrayStride);
+        if (textureArrayStride > 0)
+            base = (const uint8_t*)textureArrayPointer + (i * textureArrayStride);
         else
             base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*2));
-        const float* t = (const float*)base;
-        return Vec2{t[0], t[1]};
+        const GLfloat* t = (const GLfloat*)base;
+        return Vec2{ t[0], t[1] };
     };
+
 
     auto drawTri = [&](int a, int b, int c){
         Triangle tri;
@@ -630,6 +622,10 @@ void Process_glMatrixMode(GLenum mode) {
             PrintInfo("GL_MODELVIEW");
             lastAccessedMatrix = &modelMatrices[modelMatrixPtr];
             break;
+        case GL_TEXTURE:
+            PrintInfo("GL_TEXTURE");
+            lastAccessedMatrix = &texMatrices[texMatrixPtr];
+            break;
     }
 }
 
@@ -691,7 +687,7 @@ void Process_glLoadMatrixf(const GLfloat *m) {
 }
 
 void Process_glMultMatrixf(const GLfloat *m) {
-    *lastAccessedMatrix = *lastAccessedMatrix * Mat4x4{
+    *lastAccessedMatrix = (*lastAccessedMatrix) * Mat4x4{
         Vec4{m[0],m[1],m[2],m[3]},
         Vec4{m[4],m[5],m[6],m[7]},
         Vec4{m[8],m[9],m[10],m[11]},

@@ -50,19 +50,19 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
     if (depthTestActive && frameBufferDepth) {
         switch(depthFunction) {
             case GL_LESS:
-                if (screenPos.z < frameBufferDepth[index]) return;
+                if (screenPos.z > frameBufferDepth[index]) return;
                 break;
             case GL_LEQUAL:
-                if (screenPos.z <= frameBufferDepth[index]) return;
+                if (screenPos.z >= frameBufferDepth[index]) return;
                 break;
             case GL_EQUAL:
                 if (screenPos.z == frameBufferDepth[index]) return;
                 break;
             case GL_GEQUAL:
-                if (screenPos.z >= frameBufferDepth[index]) return;
+                if (screenPos.z <= frameBufferDepth[index]) return;
                 break;
             case GL_GREATER:
-                if (screenPos.z > frameBufferDepth[index]) return;
+                if (screenPos.z < frameBufferDepth[index]) return;
                 break;
         }
     }
@@ -167,13 +167,14 @@ void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
 // Render triangle to framebuffer
 void RenderTriangle(Triangle rawTri) {
     Triangle tri = ProjectTriangle(rawTri);
+    //std::cout << rawTri << "\n";
     // Determine bounding area
     int xMin = renderAreaWidth;
     int yMin = renderAreaHeight;
     int xMax = 0;
     int yMax = 0;
 
-    if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
+    //if (tri.a.pos.z < 0 || tri.b.pos.z < 0 || tri.c.pos.z < 0) return;
 
     if (!DetermineBounding(tri, xMin, yMin, xMax, yMax)) return;
 

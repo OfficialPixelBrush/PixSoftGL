@@ -1,6 +1,7 @@
 #pragma once
 
 // Screen RGB Pixels
+#include <ostream>
 struct PixelValue {
     unsigned char r,g,b;
 };
@@ -20,6 +21,11 @@ struct Vec2 {
     Vec2 operator*(const Vec2& o) const {
         return Vec2{x * o.x, y * o.y};
     }
+    
+    friend std::ostream& operator<<(std::ostream& os, const Vec2& v) {
+        os << "(" << (v.x) << ", " << (v.y) << ")";
+        return os;
+    }
 };
 
 // 3D Vector
@@ -36,6 +42,11 @@ struct Vec3 {
 
     Vec3 operator*(const Vec3& o) const {
         return Vec3{x * o.x, y * o.y, z * o.z};
+    }
+    
+    friend std::ostream& operator<<(std::ostream& os, const Vec3& v) {
+        os << "(" << (v.x) << ", " << (v.y) << ", " << (v.z) << ")";
+        return os;
     }
 };
 
@@ -66,6 +77,11 @@ struct Vec4 {
     friend Vec4 operator*(float f, const Vec4& v) {
         return v * f;
     }
+    
+    friend std::ostream& operator<<(std::ostream& os, const Vec4& v) {
+        os << "(" << (v.x) << ", " << (v.y) << ", " << (v.z) << ", " << (v.w) << ")";
+        return os;
+    }
 
 };
 
@@ -76,6 +92,11 @@ struct Col3 {
     Col3 operator*(const Col3& o) const {
         return Col3{r * o.r, g * o.g, b * o.b};
     }
+    
+    friend std::ostream& operator<<(std::ostream& os, const Col3& c) {
+        os << "("  << (c.r) << ", " << (c.g) << ", " << (c.b) << ")";
+        return os;
+    }
 };
 
 // Floating-point r,g,b,a color
@@ -84,6 +105,11 @@ struct Col4 {
     
     Col4 operator*(const Col4& o) const {
         return Col4{r * o.r, g * o.g, b * o.b, a * o.a};
+    }
+    
+    friend std::ostream& operator<<(std::ostream& os, const Col4& c) {
+        os << "("  << (c.r) << ", " << (c.g) << ", " << (c.b) << ", " << (c.a) << ")";
+        return os;
     }
 };
 
@@ -129,6 +155,14 @@ struct Mat4x4 {
     friend Mat4x4 operator*(float f, const Mat4x4& m) {
         return m * f;
     }
+    
+    friend std::ostream& operator<<(std::ostream& os, const Mat4x4& m) {
+        os << "(" << m.a.x << ", " << m.a.y << ", " << m.a.z << ", " << m.a.w << "),"
+           << "(" << m.b.x << ", " << m.b.y << ", " << m.b.z << ", " << m.b.w << "),"
+           << "(" << m.c.x << ", " << m.c.y << ", " << m.c.z << ", " << m.c.w << "),"
+           << "(" << m.d.x << ", " << m.d.y << ", " << m.d.z << ", " << m.d.w << ")";
+        return os;
+    }
 };
 
 // Vertex
@@ -142,6 +176,11 @@ struct Vertex {
 // Triangle
 struct Triangle {
     Vertex a,b,c;
+    
+    friend std::ostream& operator<<(std::ostream& os, const Triangle& t) {
+        os << "(" << t.a.pos << ", " << t.b.pos << ", " << t.c.pos << ")";
+        return os;
+    }
 };
 
 // Light
