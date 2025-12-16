@@ -196,6 +196,9 @@ void ExecuteDisplayList(const DisplayList& dl) {
             case CMD_glDepthFunc:
                 Process_glDepthFunc(c.data.PARAM_glDepthFunc);
                 break;
+            case CMD_glCallList:
+                Process_glCallList(c.data.PARAM_glCallList);
+                break;
             }
     }
 }
@@ -433,5 +436,13 @@ void Record_glDepthFunc(GLenum func) {
     DisplayListCommand c;
     c.type = CMD_glDepthFunc;
     c.data.PARAM_glDepthFunc = {func};
+    displayListBuffer.commands.push_back(c);
+}
+
+void Record_glCallList(GLuint list) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glCallList;
+    c.data.PARAM_glCallList = {list};
     displayListBuffer.commands.push_back(c);
 }

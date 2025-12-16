@@ -33,6 +33,7 @@ struct DisplayListCommand {
         CMD_PARAM_glLoadMatrixf PARAM_glLoadMatrixf;
         CMD_PARAM_glMultMatrixf PARAM_glMultMatrixf;
         GLenum PARAM_glDepthFunc;
+        GLuint PARAM_glCallList;
     } data;
 };
 
@@ -72,3 +73,4 @@ void Record_glFogf(GLenum pname, GLfloat param);
 void Record_glLoadMatrixf(const GLfloat *m);
 void Record_glMultMatrixf(const GLfloat *m);
 void Record_glDepthFunc(GLenum func);
+void Record_glCallList(GLuint list);

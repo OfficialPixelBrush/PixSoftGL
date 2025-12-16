@@ -46,6 +46,7 @@ enum CommandType {
     CMD_glMaterialfv,
     CMD_glDrawArrays,
     CMD_glDepthFunc,
+    CMD_glCallList,
 };
 
 struct CMD_PARAM_glVertex2f {

@@ -269,7 +269,15 @@ extern "C" {
             }
             real_gl(list);
         }
-        Process_glCallList(list);
+
+        if (activeDisplayListIndex == 0) {
+            Process_glCallList(list);
+        } else {
+            if (compileAndExecute) {
+                Process_glCallList(list);
+            }
+            Record_glCallList(list);
+        }
         PrintInfo("\n");
     }
 

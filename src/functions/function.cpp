@@ -28,6 +28,7 @@ void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
     vertices[vertexIndex].uv = currentTextureUV;
     vertexIndex++;
 }
+
 void Process_glVertex3fv(const GLfloat *v) {
     if (vertexIndex >= MAX_VERTICES) {
         errorState = GL_OUT_OF_MEMORY;
@@ -68,7 +69,8 @@ void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
     if (!frameBufferDepth) {
         frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
     }
-
+    
+    ReCreateWindow();
     ClearFramebuffers(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
