@@ -35,11 +35,11 @@ GLfloat texcoords[] = {
 
 // Indices for glDrawElements
 GLushort indices[] = {
-    0, 1, 2, 3
-};
-GLushort indices2[] = {
+    0, 1, 2, 3,
     1, 2, 3, 0
 };
+
+GLushort* indiciesPtr;
 
 bool ind = false;
 
@@ -84,15 +84,13 @@ void drawQuad() {
     glColorPointer(4, GL_UNSIGNED_BYTE, 0, colors);
     glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
-    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indices);
-    /*
     if (ind) {
-        
+        indiciesPtr = indices;
     } else {
-        glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indices2);
+        indiciesPtr = indices+4;
     }
     ind = !ind;
-    */
+    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indiciesPtr);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
