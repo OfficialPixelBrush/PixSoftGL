@@ -104,4 +104,4 @@ GLenum textureArrayType = 0;
 GLenum textureArrayTypeSize = 0;
 
 // GL error global
-GLenum errorState = 0;
+GLenum errorState = GL_NO_ERROR;

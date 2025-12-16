@@ -49,6 +49,18 @@
       "MIMode": "gdb"
     },
     {
+      "type": "cppdbg",
+      "request": "launch",
+      "name": "GL1XTS Run",
+      "program": "/home/torben/GitHub/C_C++/OpenGL-1.x-Test-Suite/build/gl1xts",
+      "cwd": "${workspaceFolder}",
+      "args": [],
+      "environment": [
+        { "name": "LD_PRELOAD", "value": "${workspaceFolder}/build/libGL.so" }
+      ],
+      "MIMode": "gdb"
+    },
+    {
         "name": "Quakespasm SDL2 with Preload",
         "type": "cppdbg",
         "request": "launch",

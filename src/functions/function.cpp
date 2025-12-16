@@ -495,7 +495,7 @@ void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void*
 
     Process_glBegin(mode);
     for (int i = 0; i < count; i++) {
-        int index = indicesUByte ? indicesUByte[i] :
+        GLuint index = indicesUByte ? indicesUByte[i] :
             (indicesUShort ? indicesUShort[i] : indicesUInt[i]);
         if (colorArrayPointer) {
             Col4 col = fetchCol(index);

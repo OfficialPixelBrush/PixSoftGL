@@ -37,6 +37,11 @@ GLfloat texcoords[] = {
 GLushort indices[] = {
     0, 1, 2, 3
 };
+GLushort indices2[] = {
+    1, 2, 3, 0
+};
+
+bool ind = false;
 
 GLuint texture;
 
@@ -80,6 +85,14 @@ void drawQuad() {
     glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
     glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indices);
+    /*
+    if (ind) {
+        
+    } else {
+        glDrawElements(GL_QUADS, 4, GL_UNSIGNED_SHORT, indices2);
+    }
+    ind = !ind;
+    */
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);

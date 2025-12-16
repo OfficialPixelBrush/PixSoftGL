@@ -1,4 +1,6 @@
 #include "lib.h"
+#include "global.h"
+#include <GL/gl.h>
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
@@ -1102,4 +1104,15 @@ extern "C" {
             Record_glMaterialfv(face,pname,params);
         }
     }
+    
+    GLenum glGetError() {
+        if (forwardToSystemGl) {
+            static void (*real_gl)() = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)()) dlsym(RTLD_NEXT, "glGetError");
+            }
+            real_gl();
+        }
+        return errorState;
+    };
 }
