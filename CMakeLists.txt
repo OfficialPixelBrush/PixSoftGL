@@ -14,6 +14,7 @@ add_library(GL SHARED
     src/maths.cpp
     src/displayLists.cpp
     src/functions/function.cpp
+    src/shim.cpp
 )
 
 target_include_directories(GL PRIVATE include)

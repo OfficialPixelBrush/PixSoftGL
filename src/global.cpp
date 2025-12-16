@@ -2,7 +2,7 @@
 #include <GL/gl.h>
 #include <cstddef>
 
-bool forwardToSystemGl = true;
+bool forwardToSystemGl = false;
 
 int vertexIndex = 0;
 
