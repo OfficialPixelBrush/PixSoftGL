@@ -20,7 +20,7 @@ bool depthWriteActive = true;
 bool alphaTestActive = false;
 bool texture2dActive = false;
 
-GLenum depthFunction = GL_GEQUAL;
+GLenum depthFunction = GL_LESS;
 
 // Lights
 bool lightActive[MAX_LIGHTS];

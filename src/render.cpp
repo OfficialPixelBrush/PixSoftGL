@@ -1,6 +1,7 @@
 #include "render.h"
 #include "global.h"
 #include "maths.h"
+#include <cassert>
 #include <cmath>
 #include "sdl.h"
 
@@ -48,41 +49,42 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
 
     // If the new pixel is behind the old one, skip
     if (depthTestActive && frameBufferDepth) {
-        switch(depthFunction) {
+        float oldZ = frameBufferDepth[index];
+        float newZ = screenPos.z;
+
+        switch (depthFunction) {
             case GL_LESS:
-                if (screenPos.z < frameBufferDepth[index]) return;
+                if (newZ >= oldZ) return;
                 break;
             case GL_LEQUAL:
-                if (screenPos.z <= frameBufferDepth[index]) return;
+                if (newZ > oldZ) return;
                 break;
             case GL_EQUAL:
-                if (screenPos.z == frameBufferDepth[index]) return;
-                break;
-            case GL_GEQUAL:
-                if (screenPos.z >= frameBufferDepth[index]) return;
+                if (newZ != oldZ) return;
                 break;
             case GL_GREATER:
-                if (screenPos.z > frameBufferDepth[index]) return;
+                if (newZ <= oldZ) return;
+                break;
+            case GL_GEQUAL:
+                if (newZ < oldZ) return;
                 break;
         }
     }
 
+
     // Apply fog (if active)
     if (fogActive && screenPos.z > fogStart) {
-        float f = 1.0f;
-
+        float f;
         switch (fogMode) {
-            case GL_EXP:
-                f = std::exp(-fogDensity * screenPos.z);
-                break;
-
-            case GL_EXP2: {
-                float d = fogDensity * screenPos.z;
-                f = std::exp(-(d * d));
-            } break;
-
+            default:
             case GL_LINEAR:
-                f = (fogEnd - screenPos.z) / (fogEnd - fogStart);
+                f = (screenPos.z - fogStart) / (fogEnd - fogStart);
+                break;
+            case GL_EXP:
+                f = exp(-fogDensity * screenPos.z);
+                break;
+            case GL_EXP2:
+                f = exp(-(fogDensity * screenPos.z) * (fogDensity * screenPos.z));
                 break;
         }
 
