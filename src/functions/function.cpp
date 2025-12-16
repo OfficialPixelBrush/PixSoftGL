@@ -8,6 +8,10 @@
 #include <cstdlib>
 
 void Process_glVertex2f(GLfloat x, GLfloat y) {
+    if (vertexIndex >= MAX_VERTICES) {
+        errorState = GL_OUT_OF_MEMORY;
+        return;
+    }
     vertices[vertexIndex].pos = Vec3{x,y,0};
     vertices[vertexIndex].col = currentColor;
     vertices[vertexIndex].uv = currentTextureUV;
@@ -20,6 +24,16 @@ void Process_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
         return;
     }
     vertices[vertexIndex].pos = Vec3{x,y,z};
+    vertices[vertexIndex].col = currentColor;
+    vertices[vertexIndex].uv = currentTextureUV;
+    vertexIndex++;
+}
+void Process_glVertex3fv(const GLfloat *v) {
+    if (vertexIndex >= MAX_VERTICES) {
+        errorState = GL_OUT_OF_MEMORY;
+        return;
+    }
+    vertices[vertexIndex].pos = Vec3{v[0],v[1],v[2]};
     vertices[vertexIndex].col = currentColor;
     vertices[vertexIndex].uv = currentTextureUV;
     vertexIndex++;
@@ -55,7 +69,6 @@ void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
         frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
     }
 
-    ReCreateWindow();
     ClearFramebuffers(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

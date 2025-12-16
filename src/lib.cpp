@@ -54,6 +54,26 @@ extern "C" {
         //PrintInfo("\n");
     }
 
+    void glVertex3fv(const GLfloat *v) {
+        //PrintInfo("glVertex3fv");
+        if (forwardToSystemGl) {
+            static void (*real_gl)(const GLfloat *) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(const GLfloat *)) dlsym(RTLD_NEXT, "glVertex3fv");
+            }
+            real_gl(v);
+        }
+        if (activeDisplayListIndex == 0) {
+            Process_glVertex3fv(v);
+        } else {
+            if (compileAndExecute) {
+                Process_glVertex3fv(v);
+            }
+            //Record_glVector3f(v);
+        }
+        //PrintInfo("\n");
+    }
+
     // Adjust OpenGL Viewport
     void glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
         PrintInfo("glViewport");

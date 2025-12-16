@@ -47,6 +47,29 @@
         { "name": "LD_PRELOAD", "value": "${workspaceFolder}/build/libGL.so" }
       ],
       "MIMode": "gdb"
+    },
+    {
+        "name": "Quakespasm SDL2 with Preload",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "/home/torben/quake/quakespasm-sdl2",
+        "args": ["-nosound"],
+        "cwd": "/home/torben/quake",
+        "environment": [
+            {
+                "name": "LD_PRELOAD",
+                "value": "/home/torben/PixSoftGL/build/libGL.so"
+            }
+        ],
+        "stopAtEntry": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ]
     }
   ]
 }

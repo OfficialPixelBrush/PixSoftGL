@@ -9,7 +9,7 @@ SDL_Window *win;
 SDL_Surface *surf;
 bool running = true;
 
-bool printInfo = false;
+bool printInfo = true;
 bool pauseForEveryRefresh = false;
 
 void PrintInfoAddr(void* s) {
