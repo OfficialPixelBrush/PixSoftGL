@@ -1,13 +1,234 @@
-void setup() {
-  // put your setup code here, to run once:
+#define MAX_VERTICES 64
 
+#define MAX_LIGHTS 8
+#define MAX_CLIP_PLANES 6
+#define MAX_MODELVIEW_STACK_DEPTH 32
+#define MAX_PROJECTION_STACK_DEPTH 2
+#define MAX_TEXTURE_STACK_DEPTH 32
+#define MAX_TEXTURE_SIZE 64
+
+#define CODE_MAX_TEXTURE_SIZE 0x0D33
+
+enum PacketType {
+  PacketNone,
+  PacketBegin,
+  PacketEnd,
+  PacketVertex,
+  PacketColor,
+  PacketUV,
+  PacketGet,
+};
+
+enum DataType {
+  TypeBool,
+  TypeByte,
+  TypeShort,
+
+  TypeInteger,
+  TypeInteger2,
+  TypeInteger3,
+  TypeInteger4,
+
+  TypeFloat,
+  TypeFloat2,
+  TypeFloat3,
+  TypeFloat4,
+
+  TypeDouble,
+  TypeDouble2,
+  TypeDouble3,
+  TypeDouble4
+};
+
+struct BasePacket {
+  PacketType ptype = PacketNone;
+};
+
+struct ValuePacket : public BasePacket {
+  DataType dtype;
+};
+
+// Single-value packets
+struct BytePacket : public ValuePacket {
+  char value;
+};
+
+struct ShortPacket : public ValuePacket {
+  short value;
+};
+
+struct IntegerPacket : public ValuePacket {
+  int value;
+};
+
+struct FloatPacket : public ValuePacket {
+  float value;
+};
+
+struct DoublePacket : public ValuePacket {
+  double value;
+};
+
+// Multi-byte packets
+struct Float2fPacket : public ValuePacket {
+  float x,y;
+};
+
+struct Float3fPacket : public ValuePacket {
+  float x,y,z;
+};
+
+struct Float4fPacket : public ValuePacket {
+  float x,y,z,w;
+};
+
+// Active packet and data type
+byte packetType = PacketNone;
+byte dataType = TypeInteger;
+
+void setup() {
+  Serial.begin(115200);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+// Reading of packet types
+void ReadPacketType() {
+  packetType = Serial.read();
+}
 
+void ReadDataType() {
+  dataType = Serial.read();
+}
+
+// Basic communication
+byte ReadByte() {
+  byte value = 0;
+  Serial.readBytes(&value, 1);
+  return value;
+}
+
+void WriteByte(byte value) {
+  Serial.write(value);
+}
+
+short ReadShort() {
+  short value = 0;
+  Serial.readBytes(&value, 2);
+  return value;
+}
+
+void WriteShort(short value) {
+  Serial.write(value);
+}
+
+int ReadInteger() {
+  int value = 0;
+  Serial.readBytes(&value, 4);
+  return value;
+}
+
+void WriteInteger(int value) {
+  Serial.write(value);
+}
+
+float ReadFloat() {
+  float value = 0.0f;
+  Serial.readBytes(&value, 4);
+  return value;
+}
+
+void WriteFloat(float value) {
+  Serial.write(value);
+}
+
+double ReadDouble() {
+  double value = 0.0;
+  Serial.readBytes(&value, 8);
+  return value;
+}
+
+void WriteDouble(double value) {
+  Serial.write(value);
 }
 
 void SendFramebuffer() {
+  // Serial.write()
+}
 
+struct Vec4 {
+  float x,y,z,w;
+};
+
+struct Col4 {
+  float r,g,b,a;
+};
+
+struct Vec2 {
+  float x,y;
+};
+
+struct Vertex {
+  Vec4 pos = Vec4{0,0,0,0};
+  Col4 col = Col4{1,1,1,1};
+  Vec2 uv = Vec2{0,0};
+};
+
+int vertPtr = 0;
+Vertex vertices[MAX_VERTICES];
+
+Vec4 ReadMultiFloat() {
+  Vec4 v;
+  switch (dataType) {
+    case TypeFloat4
+      v.w = ReadFloat();
+    case TypeFloat3
+      v.z = ReadFloat();
+    case TypeFloat2
+      v.y = ReadFloat();
+    case TypeFloat:
+      v.x = ReadFloat();
+      break;
+  }
+  return v;
+}
+
+Col4 activeColor = Col4{0,0,0,1};
+Vec2 activeUV = Vec2{0,0};
+
+void loop() {
+  // send data only when you receive data:
+
+  // If we received nothing, do nothing
+  if (Serial.available() <= 0) return;
+
+  ReadPacketType();
+  switch(packetType) {
+    // Request values from server
+    case PacketGet:
+      short value = ReadShort();
+      switch (value) {
+        case CODE_MAX_TEXTURE_SIZE:
+          WriteInteger(MAX_TEXTURE_SIZE);
+          break;
+      }
+      break;
+    // Receive Vertex from Client
+    case PacketVertex:
+      ReadDataType();
+      Vertex v;
+      v.pos = ReadMultiFloat();
+      v.col = activeColor;
+      v.uv = activeUV;
+      vertices[vertPtr++] = v;
+      break;
+    case PacketColor:
+      ReadDataType();
+      activeColor = ReadMultiFloat();
+      break;
+    case PacketUV:
+      ReadDataType();
+      activeUV = ReadMultiFloat();
+      break;
+    default:
+      break;
+  }
 }
