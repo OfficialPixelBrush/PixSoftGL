@@ -1,8 +1,8 @@
 #include "function.h"
-#include "../render.h"
-#include "../sdl.h"
-#include "../global.h"
-#include "../maths.h"
+#include "render.h"
+#include "sdl.h"
+#include "global.h"
+#include "maths.h"
 #include <GL/gl.h>
 #include <SDL3/SDL_stdinc.h>
 #include <cstdlib>

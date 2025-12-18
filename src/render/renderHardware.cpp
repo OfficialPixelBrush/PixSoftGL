@@ -1,9 +1,4 @@
-#include "render.h"
-#include "global.h"
-#include "maths.h"
-#include <cassert>
-#include <cmath>
-#include "sdl.h"
+#include "renderHardware.h"
 
 void ClearFramebuffers(GLenum mask) {
     // Clear color

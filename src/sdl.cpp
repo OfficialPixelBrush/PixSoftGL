@@ -1,6 +1,6 @@
 #include "sdl.h"
 #include "global.h"
-#include "include/datatypes.h"
+#include "datatypes.h"
 #include "maths.h"
 #include <exception>
 

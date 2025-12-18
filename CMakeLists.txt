@@ -10,14 +10,30 @@ add_library(GL SHARED
     src/global.cpp
     src/lib.cpp
     src/sdl.cpp
-    src/render.cpp
     src/maths.cpp
     src/displayLists.cpp
     src/functions/function.cpp
     src/shim.cpp
 )
 
-target_include_directories(GL PRIVATE include)
+target_include_directories(GL PRIVATE include
+    src/
+    src/render
+    src/functions
+    src/include
+)
+
+set(RENDERTARGET "HARDWARE" CACHE STRING "Renderer target: SOFTWARE or HARDWARE")
+set_property(CACHE RENDERTARGET PROPERTY STRINGS SOFTWARE HARDWARE)
+
+if(RENDERTARGET STREQUAL "SOFTWARE")
+    target_compile_definitions(GL PRIVATE RENDERTARGET_SOFTWARE)
+    target_sources(GL PRIVATE src/render/renderSoftware.cpp)
+else()
+    target_compile_definitions(GL PRIVATE RENDERTARGET_HARDWARE)
+    target_sources(GL PRIVATE src/render/renderHardware.cpp)
+endif()
+
 
 target_link_libraries(GL PRIVATE SDL3::SDL3)
 

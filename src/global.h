@@ -2,8 +2,8 @@
 
 // The current vertex index
 #include "displayLists.h"
-#include "include/datatypes.h"
-#include "include/defines.h"
+#include "datatypes.h"
+#include "defines.h"
 #include <GL/gl.h>
 #include <vector>
 

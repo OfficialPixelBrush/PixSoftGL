@@ -1,6 +1,8 @@
-#pragma once
 #include "global.h"
-#include <algorithm>
+#include "maths.h"
+#include <cassert>
+#include <cmath>
+#include "sdl.h"
 
 void ClearFramebuffers(GLenum mask);
 void RenderPixel(Vec3 screenPos, Col4 color);

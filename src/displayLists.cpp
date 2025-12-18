@@ -1,7 +1,7 @@
 #include "displayLists.h"
 #include "functions/function.h"
 #include "global.h"
-#include "include/commands.h"
+#include "commands.h"
 #include <GL/gl.h>
 
 void ExecuteDisplayList(const DisplayList& dl) {

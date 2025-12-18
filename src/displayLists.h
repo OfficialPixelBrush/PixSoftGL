@@ -1,6 +1,6 @@
 #pragma once
 
-#include "include/commands.h"
+#include "commands.h"
 #include <GL/gl.h>
 #include <vector>
 

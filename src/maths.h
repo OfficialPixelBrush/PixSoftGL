@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm>
 #include "global.h"
-#include "include/datatypes.h"
+#include "datatypes.h"
 
 Col4 lerp(Col4 a, Col4 b, float t);
 Col3 lerp(Col3 a, Col3 b, float t);
