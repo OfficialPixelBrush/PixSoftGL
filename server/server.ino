@@ -112,7 +112,7 @@ void WriteByte(byte value) {
 
 short ReadShort() {
   short value = 0;
-  Serial.readBytes(&value, 2);
+  Serial.readBytes((uint8_t*)&value, 2);
   return value;
 }
 
@@ -122,7 +122,7 @@ void WriteShort(short value) {
 
 int ReadInteger() {
   int value = 0;
-  Serial.readBytes(&value, 4);
+  Serial.readBytes((uint8_t*)&value, 4);
   return value;
 }
 
@@ -132,7 +132,7 @@ void WriteInteger(int value) {
 
 float ReadFloat() {
   float value = 0.0f;
-  Serial.readBytes(&value, 4);
+  Serial.readBytes((uint8_t*)&value, 4);
   return value;
 }
 
@@ -142,7 +142,7 @@ void WriteFloat(float value) {
 
 double ReadDouble() {
   double value = 0.0;
-  Serial.readBytes(&value, 8);
+  Serial.readBytes((uint8_t*)&value, 8);
   return value;
 }
 
@@ -175,20 +175,25 @@ struct Vertex {
 int vertPtr = 0;
 Vertex vertices[MAX_VERTICES];
 
-Vec4 ReadMultiFloat() {
+struct Vec4 ReadMultiFloat() {
   Vec4 v;
   switch (dataType) {
-    case TypeFloat4
+    case TypeFloat4:
       v.w = ReadFloat();
-    case TypeFloat3
+    case TypeFloat3:
       v.z = ReadFloat();
-    case TypeFloat2
+    case TypeFloat2:
       v.y = ReadFloat();
     case TypeFloat:
       v.x = ReadFloat();
       break;
   }
   return v;
+}
+
+struct Col4 ReadMultiFloatCol() {
+  Vec4 v = ReadMultiFloat();
+  return Col4{v.x,v.y,v.z,v.w};
 }
 
 Col4 activeColor = Col4{0,0,0,1};
@@ -203,7 +208,7 @@ void loop() {
   ReadPacketType();
   switch(packetType) {
     // Request values from server
-    case PacketGet:
+    case PacketGet: {
       short value = ReadShort();
       switch (value) {
         case CODE_MAX_TEXTURE_SIZE:
@@ -211,8 +216,9 @@ void loop() {
           break;
       }
       break;
+      }
     // Receive Vertex from Client
-    case PacketVertex:
+    case PacketVertex: {
       ReadDataType();
       Vertex v;
       v.pos = ReadMultiFloat();
@@ -220,14 +226,18 @@ void loop() {
       v.uv = activeUV;
       vertices[vertPtr++] = v;
       break;
-    case PacketColor:
+    }
+    case PacketColor: {
       ReadDataType();
-      activeColor = ReadMultiFloat();
+      activeColor = ReadMultiFloatCol();
       break;
-    case PacketUV:
+    }
+    case PacketUV: {
       ReadDataType();
-      activeUV = ReadMultiFloat();
+      Vec4 mf = ReadMultiFloat();
+      activeUV = Vec2{mf.x,mf.y};
       break;
+    }
     default:
       break;
   }
