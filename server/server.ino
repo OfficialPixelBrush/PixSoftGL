@@ -90,19 +90,11 @@ void setup() {
   Serial.begin(115200);
 }
 
-// Reading of packet types
-void ReadPacketType() {
-  packetType = Serial.read();
-}
-
-void ReadDataType() {
-  dataType = Serial.read();
-}
-
 // Basic communication
 byte ReadByte() {
+  while(Serial.available() < sizeof(byte)) {}
   byte value = 0;
-  Serial.readBytes(&value, 1);
+  Serial.readBytes(&value, sizeof(byte));
   return value;
 }
 
@@ -111,8 +103,9 @@ void WriteByte(byte value) {
 }
 
 short ReadShort() {
+  while(Serial.available() < sizeof(short)) {}
   short value = 0;
-  Serial.readBytes((uint8_t*)&value, 2);
+  Serial.readBytes((uint8_t*)&value, sizeof(short));
   return value;
 }
 
@@ -121,8 +114,9 @@ void WriteShort(short value) {
 }
 
 int ReadInteger() {
+  while(Serial.available() < sizeof(int)) {}
   int value = 0;
-  Serial.readBytes((uint8_t*)&value, 4);
+  Serial.readBytes((uint8_t*)&value, sizeof(int));
   return value;
 }
 
@@ -131,27 +125,38 @@ void WriteInteger(int value) {
 }
 
 float ReadFloat() {
+  while(Serial.available() < sizeof(float)) {}
   float value = 0.0f;
-  Serial.readBytes((uint8_t*)&value, 4);
+  Serial.readBytes((uint8_t*)&value, sizeof(float));
   return value;
 }
 
 void WriteFloat(float value) {
-  Serial.write(value);
+  //Serial.write(value);
 }
 
 double ReadDouble() {
+  while(Serial.available() < sizeof(double)) {}
   double value = 0.0;
-  Serial.readBytes((uint8_t*)&value, 8);
+  Serial.readBytes((uint8_t*)&value, sizeof(double));
   return value;
 }
 
 void WriteDouble(double value) {
-  Serial.write(value);
+  //Serial.write(value);
 }
 
 void SendFramebuffer() {
   // Serial.write()
+}
+
+// Reading of packet types
+void ReadPacketType() {
+  packetType = ReadByte();
+}
+
+void ReadDataType() {
+  dataType = ReadByte();
 }
 
 struct Vec4 {
