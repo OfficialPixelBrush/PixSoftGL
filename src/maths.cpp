@@ -276,8 +276,11 @@ bool DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax
     // Clamp to render area
     xMin = std::max(0, xMin);
     yMin = std::max(0, yMin);
-    xMax = std::min(renderAreaWidth, xMax);
-    yMax = std::min(renderAreaHeight, yMax);
+    // clamp max values to the last valid pixel index instead of the width/height
+    // itself; the calling loops use `<=` when iterating, so using the full
+    // renderAreaWidth would allow an out-of-bounds access.
+    xMax = std::min(renderAreaWidth - 1, xMax);
+    yMax = std::min(renderAreaHeight - 1, yMax);
     return true;
 }
 

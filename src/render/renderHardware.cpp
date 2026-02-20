@@ -5,9 +5,8 @@ void ClearFramebuffers(GLenum mask) {
     if ((mask & GL_COLOR_BUFFER_BIT) && frameBufferColor) {
         PrintInfo("GL_COLOR_BUFFER_BIT ");
         for (int i = 0; i < renderAreaTotal; i++) {
-            Col3 fb = PixelValueToCol3(frameBufferColor[i]);
-            Col3 newColor = lerp(fb,Col3{clearColor.r,clearColor.g,clearColor.b}, clearColor.a);
-            frameBufferColor[i] = Col3ToPixelValue(newColor);
+            frameBufferColor[i] = Col3ToPixelValue(
+                    Col3{clearColor.r, clearColor.g, clearColor.b});
         }
     }
     // Clear depth
@@ -48,21 +47,30 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
         float newZ = screenPos.z;
 
         switch (depthFunction) {
+            case GL_NEVER:
+                return;
             case GL_LESS:
                 if (newZ >= oldZ) return;
-                break;
-            case GL_LEQUAL:
-                if (newZ > oldZ) return;
                 break;
             case GL_EQUAL:
                 if (newZ != oldZ) return;
                 break;
+            case GL_LEQUAL:
+                if (newZ > oldZ) return;
+                break;
             case GL_GREATER:
                 if (newZ <= oldZ) return;
+                break;
+            case GL_NOTEQUAL:
+                if (newZ == oldZ) return;
                 break;
             case GL_GEQUAL:
                 if (newZ < oldZ) return;
                 break;
+            case GL_ALWAYS:
+                break;
+            default:
+                return;
         }
     }
 
@@ -73,7 +81,11 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
         switch (fogMode) {
             default:
             case GL_LINEAR:
-                f = (screenPos.z - fogStart) / (fogEnd - fogStart);
+                if (fogEnd == fogStart) {
+                    f = 1.0f;
+                } else {
+                    f = (screenPos.z - fogStart) / (fogEnd - fogStart);
+                }
                 break;
             case GL_EXP:
                 f = exp(-fogDensity * screenPos.z);
