@@ -4,12 +4,11 @@ project(GL_Library LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(SDL3 REQUIRED)
+#find_package(SDL3 REQUIRED)
 
 add_library(GL SHARED
     src/global.cpp
     src/lib.cpp
-    src/sdl.cpp
     src/maths.cpp
     src/displayLists.cpp
     src/functions/function.cpp

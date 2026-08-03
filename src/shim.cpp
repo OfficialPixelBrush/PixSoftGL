@@ -7,7 +7,6 @@
 #include "display/x11_display.h"
 #include "global.h"
 #include "lib.h"
-#include "sdl.h"
 
 namespace {
 

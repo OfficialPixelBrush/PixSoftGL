@@ -2,7 +2,6 @@
 #include "global.h"
 #include "datatypes.h"
 #include "render.h"
-#include "sdl.h"
 #include "maths.h"
 #include "function.h"
 #include <GL/gl.h>
