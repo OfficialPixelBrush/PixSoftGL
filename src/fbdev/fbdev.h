@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "datatypes.h"
 #include <string>
 #include <vector>
 
@@ -13,6 +14,10 @@ struct VideoMode {
 
 class FbDevice {
 public:
+    struct Channel {
+        uint32_t offset = 0;
+        uint32_t length = 0;
+    };
     FbDevice();
     ~FbDevice();
 
@@ -39,7 +44,7 @@ public:
     void unmapFramebuffer();
     bool isMapped() const { return fbMem != nullptr; }
 
-    bool present(const uint8_t* rgba, int srcWidth, int srcHeight);
+    bool present(const PixelValue* pixels, int srcWidth, int srcHeight);
 
 private:
     bool queryScreenInfo();
@@ -55,6 +60,8 @@ private:
     int screenBpp = 0;
     int lineLength_ = 0;
     size_t fbSize = 0;
+
+    Channel red_, green_, blue_, transp_;
 
     void* fbMem = nullptr;
 };

@@ -2,7 +2,7 @@
 #include "maths.h"
 #include <cassert>
 #include <cmath>
-#include "sdl.h"
+#include "framebuffer.h"
 
 void ClearFramebuffers(GLenum mask);
 void RenderPixel(Vec3 screenPos, Col4 color);

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdlib>
 
-bool forwardToSystemGl = std::getenv("PIXSOFTGL_WM") == nullptr;
+bool forwardToSystemGl = false;
 
 int vertexIndex = 0;
 

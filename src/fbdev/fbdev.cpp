@@ -1,5 +1,6 @@
 #include "fbdev.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
@@ -115,6 +116,11 @@ bool FbDevice::queryScreenInfo() {
     screenBpp = static_cast<int>(vinfo.bits_per_pixel);
     lineLength_ = static_cast<int>(finfo.line_length);
     fbSize = finfo.smem_len;
+
+    red_ = {vinfo.red.offset, vinfo.red.length};
+    green_ = {vinfo.green.offset, vinfo.green.length};
+    blue_ = {vinfo.blue.offset, vinfo.blue.length};
+    transp_ = {vinfo.transp.offset, vinfo.transp.length};
     return true;
 }
 
@@ -216,42 +222,73 @@ void FbDevice::unmapFramebuffer() {
     }
 }
 
-bool FbDevice::present(const uint8_t* rgba, int srcWidth, int srcHeight) {
-    if (!rgba) return false;
+namespace {
+
+uint32_t scaleChannel(uint8_t value, uint32_t bits) {
+    if (bits == 0) return 0;
+    if (bits >= 8) return static_cast<uint32_t>(value) << (bits - 8);
+    const uint32_t maxValue = (1u << bits) - 1u;
+    return (static_cast<uint32_t>(value) * maxValue + 127u) / 255u;
+}
+
+uint32_t mapChannel(uint8_t value, uint32_t offset, uint32_t length) {
+    if (length == 0) return 0;
+    return scaleChannel(value, length) << offset;
+}
+
+uint32_t mapPixel(const PixelValue& p,
+                  const FbDevice::Channel& r,
+                  const FbDevice::Channel& g,
+                  const FbDevice::Channel& b,
+                  const FbDevice::Channel& a) {
+    return mapChannel(p.r, r.offset, r.length) |
+           mapChannel(p.g, g.offset, g.length) |
+           mapChannel(p.b, b.offset, b.length) |
+           mapChannel(255, a.offset, a.length);
+}
+
+} // namespace
+
+bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
+    if (!pixels || srcWidth <= 0 || srcHeight <= 0) return false;
 
     void* mem = fbMem ? fbMem : mapFramebuffer();
     if (!mem) return false;
 
-    const int dstW = screenWidth;
-    const int dstH = screenHeight;
-    const int copyW = srcWidth < dstW ? srcWidth : dstW;
-    const int copyH = srcHeight < dstH ? srcHeight : dstH;
-
+    // The renderer uses OpenGL's bottom-left origin. Linux fbdev scanout is
+    // normally top-left, so present the image vertically flipped.
+    const int copyW = std::min(srcWidth, screenWidth);
+    const int copyH = std::min(srcHeight, screenHeight);
     auto* dst = static_cast<uint8_t*>(mem);
 
-    if (screenBpp == 32 || screenBpp == 24) {
-        for (int y = 0; y < copyH; ++y) {
-            uint8_t* row = dst + y * lineLength_;
-            for (int x = 0; x < copyW; ++x) {
-                const int srcIdx = (x + y * srcWidth) * 3;
-                uint8_t* px = row + x * (screenBpp / 8);
-                px[0] = rgba[srcIdx + 2];
-                px[1] = rgba[srcIdx + 1];
-                px[2] = rgba[srcIdx + 0];
-                if (screenBpp == 32) px[3] = 0;
-            }
-        }
-    } else if (screenBpp == 16) {
-        for (int y = 0; y < copyH; ++y) {
-            uint16_t* row = reinterpret_cast<uint16_t*>(dst + y * lineLength_);
-            for (int x = 0; x < copyW; ++x) {
-                const int srcIdx = (x + y * srcWidth) * 3;
-                const uint8_t r = rgba[srcIdx + 0];
-                const uint8_t g = rgba[srcIdx + 1];
-                const uint8_t b = rgba[srcIdx + 2];
-                row[x] = static_cast<uint16_t>(
-                    ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
-            }
+    if (screenBpp != 8 && screenBpp != 16 &&
+        screenBpp != 24 && screenBpp != 32) {
+        std::cerr << "PixSoftGL: unsupported framebuffer depth "
+                  << screenBpp << "bpp\n";
+        return false;
+    }
+
+    // True/direct-color fbdev modes describe their layout with bitfields.
+    // This avoids assuming RGB565/BGR888/ARGB8888 and handles unusual
+    // hardware layouts correctly.
+    if (red_.length == 0 || green_.length == 0 || blue_.length == 0) {
+        std::cerr << "PixSoftGL: framebuffer has no RGB bitfield mapping\n";
+        return false;
+    }
+
+    const int bytesPerPixel = (screenBpp + 7) / 8;
+    for (int y = 0; y < copyH; ++y) {
+        const int srcY = srcHeight - 1 - y;
+        uint8_t* row = dst + static_cast<size_t>(y) * lineLength_;
+
+        for (int x = 0; x < copyW; ++x) {
+            const PixelValue& p = pixels[x + srcY * srcWidth];
+            const uint32_t packed = mapPixel(p, red_, green_, blue_, transp_);
+
+            // fbdev bitfields describe a native pixel value. Copy only the
+            // number of bytes occupied by the selected framebuffer format.
+            std::memcpy(row + static_cast<size_t>(x) * bytesPerPixel,
+                        &packed, static_cast<size_t>(bytesPerPixel));
         }
     }
 

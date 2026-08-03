@@ -8,8 +8,6 @@
 #include <vector>
 
 // SDL Stuff
-SDL_Window *win;
-SDL_Surface *surf;
 bool running = true;
 
 bool printInfo = true;

@@ -1,10 +1,9 @@
 #include "function.h"
 #include "render.h"
-#include "sdl.h"
+#include "framebuffer.h"
 #include "global.h"
 #include "maths.h"
 #include <GL/gl.h>
-#include <SDL3/SDL_stdinc.h>
 #include <cstdlib>
 
 void Process_glVertex2f(GLfloat x, GLfloat y) {
