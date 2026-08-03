@@ -1,5 +1,6 @@
 #include "function.h"
 #include "render.h"
+#include "sdl.h"
 #include "global.h"
 #include "maths.h"
 #include <GL/gl.h>
