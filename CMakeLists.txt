@@ -35,6 +35,6 @@ else()
 endif()
 
 
-target_link_libraries(GL PRIVATE SDL3::SDL3)
+#target_link_libraries(GL PRIVATE SDL3::SDL3)
 
 set_target_properties(GL PROPERTIES OUTPUT_NAME "GL")

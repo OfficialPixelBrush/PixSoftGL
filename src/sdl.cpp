@@ -1,8 +1,11 @@
 #include "sdl.h"
+#include "display/x11_display.h"
 #include "global.h"
 #include "datatypes.h"
 #include "maths.h"
+#include <cstdlib>
 #include <exception>
+#include <vector>
 
 // SDL Stuff
 SDL_Window *win;
@@ -124,33 +127,62 @@ void DrawPixel(PixelValue p, int x, int y) {
     */
 }
 
-// Draw the framebuffer colors to the SDL Window
+static std::vector<uint8_t> presentBuffer;
+
+static void blitFrameBufferRgb(uint8_t* dst) {
+    if (!frameBufferColor || !dst) return;
+    for (int y = 0; y < renderAreaHeight; y++) {
+        for (int x = 0; x < renderAreaWidth; x++) {
+            const int src_index = x + y * renderAreaWidth;
+            const int dst_index = src_index * 3;
+            if (src_index >= renderAreaTotal) break;
+            PixelValue p = frameBufferColor[src_index];
+            dst[dst_index + 0] = p.r;
+            dst[dst_index + 1] = p.g;
+            dst[dst_index + 2] = p.b;
+        }
+    }
+}
+
+// Draw the framebuffer colors to the active display target
 void UpdateScreen() {
-    if (!frameBufferColor || !surf) return;
-    
+    if (!frameBufferColor) return;
+
+    const size_t rgbBytes = static_cast<size_t>(renderAreaTotal) * 3;
+    if (presentBuffer.size() != rgbBytes) {
+        presentBuffer.resize(rgbBytes);
+    }
+    blitFrameBufferRgb(presentBuffer.data());
+
+    if (X11DisplayGetContext()) {
+        X11DisplayPresent(presentBuffer.data(), renderAreaWidth, renderAreaHeight);
+        if (pauseForEveryRefresh) {
+            char x;
+            std::cin >> x;
+        }
+        return;
+    }
+
+    if (!surf) return;
+
     bool needs_lock = SDL_MUSTLOCK(surf);
     if (needs_lock && SDL_LockSurface(surf) != 0) return;
-    
-    // Assuming 32-bit RGBA format (verify this matches your surface!)
+
     uint32_t *pixels = (uint32_t*)surf->pixels;
-    int pitch_in_pixels = surf->pitch / 4;  // Convert byte pitch to pixel pitch
-    
+    int pitch_in_pixels = surf->pitch / 4;
+
     for (int y = 0; y < renderAreaHeight; y++) {
         for (int x = 0; x < renderAreaWidth; x++) {
             int src_index = x + y * renderAreaWidth;
             int dst_index = x + y * pitch_in_pixels;
-            
+
             if (src_index >= renderAreaTotal) break;
-            
+
             PixelValue p = frameBufferColor[src_index];
-            
-            // Direct pixel write (assumes RGBA8888 or BGRA8888)
-            // Adjust byte order based on your surface format
             pixels[dst_index] = (255 << 24) | (p.r << 16) | (p.g << 8) | p.b;
-            // OR for RGBA: pixels[dst_index] = (p.r << 24) | (p.g << 16) | (p.b << 8) | 255;
         }
     }
-    
+
     if (needs_lock) SDL_UnlockSurface(surf);
     SDL_KeepAliveAndUpdate();
     if (pauseForEveryRefresh) {

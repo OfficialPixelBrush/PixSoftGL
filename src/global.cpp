@@ -1,8 +1,9 @@
 #include "global.h"
 #include <GL/gl.h>
 #include <cstddef>
+#include <cstdlib>
 
-bool forwardToSystemGl = true;
+bool forwardToSystemGl = std::getenv("PIXSOFTGL_WM") == nullptr;
 
 int vertexIndex = 0;
 
