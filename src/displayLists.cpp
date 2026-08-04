@@ -3,6 +3,7 @@
 #include "global.h"
 #include "commands.h"
 #include <GL/gl.h>
+#include <cstdint>
 
 void ExecuteDisplayList(const DisplayList& dl) {
     for (int i = 0; i < dl.commands.size(); i++) {
@@ -42,6 +43,14 @@ void ExecuteDisplayList(const DisplayList& dl) {
                     c.data.PARAM_glColor3f.red,
                     c.data.PARAM_glColor3f.green,
                     c.data.PARAM_glColor3f.blue    
+                );
+                break;
+            case CMD_glColor4f:
+                Process_glColor4f(
+                    c.data.PARAM_glColor4f.red,
+                    c.data.PARAM_glColor4f.green,
+                    c.data.PARAM_glColor4f.blue,
+                    c.data.PARAM_glColor4f.alpha
                 );
                 break;
             case CMD_glGetString:
@@ -227,6 +236,14 @@ void Record_glColor3f(GLfloat red, GLfloat green, GLfloat blue) {
     displayListBuffer.commands.push_back(c);
 }
 
+void Record_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+    if (activeDisplayListIndex == 0) return;
+    DisplayListCommand c;
+    c.type = CMD_glColor4f;
+    c.data.PARAM_glColor4f = {red, green, blue, alpha};
+    displayListBuffer.commands.push_back(c);
+}
+
 void Record_glTexCoord2f(GLfloat s, GLfloat t) {
     if (activeDisplayListIndex == 0) return;
     DisplayListCommand c;
@@ -377,10 +394,67 @@ void Record_glFrontFace(GLenum mode) {
 
 void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
     if (activeDisplayListIndex == 0) return;
-    DisplayListCommand c;
-    c.type = CMD_glDrawArrays;
-    c.data.PARAM_glDrawArrays = {mode,first,count};
-    displayListBuffer.commands.push_back(c);
+    if (!vertexArrayActive || !vertexArrayPointer || count <= 0) return;
+
+    // OpenGL copies array contents into the list. Storing a pointer would dangle
+    // (Minecraft font glyphs compile Tessellator draws into display lists).
+    auto typeBytes = [](GLenum type) -> int {
+        switch (type) {
+        case GL_BYTE: case GL_UNSIGNED_BYTE: return 1;
+        case GL_SHORT: case GL_UNSIGNED_SHORT: return 2;
+        case GL_INT: case GL_UNSIGNED_INT: case GL_FLOAT: return 4;
+        case GL_DOUBLE: return 8;
+        default: return 4;
+        }
+    };
+    auto elemPtr = [&](const void* base, GLsizei stride, GLint size, GLenum type, int index) -> const uint8_t* {
+        const int natural = size * typeBytes(type);
+        const int step = stride > 0 ? stride : natural;
+        return static_cast<const uint8_t*>(base) + index * step;
+    };
+
+    Record_glBegin(mode);
+    for (int i = 0; i < count; ++i) {
+        const int idx = first + i;
+        if (textureArrayActive && textureArrayPointer) {
+            const uint8_t* p = elemPtr(textureArrayPointer, textureArrayStride,
+                                       textureArrayTypeSize, textureArrayType, idx);
+            if (textureArrayType == GL_FLOAT) {
+                const float* f = reinterpret_cast<const float*>(p);
+                Record_glTexCoord2f(f[0], textureArrayTypeSize > 1 ? f[1] : 0.0f);
+            }
+        }
+        // Only bake colors when a color array is enabled. Font glyph lists
+        // (Tessellator UV+pos only) must keep execute-time glColor4f / color lists.
+        if (colorArrayActive && colorArrayPointer) {
+            const uint8_t* p = elemPtr(colorArrayPointer, colorArrayStride,
+                                       colorArrayTypeSize, colorArrayType, idx);
+            if (colorArrayType == GL_UNSIGNED_BYTE) {
+                Record_glColor4f(
+                    p[0] / 255.0f,
+                    colorArrayTypeSize > 1 ? p[1] / 255.0f : p[0] / 255.0f,
+                    colorArrayTypeSize > 2 ? p[2] / 255.0f : p[0] / 255.0f,
+                    colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f);
+            } else if (colorArrayType == GL_FLOAT) {
+                const float* f = reinterpret_cast<const float*>(p);
+                Record_glColor4f(
+                    f[0],
+                    colorArrayTypeSize > 1 ? f[1] : f[0],
+                    colorArrayTypeSize > 2 ? f[2] : f[0],
+                    colorArrayTypeSize > 3 ? f[3] : 1.0f);
+            }
+        }
+
+        const uint8_t* vp = elemPtr(vertexArrayPointer, vertexArrayStride,
+                                    vertexArrayTypeSize, vertexArrayType, idx);
+        if (vertexArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(vp);
+            Record_glVector3f(f[0],
+                              vertexArrayTypeSize > 1 ? f[1] : 0.0f,
+                              vertexArrayTypeSize > 2 ? f[2] : 0.0f);
+        }
+    }
+    Record_glEnd();
 }
 
 void Record_glFogiv(GLenum pname, const GLint *params) {

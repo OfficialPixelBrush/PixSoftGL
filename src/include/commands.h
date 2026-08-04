@@ -10,6 +10,7 @@ enum CommandType {
     CMD_glViewport,
     CMD_glClearColor,
     CMD_glColor3f,
+    CMD_glColor4f,
     CMD_glGetString,
     CMD_glLightfv,
     CMD_glGenLists,
@@ -89,6 +90,10 @@ struct CMD_PARAM_glBindTexture {
 
 struct CMD_PARAM_glColor3f {
     GLfloat red, green, blue;
+};
+
+struct CMD_PARAM_glColor4f {
+    GLfloat red, green, blue, alpha;
 };
 
 struct CMD_PARAM_glDrawElements {

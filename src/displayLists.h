@@ -18,6 +18,7 @@ struct DisplayListCommand {
         GLenum PARAM_glBegin;
         CMD_PARAM_glBindTexture PARAM_glBindTexture;
         CMD_PARAM_glColor3f PARAM_glColor3f;
+        CMD_PARAM_glColor4f PARAM_glColor4f;
         CMD_PARAM_glDrawElements PARAM_glDrawElements;
         CMD_PARAM_glMaterialfv PARAM_glMaterialfv;
         GLenum PARAM_glEnable;
@@ -46,6 +47,7 @@ void ExecuteDisplayList(const DisplayList& dl);
 void Record_glVector2f(GLfloat x, GLfloat y);
 void Record_glVector3f(GLfloat x, GLfloat y, GLfloat z);
 void Record_glColor3f(GLfloat red, GLfloat green, GLfloat blue);
+void Record_glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 void Record_glTexCoord2f(GLfloat s, GLfloat t);
 void Record_glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 void Record_glBegin(GLenum mode);

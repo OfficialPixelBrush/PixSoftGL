@@ -173,6 +173,48 @@ void packTopLeft(
     const unsigned long gMask = ctx.visual->green_mask;
     const unsigned long bMask = ctx.visual->blue_mask;
 
+    (void)fbHeight;
+
+    // Fast path: 32bpp with 8-bit channels in common TrueColor layouts.
+    if (bpp == 32 && rMask && gMask && bMask) {
+        // Standard X11 24-in-32: R=0xff0000 G=0xff00 B=0xff (or swapped).
+        if ((rMask == 0x00ff0000ul && gMask == 0x0000ff00ul && bMask == 0x000000fful) ||
+            (rMask == 0x000000fful && gMask == 0x0000ff00ul && bMask == 0x00ff0000ul)) {
+            const bool rgb = (rMask == 0x00ff0000ul);
+            for (int y = 0; y < putH; ++y) {
+                const PixelValue* srcRow = pixels + y * fbWidth;
+                auto* dstRow = reinterpret_cast<uint32_t*>(
+                    dstBase + static_cast<size_t>(y) * static_cast<size_t>(dstStride));
+                for (int x = 0; x < putW; ++x) {
+                    const PixelValue& p = srcRow[x];
+                    dstRow[x] = rgb
+                        ? (static_cast<uint32_t>(p.r) << 16) |
+                          (static_cast<uint32_t>(p.g) << 8) |
+                          static_cast<uint32_t>(p.b)
+                        : (static_cast<uint32_t>(p.b) << 16) |
+                          (static_cast<uint32_t>(p.g) << 8) |
+                          static_cast<uint32_t>(p.r);
+                }
+            }
+            return;
+        }
+    }
+
+    // Fast path: RGB565
+    if (bpp == 16 && rMask == 0xf800ul && gMask == 0x07e0ul && bMask == 0x001ful) {
+        for (int y = 0; y < putH; ++y) {
+            const PixelValue* srcRow = pixels + y * fbWidth;
+            auto* dstRow = reinterpret_cast<uint16_t*>(
+                dstBase + static_cast<size_t>(y) * static_cast<size_t>(dstStride));
+            for (int x = 0; x < putW; ++x) {
+                const PixelValue& p = srcRow[x];
+                dstRow[x] = static_cast<uint16_t>(
+                    ((p.r & 0xf8) << 8) | ((p.g & 0xfc) << 3) | (p.b >> 3));
+            }
+        }
+        return;
+    }
+
     auto shiftOf = [](unsigned long mask) {
         int shift = 0;
         if (!mask) return 0;
@@ -204,10 +246,6 @@ void packTopLeft(
     const int gBits = bitsOf(gMask);
     const int bBits = bitsOf(bMask);
 
-    (void)fbHeight;
-    // Software color buffer is already top-left (viewport converts from GL
-    // bottom-left). Do not flip again or a smaller window on a larger FB
-    // presents undrawn rows and looks permanently black.
     for (int y = 0; y < putH; ++y) {
         const PixelValue* srcRow = pixels + y * fbWidth;
         uint8_t* dstRow = dstBase + static_cast<size_t>(y) * static_cast<size_t>(dstStride);

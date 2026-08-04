@@ -198,7 +198,8 @@ struct Texture2D {
     float texturePriority;
     int width;
     int height;
-    Col4* textureData;
+    // Tight RGBA8888 (4 bytes/texel) — much friendlier to P2-era caches than Col4 floats.
+    unsigned char* textureData;
 };
 
 struct TextureSlot {

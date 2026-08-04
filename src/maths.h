@@ -33,6 +33,7 @@ bool PointInTriangle(Triangle tri, Vec3 p);
 Col4 BarycentricColor(Triangle tri, Vec3& p);
 Col4 BarycentricTexture(Triangle tri, Vec3& p);
 FragmentAttrs ShadeFragment(const Triangle& tri, Vec3& p, bool sampleTex);
+Col4 sampleTexture(float u, float v);
 bool DetermineBounding(Triangle& tri, int& xMin, int& yMin, int& xMax, int& yMax);
 Vec3 CalculateNormal(Triangle& tri);
 float LinearizeDepth(float ndcZ, float near, float far);

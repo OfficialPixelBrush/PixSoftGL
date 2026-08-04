@@ -95,6 +95,7 @@ extern float* frameBufferDepth;
 
 // Display lists
 extern GLint activeDisplayListIndex;
+extern GLuint listBase;
 // Currently active Display list is display List 0!!!
 extern DisplayList displayListBuffer;
 extern std::vector<DisplayList> displayLists;

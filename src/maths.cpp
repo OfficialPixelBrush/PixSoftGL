@@ -1,5 +1,6 @@
 #include "maths.h"
 #include "global.h"
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 
@@ -312,12 +313,14 @@ bool computeBarycentric(const Triangle& tri, const Vec3& p,
     return true;
 }
 
+} // namespace
+
 Col4 sampleTexture(float u, float v) {
     if (!lastAccessedTexture || !lastAccessedTexture->texture2D.textureData) {
         return Col4{1, 1, 1, 1};
     }
-    int tw = lastAccessedTexture->texture2D.width;
-    int th = lastAccessedTexture->texture2D.height;
+    const int tw = lastAccessedTexture->texture2D.width;
+    const int th = lastAccessedTexture->texture2D.height;
     if (tw <= 0 || th <= 0) return Col4{1, 1, 1, 1};
 
     int tx, ty;
@@ -337,10 +340,12 @@ Col4 sampleTexture(float u, float v) {
         ty = j % th;
         if (ty < 0) ty += th;
     }
-    return lastAccessedTexture->texture2D.textureData[ty * tw + tx];
+    const unsigned char* p =
+        lastAccessedTexture->texture2D.textureData + (ty * tw + tx) * 4;
+    // Keep float conversion; hot path already avoided per-pixel orient2d.
+    return Col4{p[0] * (1.0f / 255.0f), p[1] * (1.0f / 255.0f),
+                p[2] * (1.0f / 255.0f), p[3] * (1.0f / 255.0f)};
 }
-
-} // namespace
 
 FragmentAttrs ShadeFragment(const Triangle& tri, Vec3& p, bool sampleTex) {
     FragmentAttrs out{};

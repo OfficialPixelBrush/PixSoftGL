@@ -185,6 +185,7 @@ void Process_glEnd() {
             } 
             break;
     }
+    vertexIndex = 0;
 }
 
 void Process_glLoadIdentity() {
@@ -354,11 +355,58 @@ void Process_glEndList() {
 }
 
 void Process_glCallList(GLuint list) {
-    if (list == 0 || list > displayLists.size() || displayLists[list - 1].commands.empty()) {
-        errorState = GL_INVALID_VALUE;
-        return;
-    }
+    if (list == 0 || list > displayLists.size()) return;
+    if (displayLists[list - 1].commands.empty()) return;
     ExecuteDisplayList(displayLists[list - 1]);
+}
+
+void Process_glListBase(GLuint base) {
+    listBase = base;
+}
+
+void Process_glCallLists(GLsizei n, GLenum type, const GLvoid* lists) {
+    if (!lists || n <= 0) return;
+    for (GLsizei i = 0; i < n; ++i) {
+        GLuint offset = 0;
+        switch (type) {
+        case GL_BYTE:
+            offset = static_cast<GLuint>(static_cast<const GLbyte*>(lists)[i]);
+            break;
+        case GL_UNSIGNED_BYTE:
+            offset = static_cast<const GLubyte*>(lists)[i];
+            break;
+        case GL_SHORT:
+            offset = static_cast<GLuint>(static_cast<const GLshort*>(lists)[i]);
+            break;
+        case GL_UNSIGNED_SHORT:
+            offset = static_cast<const GLushort*>(lists)[i];
+            break;
+        case GL_INT:
+            offset = static_cast<GLuint>(static_cast<const GLint*>(lists)[i]);
+            break;
+        case GL_UNSIGNED_INT:
+            offset = static_cast<const GLuint*>(lists)[i];
+            break;
+        case GL_2_BYTES:
+            offset = (static_cast<const GLubyte*>(lists)[i * 2] << 8) |
+                     static_cast<const GLubyte*>(lists)[i * 2 + 1];
+            break;
+        case GL_3_BYTES:
+            offset = (static_cast<const GLubyte*>(lists)[i * 3] << 16) |
+                     (static_cast<const GLubyte*>(lists)[i * 3 + 1] << 8) |
+                     static_cast<const GLubyte*>(lists)[i * 3 + 2];
+            break;
+        case GL_4_BYTES:
+            offset = (static_cast<const GLubyte*>(lists)[i * 4] << 24) |
+                     (static_cast<const GLubyte*>(lists)[i * 4 + 1] << 16) |
+                     (static_cast<const GLubyte*>(lists)[i * 4 + 2] << 8) |
+                     static_cast<const GLubyte*>(lists)[i * 4 + 3];
+            break;
+        default:
+            return;
+        }
+        Process_glCallList(listBase + offset);
+    }
 }
 
 GLuint Process_glGenLists(GLsizei range) {

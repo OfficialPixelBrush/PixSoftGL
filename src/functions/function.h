@@ -21,6 +21,8 @@ void Process_glPopMatrix();
 void Process_glNewList(GLuint list, GLenum mode);
 void Process_glEndList();
 void Process_glCallList(GLuint list);
+void Process_glListBase(GLuint base);
+void Process_glCallLists(GLsizei n, GLenum type, const GLvoid* lists);
 GLuint Process_glGenLists(GLsizei range);
 GLboolean Process_IsList(GLuint list);
 void Process_glDeleteLists(GLuint list, GLsizei range);

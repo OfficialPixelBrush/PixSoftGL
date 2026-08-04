@@ -112,16 +112,16 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
         }
         tex.width = width;
         tex.height = height;
-        tex.textureData = static_cast<Col4*>(
-            malloc(sizeof(Col4) * static_cast<size_t>(width * height)));
+        tex.textureData = static_cast<unsigned char*>(
+            malloc(4u * static_cast<size_t>(width * height)));
         if (!tex.textureData) {
             errorState = GL_OUT_OF_MEMORY;
             return false;
         }
-        // OpenGL leaves undefined; Minecraft does null TexImage then TexSubImage.
-        // Fill opaque white so incomplete uploads aren't modulate-to-black.
+        // Opaque white so incomplete uploads aren't modulate-to-black.
         for (int i = 0; i < width * height; ++i) {
-            tex.textureData[i] = Col4{1, 1, 1, 1};
+            unsigned char* p = tex.textureData + i * 4;
+            p[0] = p[1] = p[2] = p[3] = 255;
         }
         if (!pixels) return true;
 
@@ -130,7 +130,13 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
         for (int y = 0; y < height; ++y) {
             const unsigned char* row = src + static_cast<size_t>(y) * stride;
             for (int x = 0; x < width; ++x) {
-                decodeTexel(row + x * comps, format, tex.textureData[y * width + x]);
+                Col4 c{};
+                decodeTexel(row + x * comps, format, c);
+                unsigned char* dst = tex.textureData + (y * width + x) * 4;
+                dst[0] = static_cast<unsigned char>(c.r * 255.0f + 0.5f);
+                dst[1] = static_cast<unsigned char>(c.g * 255.0f + 0.5f);
+                dst[2] = static_cast<unsigned char>(c.b * 255.0f + 0.5f);
+                dst[3] = static_cast<unsigned char>(c.a * 255.0f + 0.5f);
             }
         }
         return true;
@@ -156,8 +162,14 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
     for (int y = 0; y < height; ++y) {
         const unsigned char* row = src + static_cast<size_t>(y) * stride;
         for (int x = 0; x < width; ++x) {
-            decodeTexel(row + x * comps, format,
-                        tex.textureData[(yoffset + y) * tex.width + (xoffset + x)]);
+            Col4 c{};
+            decodeTexel(row + x * comps, format, c);
+            unsigned char* dst =
+                tex.textureData + ((yoffset + y) * tex.width + (xoffset + x)) * 4;
+            dst[0] = static_cast<unsigned char>(c.r * 255.0f + 0.5f);
+            dst[1] = static_cast<unsigned char>(c.g * 255.0f + 0.5f);
+            dst[2] = static_cast<unsigned char>(c.b * 255.0f + 0.5f);
+            dst[3] = static_cast<unsigned char>(c.a * 255.0f + 0.5f);
         }
     }
     return true;
@@ -301,9 +313,7 @@ extern "C" {
             if (compileAndExecute) {
                 Process_glColor4f(red, green, blue, alpha);
             }
-            // Display lists currently record RGB only; keep alpha via immediate state.
-            Record_glColor3f(red, green, blue);
-            currentColor.a = alpha;
+            Record_glColor4f(red, green, blue, alpha);
         }
     }
 
@@ -492,6 +502,28 @@ extern "C" {
             Record_glCallList(list);
         }
         PrintInfo("\n");
+    }
+
+    void glListBase(GLuint base) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLuint) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLuint)) dlsym(RTLD_NEXT, "glListBase");
+            }
+            real_gl(base);
+        }
+        Process_glListBase(base);
+    }
+
+    void glCallLists(GLsizei n, GLenum type, const GLvoid* lists) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLsizei, GLenum, const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLsizei, GLenum, const GLvoid*)) dlsym(RTLD_NEXT, "glCallLists");
+            }
+            real_gl(n, type, lists);
+        }
+        Process_glCallLists(n, type, lists);
     }
 
     // Clear framebuffer(s)
@@ -1032,6 +1064,9 @@ extern "C" {
             case GL_MAX_TEXTURE_SIZE:
                 PrintInfo("GL_MAX_TEXTURE_SIZE");
                 params[0] = MAX_TEXTURE_SIZE;
+                break;
+            case GL_LIST_BASE:
+                params[0] = static_cast<GLint>(listBase);
                 break;
             default:
                 if (forwardToSystemGl) {

@@ -118,6 +118,7 @@ float* frameBufferDepth;
 
 // Display lists
 GLint activeDisplayListIndex = 0;
+GLuint listBase = 0;
 // Currently active Display list is display List 0!!!
 DisplayList displayListBuffer;
 std::vector<DisplayList> displayLists;
