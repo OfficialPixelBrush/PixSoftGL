@@ -379,7 +379,10 @@ FragmentAttrs ShadeFragment(const Triangle& tri, Vec3& p, bool sampleTex) {
     out.eyeDist = persp(tri.a.eyeDist, tri.b.eyeDist, tri.c.eyeDist);
     p.z = out.ndcZ;
 
-    if (sampleTex && texture2dActive && lastAccessedTexture) {
+    if (sampleTex && texture2dActive && lastAccessedTexture &&
+        lastAccessedTexture->texture2D.textureData &&
+        lastAccessedTexture->texture2D.width > 0 &&
+        lastAccessedTexture->texture2D.height > 0) {
         const float u = persp(static_cast<float>(tri.a.uv.x),
                               static_cast<float>(tri.b.uv.x),
                               static_cast<float>(tri.c.uv.x));

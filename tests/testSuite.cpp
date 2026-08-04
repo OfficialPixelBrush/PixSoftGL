@@ -234,6 +234,47 @@ static TestResult test_texture_2x2() {
     return t;
 }
 
+static TestResult test_texture_subimage() {
+    TestResult t = {"TexImage(null) + TexSubImage upload", false, ""};
+    resetGLState();
+    glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, WIN_W, 0, WIN_H, -1,1);
+    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+    glClearColor(0,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_TEXTURE_2D);
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    // Minecraft-style allocate-then-upload.
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    unsigned char red[4] = {255, 0, 0, 255};
+    unsigned char green[4] = {0, 255, 0, 255};
+    unsigned char blue[4] = {0, 0, 255, 255};
+    unsigned char yellow[4] = {255, 255, 0, 255};
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, red);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 1, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, green);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, blue);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 1, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, yellow);
+    glColor3f(1,1,1);
+    glBegin(GL_QUADS);
+      glTexCoord2f(0.25f, 0.25f); glVertex2f(40,40);
+      glTexCoord2f(0.75f, 0.25f); glVertex2f(120,40);
+      glTexCoord2f(0.75f, 0.75f); glVertex2f(120,120);
+      glTexCoord2f(0.25f, 0.75f); glVertex2f(40,120);
+    glEnd();
+    glFlush();
+    unsigned char pix[4];
+    readPixel(80, 80, pix);
+    if ((pix[0] + pix[1] + pix[2]) > 10) t.pass = true;
+    else t.msg = "TexSubImage path produced near-black";
+    glDeleteTextures(1, &tex);
+    glDisable(GL_TEXTURE_2D);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    return t;
+}
+
 static TestResult test_blending() {
     TestResult t = {"Blending (SRC_ALPHA, ONE_MINUS_SRC_ALPHA)", false, ""};
     resetGLState();
@@ -330,6 +371,9 @@ int main() {
     usleep(PAUSE_BETWEEN_TESTS);
     std::printf("\n### test_texture_2x2 ###\n");
     results.push_back(test_texture_2x2());          glXSwapBuffers(dpy, win);
+    usleep(PAUSE_BETWEEN_TESTS);
+    std::printf("\n### test_texture_subimage ###\n");
+    results.push_back(test_texture_subimage());     glXSwapBuffers(dpy, win);
     usleep(PAUSE_BETWEEN_TESTS);
     std::printf("\n### test_blending ###\n");
     results.push_back(test_blending());             glXSwapBuffers(dpy, win);

@@ -11,6 +11,115 @@
 #ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
 #endif
+#ifndef GL_UNPACK_ALIGNMENT
+#define GL_UNPACK_ALIGNMENT 0x0CF5
+#endif
+#ifndef GL_PACK_ALIGNMENT
+#define GL_PACK_ALIGNMENT 0x0D05
+#endif
+
+namespace {
+
+int unpackRowStride(int width, int comps, GLint alignment) {
+    const int rowBytes = width * comps;
+    const int align = alignment > 0 ? alignment : 4;
+    return ((rowBytes + align - 1) / align) * align;
+}
+
+void decodeTexel(const unsigned char* src, int comps, bool bgra, Col4& out) {
+    float r, g, b, a;
+    if (bgra) {
+        b = src[0] / 255.0f;
+        g = src[1] / 255.0f;
+        r = src[2] / 255.0f;
+        a = comps > 3 ? src[3] / 255.0f : 1.0f;
+    } else {
+        r = src[0] / 255.0f;
+        g = src[1] / 255.0f;
+        b = src[2] / 255.0f;
+        a = comps > 3 ? src[3] / 255.0f : 1.0f;
+    }
+    out = Col4{r, g, b, a};
+}
+
+bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
+                         GLsizei width, GLsizei height, GLenum format,
+                         GLenum type, const GLvoid* pixels, bool allocateFull) {
+    if (type != GL_UNSIGNED_BYTE) {
+        errorState = GL_INVALID_ENUM;
+        return false;
+    }
+    if (format != GL_RGBA && format != GL_RGB && format != GL_BGRA) {
+        errorState = GL_INVALID_ENUM;
+        return false;
+    }
+    if (width <= 0 || height <= 0 || width > MAX_TEXTURE_SIZE || height > MAX_TEXTURE_SIZE) {
+        errorState = GL_INVALID_VALUE;
+        return false;
+    }
+
+    const int comps = (format == GL_RGB) ? 3 : 4;
+    const bool bgra = (format == GL_BGRA);
+
+    if (allocateFull) {
+        if (tex.textureData) {
+            free(tex.textureData);
+            tex.textureData = nullptr;
+        }
+        tex.width = width;
+        tex.height = height;
+        tex.textureData = static_cast<Col4*>(
+            malloc(sizeof(Col4) * static_cast<size_t>(width * height)));
+        if (!tex.textureData) {
+            errorState = GL_OUT_OF_MEMORY;
+            return false;
+        }
+        // OpenGL leaves undefined; Minecraft does null TexImage then TexSubImage.
+        // Fill white so incomplete uploads are visible instead of modulate-to-black.
+        for (int i = 0; i < width * height; ++i) {
+            tex.textureData[i] = Col4{1, 1, 1, 1};
+        }
+        if (!pixels) return true;
+
+        const unsigned char* src = static_cast<const unsigned char*>(pixels);
+        const int stride = unpackRowStride(width, comps, unpackAlignment);
+        for (int y = 0; y < height; ++y) {
+            const unsigned char* row = src + static_cast<size_t>(y) * stride;
+            for (int x = 0; x < width; ++x) {
+                decodeTexel(row + x * comps, comps, bgra, tex.textureData[y * width + x]);
+            }
+        }
+        return true;
+    }
+
+    // Sub-image path
+    if (!tex.textureData || tex.width <= 0 || tex.height <= 0) {
+        errorState = GL_INVALID_OPERATION;
+        return false;
+    }
+    if (xoffset < 0 || yoffset < 0 ||
+        xoffset + width > tex.width || yoffset + height > tex.height) {
+        errorState = GL_INVALID_VALUE;
+        return false;
+    }
+    if (!pixels) {
+        errorState = GL_INVALID_VALUE;
+        return false;
+    }
+
+    const unsigned char* src = static_cast<const unsigned char*>(pixels);
+    const int stride = unpackRowStride(width, comps, unpackAlignment);
+    for (int y = 0; y < height; ++y) {
+        const unsigned char* row = src + static_cast<size_t>(y) * stride;
+        for (int x = 0; x < width; ++x) {
+            decodeTexel(row + x * comps, comps, bgra,
+                        tex.textureData[(yoffset + y) * tex.width + (xoffset + x)]);
+        }
+    }
+    return true;
+}
+
+} // namespace
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
@@ -1107,63 +1216,51 @@ extern "C" {
         }
         if (!lastAccessedTexture) return;
         if (level != 0) return; // mipmaps: accept and ignore for now
-        if (width <= 0 || height <= 0 || width > MAX_TEXTURE_SIZE || height > MAX_TEXTURE_SIZE) {
-            errorState = GL_INVALID_VALUE;
-            return;
-        }
-        if (type != GL_UNSIGNED_BYTE) {
-            errorState = GL_INVALID_ENUM;
-            return;
-        }
-        if (format != GL_RGBA && format != GL_RGB && format != GL_BGRA) {
-            errorState = GL_INVALID_ENUM;
-            return;
-        }
-
-        auto& tex = lastAccessedTexture->texture2D;
-        if (tex.textureData) {
-            free(tex.textureData);
-            tex.textureData = nullptr;
-        }
-        tex.width = width;
-        tex.height = height;
-        tex.textureData = static_cast<Col4*>(malloc(sizeof(Col4) * static_cast<size_t>(width * height)));
-        if (!tex.textureData) {
-            errorState = GL_OUT_OF_MEMORY;
-            return;
-        }
-        if (!pixels) {
-            for (int i = 0; i < width * height; ++i) {
-                tex.textureData[i] = Col4{0, 0, 0, 1};
-            }
-            return;
-        }
-
-        const unsigned char* src = static_cast<const unsigned char*>(pixels);
-        const int comps = (format == GL_RGB) ? 3 : 4;
-        const bool bgra = (format == GL_BGRA);
-        for (int y = 0; y < height; ++y) {
-            for (int x = 0; x < width; ++x) {
-                const int srcIdx = (y * width + x) * comps;
-                const int dstIdx = y * width + x;
-                float r, g, b, a;
-                if (bgra) {
-                    b = src[srcIdx + 0] / 255.0f;
-                    g = src[srcIdx + 1] / 255.0f;
-                    r = src[srcIdx + 2] / 255.0f;
-                    a = comps > 3 ? src[srcIdx + 3] / 255.0f : 1.0f;
-                } else {
-                    r = src[srcIdx + 0] / 255.0f;
-                    g = src[srcIdx + 1] / 255.0f;
-                    b = src[srcIdx + 2] / 255.0f;
-                    a = comps > 3 ? src[srcIdx + 3] / 255.0f : 1.0f;
-                }
-                tex.textureData[dstIdx] = Col4{r, g, b, a};
-            }
-        }
         (void)internalFormat;
         (void)border;
         (void)target;
+        uploadTextureLevel0(lastAccessedTexture->texture2D, 0, 0, width, height,
+                            format, type, pixels, true);
+    }
+
+    // Minecraft allocates with null glTexImage2D, then fills via TexSubImage2D.
+    void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+                         GLsizei width, GLsizei height, GLenum format, GLenum type,
+                         const GLvoid* pixels) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum, GLint, GLint, GLint, GLsizei, GLsizei,
+                                  GLenum, GLenum, const GLvoid*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum, GLint, GLint, GLint, GLsizei, GLsizei,
+                                    GLenum, GLenum, const GLvoid*))
+                    dlsym(RTLD_NEXT, "glTexSubImage2D");
+            }
+            real_gl(target, level, xoffset, yoffset, width, height, format, type, pixels);
+        }
+        if (!lastAccessedTexture) return;
+        if (level != 0) return;
+        (void)target;
+        uploadTextureLevel0(lastAccessedTexture->texture2D, xoffset, yoffset, width, height,
+                            format, type, pixels, false);
+    }
+
+    void glPixelStorei(GLenum pname, GLint param) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum, GLint) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum, GLint)) dlsym(RTLD_NEXT, "glPixelStorei");
+            }
+            real_gl(pname, param);
+        }
+        if (pname == GL_UNPACK_ALIGNMENT) {
+            if (param == 1 || param == 2 || param == 4 || param == 8) {
+                unpackAlignment = param;
+            } else {
+                errorState = GL_INVALID_VALUE;
+            }
+        } else if (pname == GL_PACK_ALIGNMENT) {
+            // Readback packing ignored for now.
+        }
     }
 
     void glAlphaFunc(GLenum func, GLclampf ref) {

@@ -1,10 +1,12 @@
 #include "x11_display.h"
+#include "x11_safe.h"
 
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -18,6 +20,12 @@ GC gc = 0;
 bool useShm = false;
 XShmSegmentInfo shmInfo{};
 std::vector<uint8_t> imageBuffer;
+int g_presentError = Success;
+
+int trapPresentError(Display*, XErrorEvent* ev) {
+    g_presentError = ev->error_code;
+    return 0;
+}
 
 bool shmExtensionAvailable(Display* dpy) {
     int major = 0, minor = 0, pixmaps = 0;
@@ -57,36 +65,42 @@ bool createImage(int width, int height) {
         static_cast<size_t>(width) * static_cast<size_t>(height) * bytesPerPixel;
 
     if (shmExtensionAvailable(ctx.dpy)) {
-        ximage = XShmCreateImage(
-            ctx.dpy,
-            ctx.visual,
-            static_cast<unsigned>(ctx.depth),
-            ZPixmap,
-            nullptr,
-            &shmInfo,
-            static_cast<unsigned>(width),
-            static_cast<unsigned>(height));
-        if (ximage) {
-            const size_t shmBytes = static_cast<size_t>(ximage->bytes_per_line) *
-                                    static_cast<size_t>(height);
-            shmInfo.shmid = shmget(IPC_PRIVATE, shmBytes, IPC_CREAT | 0600);
-            if (shmInfo.shmid >= 0) {
-                shmInfo.shmaddr = static_cast<char*>(shmat(shmInfo.shmid, nullptr, 0));
-                shmInfo.readOnly = False;
-                if (shmInfo.shmaddr && shmInfo.shmaddr != reinterpret_cast<char*>(-1)) {
-                    ximage->data = shmInfo.shmaddr;
-                    if (XShmAttach(ctx.dpy, &shmInfo)) {
-                        useShm = true;
-                        return true;
+        // MIT-SHM is flaky under some WSL/XWayland setups; allow opt-out.
+        const char* noShm = std::getenv("PIXSOFTGL_NOSHM");
+        const bool allowShm =
+            !(noShm && noShm[0] != '\0' && std::strcmp(noShm, "0") != 0);
+        if (allowShm) {
+            ximage = XShmCreateImage(
+                ctx.dpy,
+                ctx.visual,
+                static_cast<unsigned>(ctx.depth),
+                ZPixmap,
+                nullptr,
+                &shmInfo,
+                static_cast<unsigned>(width),
+                static_cast<unsigned>(height));
+            if (ximage) {
+                const size_t shmBytes = static_cast<size_t>(ximage->bytes_per_line) *
+                                        static_cast<size_t>(height);
+                shmInfo.shmid = shmget(IPC_PRIVATE, shmBytes, IPC_CREAT | 0600);
+                if (shmInfo.shmid >= 0) {
+                    shmInfo.shmaddr = static_cast<char*>(shmat(shmInfo.shmid, nullptr, 0));
+                    shmInfo.readOnly = False;
+                    if (shmInfo.shmaddr && shmInfo.shmaddr != reinterpret_cast<char*>(-1)) {
+                        ximage->data = shmInfo.shmaddr;
+                        if (XShmAttach(ctx.dpy, &shmInfo)) {
+                            useShm = true;
+                            return true;
+                        }
+                        shmdt(shmInfo.shmaddr);
                     }
-                    shmdt(shmInfo.shmaddr);
+                    shmctl(shmInfo.shmid, IPC_RMID, nullptr);
                 }
-                shmctl(shmInfo.shmid, IPC_RMID, nullptr);
+                ximage->data = nullptr;
+                XDestroyImage(ximage);
+                ximage = nullptr;
+                shmInfo = {};
             }
-            ximage->data = nullptr;
-            XDestroyImage(ximage);
-            ximage = nullptr;
-            shmInfo = {};
         }
     }
 
@@ -111,8 +125,16 @@ bool createImage(int width, int height) {
 }
 
 void ensureGc() {
-    if (!gc && ctx.dpy && ctx.win) {
-        gc = XCreateGC(ctx.dpy, ctx.win, 0, nullptr);
+    if (gc || !ctx.dpy || !ctx.win) return;
+    if (!X11SafeWindowExists(ctx.dpy, ctx.win)) return;
+
+    g_presentError = Success;
+    XErrorHandler prev = XSetErrorHandler(trapPresentError);
+    gc = XCreateGC(ctx.dpy, ctx.win, 0, nullptr);
+    XSync(ctx.dpy, False);
+    XSetErrorHandler(prev);
+    if (g_presentError != Success) {
+        gc = 0;
     }
 }
 
@@ -242,6 +264,14 @@ bool X11IsPixSoftWm(Display* dpy) {
 }
 
 void X11DisplayInit(Display* dpy, Window win, int width, int height) {
+    // Re-binding the same drawable every SwapBuffers must not tear down SHM —
+    // that churn fails under WSL and presents as a permanent black window.
+    if (ctx.active && ctx.dpy == dpy && ctx.win == win) {
+        if (width > 0) ctx.width = width;
+        if (height > 0) ctx.height = height;
+        return;
+    }
+
     X11DisplayShutdown();
 
     ctx.dpy = dpy;
@@ -252,12 +282,15 @@ void X11DisplayInit(Display* dpy, Window win, int width, int height) {
 
     if (!ctx.active) return;
 
-    XWindowAttributes attrs{};
-    if (XGetWindowAttributes(dpy, win, &attrs)) {
-        ctx.visual = attrs.visual;
-        ctx.depth = attrs.depth;
-        if (width <= 0) ctx.width = attrs.width;
-        if (height <= 0) ctx.height = attrs.height;
+    int probedW = 0;
+    int probedH = 0;
+    Visual* visual = nullptr;
+    int depth = 0;
+    if (X11SafeGetWindowInfo(dpy, win, &probedW, &probedH, &visual, &depth)) {
+        ctx.visual = visual;
+        ctx.depth = depth;
+        if (width <= 0) ctx.width = probedW;
+        if (height <= 0) ctx.height = probedH;
     } else {
         const int screen = DefaultScreen(dpy);
         ctx.visual = DefaultVisual(dpy, screen);
@@ -284,15 +317,84 @@ bool X11DisplayPresent(const PixelValue* pixels, int width, int height) {
     if (!ctx.active || !pixels || width <= 0 || height <= 0 || !ctx.visual) {
         return false;
     }
+    if (!X11SafeWindowExists(ctx.dpy, ctx.win)) {
+        return false;
+    }
 
-    if (!ximage || ximage->width != width || ximage->height != height) {
-        if (!createImage(width, height)) return false;
+    // Clip the presented region to the live window without changing the
+    // framebuffer row stride (`width`).
+    int putW = width;
+    int putH = height;
+    int winW = 0;
+    int winH = 0;
+    if (X11SafeGetWindowSize(ctx.dpy, ctx.win, &winW, &winH)) {
+        if (winW < putW) putW = winW;
+        if (winH < putH) putH = winH;
+    }
+    if (putW <= 0 || putH <= 0) return false;
+
+    if (!ximage || ximage->width != putW || ximage->height != putH) {
+        if (!createImage(putW, putH)) return false;
     }
 
     ensureGc();
     if (!gc) return false;
 
-    convertAndFlip(pixels, width, height);
+    // Pack only the putW×putH top-left of the FB (OpenGL bottom-left origin).
+    auto* dstBase = reinterpret_cast<uint8_t*>(ximage->data);
+    const int dstStride = ximage->bytes_per_line;
+    const int bpp = ximage->bits_per_pixel;
+    const unsigned long rMask = ctx.visual->red_mask;
+    const unsigned long gMask = ctx.visual->green_mask;
+    const unsigned long bMask = ctx.visual->blue_mask;
+    auto shiftOf = [](unsigned long mask) {
+        int shift = 0;
+        if (!mask) return 0;
+        while ((mask & 1ul) == 0ul) { mask >>= 1; ++shift; }
+        return shift;
+    };
+    auto bitsOf = [](unsigned long mask) {
+        int bits = 0;
+        while (mask) { bits += static_cast<int>(mask & 1ul); mask >>= 1; }
+        return bits;
+    };
+    auto scale = [](unsigned char v, int bits) -> unsigned long {
+        if (bits <= 0) return 0;
+        if (bits >= 8) return static_cast<unsigned long>(v) << (bits - 8);
+        const unsigned long maxv = (1ul << bits) - 1ul;
+        return (static_cast<unsigned long>(v) * maxv + 127ul) / 255ul;
+    };
+    const int rShift = shiftOf(rMask);
+    const int gShift = shiftOf(gMask);
+    const int bShift = shiftOf(bMask);
+    const int rBits = bitsOf(rMask);
+    const int gBits = bitsOf(gMask);
+    const int bBits = bitsOf(bMask);
+
+    for (int y = 0; y < putH; ++y) {
+        const int srcY = height - 1 - y;
+        const PixelValue* srcRow = pixels + srcY * width;
+        uint8_t* dstRow = dstBase + static_cast<size_t>(y) * static_cast<size_t>(dstStride);
+        for (int x = 0; x < putW; ++x) {
+            const PixelValue& p = srcRow[x];
+            const unsigned long pixel =
+                (scale(p.r, rBits) << rShift) |
+                (scale(p.g, gBits) << gShift) |
+                (scale(p.b, bBits) << bShift);
+            if (bpp == 32) {
+                auto* dst = reinterpret_cast<uint32_t*>(dstRow + x * 4);
+                *dst = static_cast<uint32_t>(pixel);
+            } else if (bpp == 16) {
+                auto* dst = reinterpret_cast<uint16_t*>(dstRow + x * 2);
+                *dst = static_cast<uint16_t>(pixel);
+            } else {
+                XPutPixel(ximage, x, y, pixel);
+            }
+        }
+    }
+
+    g_presentError = Success;
+    XErrorHandler prev = XSetErrorHandler(trapPresentError);
 
     if (useShm) {
         XShmPutImage(
@@ -304,8 +406,8 @@ bool X11DisplayPresent(const PixelValue* pixels, int width, int height) {
             0,
             0,
             0,
-            static_cast<unsigned>(width),
-            static_cast<unsigned>(height),
+            static_cast<unsigned>(putW),
+            static_cast<unsigned>(putH),
             False);
     } else {
         XPutImage(
@@ -317,10 +419,13 @@ bool X11DisplayPresent(const PixelValue* pixels, int width, int height) {
             0,
             0,
             0,
-            static_cast<unsigned>(width),
-            static_cast<unsigned>(height));
+            static_cast<unsigned>(putW),
+            static_cast<unsigned>(putH));
     }
 
     XFlush(ctx.dpy);
-    return true;
+    XSync(ctx.dpy, False);
+    XSetErrorHandler(prev);
+
+    return g_presentError == Success;
 }

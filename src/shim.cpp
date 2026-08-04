@@ -2,10 +2,12 @@
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
 #include "display/x11_display.h"
+#include "display/x11_safe.h"
 #include "framebuffer.h"
 #include "global.h"
 #include "lib.h"
@@ -26,8 +28,33 @@ bool softwareGlx = true;
 
 void* realLibGL() {
     static void* handle = nullptr;
-    if (!handle) {
-        handle = dlopen("libGL.so.1", RTLD_LAZY | RTLD_DEEPBIND);
+    if (handle) return handle;
+
+    // Never dlopen("libGL.so.1") by soname — with LD_LIBRARY_PATH pointing at
+    // PixSoftGL that would re-open ourselves. Prefer known system paths.
+    static const char* candidates[] = {
+        "/usr/lib/x86_64-linux-gnu/libGL.so.1",
+        "/usr/lib64/libGL.so.1",
+        "/usr/lib/libGL.so.1",
+        "/lib/x86_64-linux-gnu/libGL.so.1",
+        nullptr
+    };
+    for (const char** p = candidates; *p; ++p) {
+        handle = dlopen(*p, RTLD_LAZY | RTLD_LOCAL);
+        if (handle) return handle;
+    }
+
+    // Last resort: search without our shim directory on LD_LIBRARY_PATH.
+    const char* oldPath = std::getenv("LD_LIBRARY_PATH");
+    std::string restored = oldPath ? oldPath : "";
+    if (oldPath && *oldPath) {
+        setenv("LD_LIBRARY_PATH", "", 1);
+    }
+    handle = dlopen("libGL.so.1", RTLD_LAZY | RTLD_LOCAL);
+    if (oldPath) {
+        setenv("LD_LIBRARY_PATH", restored.c_str(), 1);
+    } else {
+        unsetenv("LD_LIBRARY_PATH");
     }
     return handle;
 }
@@ -210,10 +237,11 @@ Bool glXMakeCurrent(Display* dpy, GLXDrawable drawable, GLXContext ctx) {
     pixCtx->dpy = dpy;
     pixCtx->win = static_cast<Window>(drawable);
 
-    XWindowAttributes attrs{};
-    if (XGetWindowAttributes(dpy, pixCtx->win, &attrs)) {
-        pixCtx->width = attrs.width;
-        pixCtx->height = attrs.height;
+    int width = 0;
+    int height = 0;
+    if (X11SafeGetWindowSize(dpy, pixCtx->win, &width, &height)) {
+        pixCtx->width = width;
+        pixCtx->height = height;
     }
 
     // Under PixSoftWM clients are forced fullscreen to the FB/screen size.
@@ -251,18 +279,39 @@ void glXSwapBuffers(Display* dpy, GLXDrawable drawable) {
         if (fn) fn(dpy, drawable);
         return;
     }
-    (void)drawable;
 
-    // Refresh size in case the WM resized us to fullscreen after MapRequest.
-    if (currentCtx.win) {
-        XWindowAttributes attrs{};
-        if (XGetWindowAttributes(dpy, currentCtx.win, &attrs)) {
-            if (attrs.width != currentCtx.width || attrs.height != currentCtx.height) {
-                currentCtx.width = attrs.width;
-                currentCtx.height = attrs.height;
-                X11DisplayInit(dpy, currentCtx.win, currentCtx.width, currentCtx.height);
-                EnsureRenderBuffers(currentCtx.width, currentCtx.height);
+    // Prefer the drawable being swapped (LWJGL passes this). Never reallocate /
+    // clear the software color buffer here — that wiped finished frames and
+    // produced a permanent black screen.
+    //
+    // Also: never let BadWindow reach LWJGL's X error handler. Display.create()
+    // swaps once during initContext; a trapped async X error there aborts startup.
+    Window win = drawable ? static_cast<Window>(drawable) : currentCtx.win;
+    if (dpy && win) {
+        int width = 0;
+        int height = 0;
+        if (X11SafeGetWindowSize(dpy, win, &width, &height)) {
+            currentCtx.dpy = dpy;
+            currentCtx.win = win;
+            currentCtx.width = width;
+            currentCtx.height = height;
+            X11DisplayInit(dpy, win, width, height);
+            // Grow buffers if the window is larger than what MakeCurrent saw
+            // (common once the desktop WM applies a configure). Do not shrink /
+            // clear mid-frame.
+            if (width > renderAreaWidth || height > renderAreaHeight) {
+                EnsureRenderBuffers(width, height);
             }
+        } else if (currentCtx.win == None || currentCtx.dpy != dpy) {
+            // Window not queryable yet (unmapped / racing WM). Still bind with
+            // last known or screen-sized buffers so Present has a target.
+            const int screen = DefaultScreen(dpy);
+            currentCtx.dpy = dpy;
+            currentCtx.win = win;
+            if (currentCtx.width <= 0) currentCtx.width = DisplayWidth(dpy, screen);
+            if (currentCtx.height <= 0) currentCtx.height = DisplayHeight(dpy, screen);
+            X11DisplayInit(dpy, win, currentCtx.width, currentCtx.height);
+            EnsureRenderBuffers(currentCtx.width, currentCtx.height);
         }
     }
     UpdateScreen();

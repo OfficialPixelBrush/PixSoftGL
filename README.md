@@ -40,12 +40,22 @@ Artifacts:
 
 `RENDERTARGET` selects `HARDWARE` or `SOFTWARE`; both are currently the same CPU rasterizer (the name is historical).
 
-## Using the library (LD_PRELOAD)
+## Using the library (LD_PRELOAD / LD_LIBRARY_PATH)
 
-Any GLX / OpenGL 1.1 app can be redirected:
+Native GLX apps (e.g. `testCube`) usually work with preload alone:
 
 ```bash
 LD_PRELOAD=/path/to/PixSoftGL/build/libGL.so ./your_app
+```
+
+**LWJGL apps (Minecraft, etc.)** call `dlopen("libGL.so.1")`, which **does not
+use `LD_PRELOAD`**. Put the build directory on `LD_LIBRARY_PATH` and provide the
+`libGL.so.1` SONAME (CMake emits it; `pixsoftwm -l` also sets this up):
+
+```bash
+export LD_LIBRARY_PATH=/path/to/PixSoftGL/build:$LD_LIBRARY_PATH
+export LD_PRELOAD=/path/to/PixSoftGL/build/libGL.so
+./testMinecraft.sh
 ```
 
 Examples:
@@ -54,9 +64,8 @@ Examples:
 LD_PRELOAD=./build/libGL.so ./tests/testCube
 LD_PRELOAD=./build/libGL.so glxgears
 mkdir -p cc && cd cc
-LD_PRELOAD=../build/libGL.so ~/ClassiCube/ClassiCube
+LD_PRELOAD=../build/libGL.so LD_LIBRARY_PATH=../build:$LD_LIBRARY_PATH ~/ClassiCube/ClassiCube
 ```
-
 On this branch the software GLX path is the default (so contexts / `SwapBuffers` match the software rasterizer). Optional env vars:
 
 | Variable | Meaning |

@@ -5,10 +5,13 @@
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <algorithm>
+#include <climits>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <string>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace {
@@ -246,11 +249,46 @@ bool PixSoftWM::launchClient(const std::string& command, const std::string& libP
     if (pid < 0) return false;
 
     if (pid == 0) {
-        setenv("LD_PRELOAD", libPath.c_str(), 1);
+        char resolvedBuf[PATH_MAX];
+        const char* resolved = realpath(libPath.c_str(), resolvedBuf);
+        const std::string absLib = resolved ? resolved : libPath;
+
+        // LWJGL (Minecraft, etc.) does dlopen("libGL.so.1"), which ignores
+        // LD_PRELOAD and searches LD_LIBRARY_PATH. Put our build dir first and
+        // ensure libGL.so.1 exists beside libGL.so.
+        std::string libDir = absLib;
+        const auto slash = libDir.find_last_of('/');
+        if (slash != std::string::npos) {
+            libDir.resize(slash);
+        } else {
+            libDir = ".";
+        }
+
+        const std::string sonamePath = libDir + "/libGL.so.1";
+        struct stat st{};
+        if (stat(sonamePath.c_str(), &st) != 0) {
+            // Best-effort symlink for builds that only emit libGL.so.
+            symlink(absLib.c_str(), sonamePath.c_str());
+        }
+
+        std::string ldLibraryPath = libDir;
+        if (const char* existing = std::getenv("LD_LIBRARY_PATH")) {
+            if (*existing) {
+                ldLibraryPath.push_back(':');
+                ldLibraryPath += existing;
+            }
+        }
+
+        setenv("LD_LIBRARY_PATH", ldLibraryPath.c_str(), 1);
+        setenv("LD_PRELOAD", absLib.c_str(), 1);
         setenv("PIXSOFTGL_WM", "1", 1);
         setenv("DISPLAY", DisplayString(dpy), 1);
         // Prefer X11 present into the fullscreen client window.
         setenv("PIXSOFTGL_PRESENT", "x11", 0);
+
+        std::cerr << "PixSoftGL WM: launching client with\n"
+                  << "  LD_PRELOAD=" << absLib << '\n'
+                  << "  LD_LIBRARY_PATH=" << ldLibraryPath << '\n';
 
         execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
         std::cerr << "PixSoftGL: failed to exec client: " << std::strerror(errno) << '\n';

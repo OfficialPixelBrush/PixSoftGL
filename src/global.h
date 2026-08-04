@@ -30,6 +30,7 @@ extern GLenum alphaFunc;
 extern GLfloat alphaRef;
 extern GLenum blendSrcFactor;
 extern GLenum blendDstFactor;
+extern GLint unpackAlignment;
 
 extern GLint scissorX;
 extern GLint scissorY;

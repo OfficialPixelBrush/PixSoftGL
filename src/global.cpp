@@ -45,6 +45,7 @@ GLenum alphaFunc = GL_ALWAYS;
 GLfloat alphaRef = 0.0f;
 GLenum blendSrcFactor = GL_SRC_ALPHA;
 GLenum blendDstFactor = GL_ONE_MINUS_SRC_ALPHA;
+GLint unpackAlignment = 4;
 
 GLint scissorX = 0;
 GLint scissorY = 0;

@@ -9,7 +9,7 @@
 namespace {
 
 FbDevice g_fb;
-bool printInfo = true;
+bool printInfo = false;
 bool g_fbInitialized = false;
 bool g_fbAvailable = false;
 
@@ -55,6 +55,7 @@ bool EnsureRenderBuffers(int width, int height) {
         return true;
     }
 
+    const bool firstAlloc = (frameBufferColor == nullptr);
     auto* color = static_cast<PixelValue*>(std::realloc(
         frameBufferColor, static_cast<size_t>(total) * sizeof(PixelValue)));
     auto* depth = static_cast<float*>(std::realloc(
@@ -93,9 +94,13 @@ bool EnsureRenderBuffers(int width, int height) {
         scissorHeight = height;
     }
 
-    std::memset(frameBufferColor, 0, static_cast<size_t>(total) * sizeof(PixelValue));
-    for (int i = 0; i < total; ++i) {
-        frameBufferDepth[i] = 1.0f;
+    // Only clear on first allocation. Resizes must not wipe a rendered frame
+    // (glXSwapBuffers used to trigger that and present pure black).
+    if (firstAlloc) {
+        std::memset(frameBufferColor, 0, static_cast<size_t>(total) * sizeof(PixelValue));
+        for (int i = 0; i < total; ++i) {
+            frameBufferDepth[i] = 1.0f;
+        }
     }
     return true;
 }

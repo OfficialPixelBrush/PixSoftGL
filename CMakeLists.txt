@@ -16,6 +16,7 @@ add_library(GL SHARED
     src/functions/function.cpp
     src/shim.cpp
     src/display/x11_display.cpp
+    src/display/x11_safe.cpp
 )
 
 target_include_directories(GL PRIVATE
@@ -41,7 +42,12 @@ else()
 endif()
 
 target_link_libraries(GL PRIVATE X11::X11 X11::Xext ${CMAKE_DL_LIBS})
-set_target_properties(GL PROPERTIES OUTPUT_NAME "GL")
+# LWJGL / many GLX apps dlopen("libGL.so.1") — ship that SONAME, not only libGL.so.
+set_target_properties(GL PROPERTIES
+    OUTPUT_NAME "GL"
+    VERSION "1.0.0"
+    SOVERSION "1"
+)
 
 add_executable(pixsoftwm
     src/wm/main.cpp
