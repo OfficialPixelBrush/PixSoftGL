@@ -34,7 +34,9 @@ int selectVideoMode(FbDevice& fb) {
     std::cout << "\nPixSoftGL video mode selection\n";
     std::cout << "Framebuffer: " << fb.devicePath() << '\n';
     std::cout << "Adapter: " << fb.cardName();
-    if (fb.isS3()) std::cout << " (S3)";
+    if (fb.isS3()) {
+        std::cout << " (S3) — recommend 640x480 @ 16bpp for Pentium II-class hosts";
+    }
     std::cout << "\n\n";
 
     for (size_t i = 0; i < modes.size(); ++i) {
@@ -283,12 +285,29 @@ bool PixSoftWM::launchClient(const std::string& command, const std::string& libP
         setenv("LD_PRELOAD", absLib.c_str(), 1);
         setenv("PIXSOFTGL_WM", "1", 1);
         setenv("DISPLAY", DisplayString(dpy), 1);
-        // Prefer X11 present into the fullscreen client window.
-        setenv("PIXSOFTGL_PRESENT", "x11", 0);
+
+        // Present path: inherit parent env (pixsoftwm main sets fbdev when
+        // /dev/fb0 is open — required for S3 bare-metal). Only default to x11
+        // when nothing was configured (desktop / no fbdev).
+        if (!std::getenv("PIXSOFTGL_PRESENT")) {
+            if (fbDevice && fbDevice->isOpen()) {
+                setenv("PIXSOFTGL_PRESENT", "fbdev", 1);
+            } else {
+                setenv("PIXSOFTGL_PRESENT", "x11", 1);
+            }
+        }
+        if (fbDevice && fbDevice->isOpen() && !std::getenv("PIXSOFTGL_FBDEV")) {
+            setenv("PIXSOFTGL_FBDEV", fbDevice->devicePath(), 1);
+        }
 
         std::cerr << "PixSoftGL WM: launching client with\n"
                   << "  LD_PRELOAD=" << absLib << '\n'
-                  << "  LD_LIBRARY_PATH=" << ldLibraryPath << '\n';
+                  << "  LD_LIBRARY_PATH=" << ldLibraryPath << '\n'
+                  << "  PIXSOFTGL_PRESENT="
+                  << (std::getenv("PIXSOFTGL_PRESENT")
+                          ? std::getenv("PIXSOFTGL_PRESENT")
+                          : "?")
+                  << '\n';
 
         execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
         std::cerr << "PixSoftGL: failed to exec client: " << std::strerror(errno) << '\n';
