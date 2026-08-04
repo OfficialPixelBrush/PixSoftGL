@@ -24,6 +24,7 @@ extern bool scissorTestActive;
 extern bool depthWriteActive;
 extern bool alphaTestActive;
 extern bool texture2dActive;
+extern GLenum textureEnvMode;
 
 extern GLenum depthFunction;
 extern GLenum alphaFunc;

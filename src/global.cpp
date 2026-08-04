@@ -39,6 +39,7 @@ bool counterClockWiseWindingActive = true;
 bool depthWriteActive = true;
 bool alphaTestActive = false;
 bool texture2dActive = false;
+GLenum textureEnvMode = GL_MODULATE;
 
 GLenum depthFunction = GL_LESS;
 GLenum alphaFunc = GL_ALWAYS;

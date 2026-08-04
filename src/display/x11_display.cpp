@@ -409,7 +409,12 @@ bool X11DisplayPresent(const PixelValue* pixels, int width, int height) {
     }
 
     XFlush(ctx.dpy);
-    XSync(ctx.dpy, False);
+    // Avoid XSync every frame — it serializes the CPU with the X server and
+    // is brutal on slow hosts. Errors are still trapped via the handler on
+    // the next round-trip; enable PIXSOFTGL_DEBUG for occasional sync.
+    if (debugPresent()) {
+        XSync(ctx.dpy, False);
+    }
     XSetErrorHandler(prev);
 
     if (g_presentError != Success) {

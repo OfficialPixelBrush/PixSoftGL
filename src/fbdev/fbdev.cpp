@@ -255,8 +255,8 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
     void* mem = fbMem ? fbMem : mapFramebuffer();
     if (!mem) return false;
 
-    // The renderer uses OpenGL's bottom-left origin. Linux fbdev scanout is
-    // normally top-left, so present the image vertically flipped.
+    // Software color buffer is top-left (same as X11 present). Do not flip —
+    // an older comment assumed bottom-left and inverted fbdev output.
     const int copyW = std::min(srcWidth, screenWidth);
     const int copyH = std::min(srcHeight, screenHeight);
     auto* dst = static_cast<uint8_t*>(mem);
@@ -281,8 +281,7 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
     // Fast path: packed 32bpp with contiguous writes.
     if (bytesPerPixel == 4 && copyW > 0) {
         for (int y = 0; y < copyH; ++y) {
-            const int srcY = srcHeight - 1 - y;
-            const PixelValue* srcRow = pixels + srcY * srcWidth;
+            const PixelValue* srcRow = pixels + y * srcWidth;
             auto* row = reinterpret_cast<uint32_t*>(
                 dst + static_cast<size_t>(y) * lineLength_);
             for (int x = 0; x < copyW; ++x) {
@@ -294,8 +293,7 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
 
     if (bytesPerPixel == 2 && copyW > 0) {
         for (int y = 0; y < copyH; ++y) {
-            const int srcY = srcHeight - 1 - y;
-            const PixelValue* srcRow = pixels + srcY * srcWidth;
+            const PixelValue* srcRow = pixels + y * srcWidth;
             auto* row = reinterpret_cast<uint16_t*>(
                 dst + static_cast<size_t>(y) * lineLength_);
             for (int x = 0; x < copyW; ++x) {
@@ -307,11 +305,10 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
     }
 
     for (int y = 0; y < copyH; ++y) {
-        const int srcY = srcHeight - 1 - y;
         uint8_t* row = dst + static_cast<size_t>(y) * lineLength_;
 
         for (int x = 0; x < copyW; ++x) {
-            const PixelValue& p = pixels[x + srcY * srcWidth];
+            const PixelValue& p = pixels[x + y * srcWidth];
             const uint32_t packed = mapPixel(p, red_, green_, blue_, transp_);
             std::memcpy(row + static_cast<size_t>(x) * bytesPerPixel,
                         &packed, static_cast<size_t>(bytesPerPixel));

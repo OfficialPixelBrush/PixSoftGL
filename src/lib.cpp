@@ -17,8 +17,26 @@
 #ifndef GL_PACK_ALIGNMENT
 #define GL_PACK_ALIGNMENT 0x0D05
 #endif
+#ifndef GL_LUMINANCE
+#define GL_LUMINANCE 0x1909
+#endif
+#ifndef GL_LUMINANCE_ALPHA
+#define GL_LUMINANCE_ALPHA 0x190A
+#endif
 
 namespace {
+
+int formatComponents(GLenum format) {
+    switch (format) {
+    case GL_ALPHA:
+    case GL_LUMINANCE: return 1;
+    case GL_LUMINANCE_ALPHA: return 2;
+    case GL_RGB: return 3;
+    case GL_RGBA:
+    case GL_BGRA: return 4;
+    default: return 0;
+    }
+}
 
 int unpackRowStride(int width, int comps, GLint alignment) {
     const int rowBytes = width * comps;
@@ -26,20 +44,48 @@ int unpackRowStride(int width, int comps, GLint alignment) {
     return ((rowBytes + align - 1) / align) * align;
 }
 
-void decodeTexel(const unsigned char* src, int comps, bool bgra, Col4& out) {
-    float r, g, b, a;
-    if (bgra) {
-        b = src[0] / 255.0f;
-        g = src[1] / 255.0f;
-        r = src[2] / 255.0f;
-        a = comps > 3 ? src[3] / 255.0f : 1.0f;
-    } else {
-        r = src[0] / 255.0f;
-        g = src[1] / 255.0f;
-        b = src[2] / 255.0f;
-        a = comps > 3 ? src[3] / 255.0f : 1.0f;
+void decodeTexel(const unsigned char* src, GLenum format, Col4& out) {
+    switch (format) {
+    case GL_ALPHA:
+        // Fonts / masks: RGB white, A = coverage.
+        out = Col4{1, 1, 1, src[0] / 255.0f};
+        break;
+    case GL_LUMINANCE: {
+        const float l = src[0] / 255.0f;
+        out = Col4{l, l, l, 1};
+        break;
     }
-    out = Col4{r, g, b, a};
+    case GL_LUMINANCE_ALPHA: {
+        const float l = src[0] / 255.0f;
+        out = Col4{l, l, l, src[1] / 255.0f};
+        break;
+    }
+    case GL_BGRA:
+        out = Col4{
+            src[2] / 255.0f,
+            src[1] / 255.0f,
+            src[0] / 255.0f,
+            src[3] / 255.0f
+        };
+        break;
+    case GL_RGB:
+        out = Col4{
+            src[0] / 255.0f,
+            src[1] / 255.0f,
+            src[2] / 255.0f,
+            1.0f
+        };
+        break;
+    case GL_RGBA:
+    default:
+        out = Col4{
+            src[0] / 255.0f,
+            src[1] / 255.0f,
+            src[2] / 255.0f,
+            src[3] / 255.0f
+        };
+        break;
+    }
 }
 
 bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
@@ -49,7 +95,8 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
         errorState = GL_INVALID_ENUM;
         return false;
     }
-    if (format != GL_RGBA && format != GL_RGB && format != GL_BGRA) {
+    const int comps = formatComponents(format);
+    if (comps <= 0) {
         errorState = GL_INVALID_ENUM;
         return false;
     }
@@ -57,9 +104,6 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
         errorState = GL_INVALID_VALUE;
         return false;
     }
-
-    const int comps = (format == GL_RGB) ? 3 : 4;
-    const bool bgra = (format == GL_BGRA);
 
     if (allocateFull) {
         if (tex.textureData) {
@@ -75,7 +119,7 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
             return false;
         }
         // OpenGL leaves undefined; Minecraft does null TexImage then TexSubImage.
-        // Fill white so incomplete uploads are visible instead of modulate-to-black.
+        // Fill opaque white so incomplete uploads aren't modulate-to-black.
         for (int i = 0; i < width * height; ++i) {
             tex.textureData[i] = Col4{1, 1, 1, 1};
         }
@@ -86,7 +130,7 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
         for (int y = 0; y < height; ++y) {
             const unsigned char* row = src + static_cast<size_t>(y) * stride;
             for (int x = 0; x < width; ++x) {
-                decodeTexel(row + x * comps, comps, bgra, tex.textureData[y * width + x]);
+                decodeTexel(row + x * comps, format, tex.textureData[y * width + x]);
             }
         }
         return true;
@@ -112,7 +156,7 @@ bool uploadTextureLevel0(Texture2D& tex, GLint xoffset, GLint yoffset,
     for (int y = 0; y < height; ++y) {
         const unsigned char* row = src + static_cast<size_t>(y) * stride;
         for (int x = 0; x < width; ++x) {
-            decodeTexel(row + x * comps, comps, bgra,
+            decodeTexel(row + x * comps, format,
                         tex.textureData[(yoffset + y) * tex.width + (xoffset + x)]);
         }
     }
@@ -1204,6 +1248,23 @@ extern "C" {
                 tex.textureMagFilter = param;
                 break;
         }
+    }
+
+    void glTexEnvi(GLenum target, GLenum pname, GLint param) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum, GLenum, GLint) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum, GLenum, GLint)) dlsym(RTLD_NEXT, "glTexEnvi");
+            }
+            real_gl(target, pname, param);
+        }
+        if (target == GL_TEXTURE_ENV && pname == GL_TEXTURE_ENV_MODE) {
+            textureEnvMode = static_cast<GLenum>(param);
+        }
+    }
+
+    void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {
+        glTexEnvi(target, pname, static_cast<GLint>(param));
     }
 
     void glTexImage2D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) {

@@ -390,10 +390,15 @@ FragmentAttrs ShadeFragment(const Triangle& tri, Vec3& p, bool sampleTex) {
                               static_cast<float>(tri.b.uv.y),
                               static_cast<float>(tri.c.uv.y));
         Col4 tex = sampleTexture(u, v);
-        out.color.r *= tex.r;
-        out.color.g *= tex.g;
-        out.color.b *= tex.b;
-        out.color.a *= tex.a;
+        if (textureEnvMode == GL_REPLACE) {
+            out.color = tex;
+        } else {
+            // GL_MODULATE (default)
+            out.color.r *= tex.r;
+            out.color.g *= tex.g;
+            out.color.b *= tex.b;
+            out.color.a *= tex.a;
+        }
     }
 
     return out;
