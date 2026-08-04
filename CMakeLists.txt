@@ -13,6 +13,7 @@ add_library(GL SHARED
     src/displayLists.cpp
     src/functions/function.cpp
     src/shim.cpp
+    src/display/x11_display.cpp
 )
 
 target_include_directories(GL PRIVATE include
