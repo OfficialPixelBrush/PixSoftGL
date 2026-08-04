@@ -1,8 +1,16 @@
 #include "lib.h"
+#include <algorithm>
 #include <iostream>
 #include <dlfcn.h>
 #include "global.h"
 #include <GL/gl.h>
+
+#ifndef GL_BGRA
+#define GL_BGRA 0x80E1
+#endif
+#ifndef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_TO_EDGE 0x812F
+#endif
 
 // Actual OpenGL 1.1 Library functions!
 extern "C" {
@@ -126,6 +134,54 @@ extern "C" {
         //PrintInfo("\n");
     }
 
+    void glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLfloat,GLfloat,GLfloat,GLfloat) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLfloat,GLfloat,GLfloat,GLfloat)) dlsym(RTLD_NEXT, "glColor4f");
+            }
+            real_gl(red,green,blue,alpha);
+        }
+        if (activeDisplayListIndex == 0) {
+            Process_glColor4f(red, green, blue, alpha);
+        } else {
+            if (compileAndExecute) {
+                Process_glColor4f(red, green, blue, alpha);
+            }
+            // Display lists currently record RGB only; keep alpha via immediate state.
+            Record_glColor3f(red, green, blue);
+            currentColor.a = alpha;
+        }
+    }
+
+    void glColor4ub(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha) {
+        glColor4f(red / 255.0f, green / 255.0f, blue / 255.0f, alpha / 255.0f);
+    }
+
+    void glDeleteTextures(GLsizei n, const GLuint* textures) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLsizei, const GLuint*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLsizei, const GLuint*)) dlsym(RTLD_NEXT, "glDeleteTextures");
+            }
+            real_gl(n, textures);
+        }
+        if (!textures || n <= 0) return;
+        for (GLsizei i = 0; i < n; ++i) {
+            const GLuint id = textures[i];
+            if (id == 0 || id >= textureArray.size()) continue;
+            auto& slot = textureArray[id];
+            if (slot.texture2D.textureData) {
+                free(slot.texture2D.textureData);
+                slot.texture2D.textureData = nullptr;
+            }
+            slot = TextureSlot{};
+            if (lastAccessedTexture == &textureArray[id]) {
+                lastAccessedTexture = nullptr;
+            }
+        }
+    }
+
     // Return OpenGL info
     const GLubyte* glGetString(GLenum name) {
         static const GLubyte* (*real_gl)(GLenum) = NULL;
@@ -146,7 +202,7 @@ extern "C" {
                 return (const GLubyte*)PIXSOFTGL_EXTENSIONS;
             default:
                 std::cout << std::hex << name << std::dec << std::endl;
-                return real_gl(name);
+                return real_gl ? real_gl(name) : nullptr;
         }
         PrintInfo("\n");
         return nullptr;
@@ -804,14 +860,21 @@ extern "C" {
         switch (pname) {
             case GL_VIEWPORT:
                 PrintInfo("GL_VIEWPORT");
-                params[0] = 0;
-                params[1] = 0;
-                params[2] = renderAreaWidth;
-                params[3] = renderAreaHeight;
+                params[0] = glViewportX;
+                params[1] = glViewportY;
+                params[2] = glViewportW;
+                params[3] = glViewportH;
                 break;
             case GL_DEPTH_BITS:
                 PrintInfo("GL_DEPTH_BITS");
-                params[0] = 8;
+                params[0] = DEPTH_BITS;
+                break;
+            case GL_SCISSOR_BOX:
+                // Return OpenGL bottom-left convention.
+                params[0] = scissorX;
+                params[1] = renderAreaHeight - (scissorY + scissorHeight);
+                params[2] = scissorWidth;
+                params[3] = scissorHeight;
                 break;
             case GL_MAX_TEXTURE_SIZE:
                 PrintInfo("GL_MAX_TEXTURE_SIZE");
@@ -865,17 +928,14 @@ extern "C" {
             case GL_VERTEX_ARRAY:
                 PrintInfo("GL_VERTEX_ARRAY ");
                 vertexArrayActive = false;
-                vertexArrayPointer = nullptr;
                 break;
             case GL_COLOR_ARRAY:
                 PrintInfo("GL_COLOR_ARRAY ");
                 colorArrayActive = false;
-                colorArrayPointer = nullptr;
                 break;
             case GL_TEXTURE_COORD_ARRAY:
                 PrintInfo("GL_TEXTURE_COORD_ARRAY ");
                 textureArrayActive = false;
-                textureArrayPointer = nullptr;
                 break;
         }
         PrintInfo("\n");
@@ -1046,26 +1106,104 @@ extern "C" {
             real_gl(target,level,internalFormat,width,height,border,format,type,pixels);
         }
         if (!lastAccessedTexture) return;
-        if (width > MAX_TEXTURE_SIZE || height > MAX_TEXTURE_SIZE) return;
-        if (!pixels) return;
-        lastAccessedTexture->texture2D.width = width;
-        lastAccessedTexture->texture2D.height = height;
-        lastAccessedTexture->texture2D.textureData = (Col4*)malloc(sizeof(Col4)*width*height);
-        const unsigned char* charPix = (const unsigned char*)pixels;
-        
+        if (level != 0) return; // mipmaps: accept and ignore for now
+        if (width <= 0 || height <= 0 || width > MAX_TEXTURE_SIZE || height > MAX_TEXTURE_SIZE) {
+            errorState = GL_INVALID_VALUE;
+            return;
+        }
+        if (type != GL_UNSIGNED_BYTE) {
+            errorState = GL_INVALID_ENUM;
+            return;
+        }
+        if (format != GL_RGBA && format != GL_RGB && format != GL_BGRA) {
+            errorState = GL_INVALID_ENUM;
+            return;
+        }
+
+        auto& tex = lastAccessedTexture->texture2D;
+        if (tex.textureData) {
+            free(tex.textureData);
+            tex.textureData = nullptr;
+        }
+        tex.width = width;
+        tex.height = height;
+        tex.textureData = static_cast<Col4*>(malloc(sizeof(Col4) * static_cast<size_t>(width * height)));
+        if (!tex.textureData) {
+            errorState = GL_OUT_OF_MEMORY;
+            return;
+        }
+        if (!pixels) {
+            for (int i = 0; i < width * height; ++i) {
+                tex.textureData[i] = Col4{0, 0, 0, 1};
+            }
+            return;
+        }
+
+        const unsigned char* src = static_cast<const unsigned char*>(pixels);
+        const int comps = (format == GL_RGB) ? 3 : 4;
+        const bool bgra = (format == GL_BGRA);
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
-                int idx = (y*width + x)*4;  // RGBA
-                int texIdx = y*width + x;   // Col4 array index
-
-                lastAccessedTexture->texture2D.textureData[texIdx] = Col4{
-                    charPix[idx] / 255.0f,
-                    charPix[idx+1] / 255.0f,
-                    charPix[idx+2] / 255.0f,
-                    charPix[idx+3] / 255.0f
-                };
+                const int srcIdx = (y * width + x) * comps;
+                const int dstIdx = y * width + x;
+                float r, g, b, a;
+                if (bgra) {
+                    b = src[srcIdx + 0] / 255.0f;
+                    g = src[srcIdx + 1] / 255.0f;
+                    r = src[srcIdx + 2] / 255.0f;
+                    a = comps > 3 ? src[srcIdx + 3] / 255.0f : 1.0f;
+                } else {
+                    r = src[srcIdx + 0] / 255.0f;
+                    g = src[srcIdx + 1] / 255.0f;
+                    b = src[srcIdx + 2] / 255.0f;
+                    a = comps > 3 ? src[srcIdx + 3] / 255.0f : 1.0f;
+                }
+                tex.textureData[dstIdx] = Col4{r, g, b, a};
             }
         }
+        (void)internalFormat;
+        (void)border;
+        (void)target;
+    }
+
+    void glAlphaFunc(GLenum func, GLclampf ref) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum, GLclampf) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum, GLclampf)) dlsym(RTLD_NEXT, "glAlphaFunc");
+            }
+            real_gl(func, ref);
+        }
+        alphaFunc = func;
+        alphaRef = std::clamp(static_cast<float>(ref), 0.0f, 1.0f);
+    }
+
+    void glBlendFunc(GLenum sfactor, GLenum dfactor) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum, GLenum) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum, GLenum)) dlsym(RTLD_NEXT, "glBlendFunc");
+            }
+            real_gl(sfactor, dfactor);
+        }
+        blendSrcFactor = sfactor;
+        blendDstFactor = dfactor;
+    }
+
+    void glScissor(GLint x, GLint y, GLsizei width, GLsizei height) {
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLint, GLint, GLsizei, GLsizei) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLint, GLint, GLsizei, GLsizei)) dlsym(RTLD_NEXT, "glScissor");
+            }
+            real_gl(x, y, width, height);
+        }
+        // Convert bottom-left scissor to top-left buffer coordinates.
+        scissorWidth = width;
+        scissorHeight = height;
+        scissorX = x;
+        scissorY = renderAreaHeight - (y + height);
+        if (scissorY < 0) scissorY = 0;
     }
 
     void glTexCoord2f(GLfloat s, GLfloat t) {
@@ -1106,12 +1244,14 @@ extern "C" {
     
     GLenum glGetError() {
         if (forwardToSystemGl) {
-            static void (*real_gl)() = NULL;
+            static GLenum (*real_gl)() = NULL;
             if (!real_gl) {
-                real_gl = (void (*)()) dlsym(RTLD_NEXT, "glGetError");
+                real_gl = (GLenum (*)()) dlsym(RTLD_NEXT, "glGetError");
             }
             real_gl();
         }
-        return errorState;
+        GLenum err = errorState;
+        errorState = GL_NO_ERROR;
+        return err;
     };
 }

@@ -26,6 +26,21 @@ extern bool alphaTestActive;
 extern bool texture2dActive;
 
 extern GLenum depthFunction;
+extern GLenum alphaFunc;
+extern GLfloat alphaRef;
+extern GLenum blendSrcFactor;
+extern GLenum blendDstFactor;
+
+extern GLint scissorX;
+extern GLint scissorY;
+extern GLsizei scissorWidth;
+extern GLsizei scissorHeight;
+
+// Original GL-convention viewport (origin bottom-left), for glGetIntegerv.
+extern GLint glViewportX;
+extern GLint glViewportY;
+extern GLsizei glViewportW;
+extern GLsizei glViewportH;
 
 // Lights
 extern bool lightActive[MAX_LIGHTS];

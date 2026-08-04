@@ -43,3 +43,6 @@ tests/testSuite
 /cc
 tests/testPointers
 history.txt
+/jdk1.8.0_491
+/x64_jdk1.8.0_202
+/x86_jdk1.8.0_491

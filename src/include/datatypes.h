@@ -168,7 +168,8 @@ struct Mat4x4 {
 // Vertex
 struct Vertex {
     Vec3 pos;
-    double w;
+    double w = 1.0;       // clip-space w (after projection)
+    float eyeDist = 0.0f; // eye-space distance for fog
     Col4 col = Col4{1,0,1,1};
     Vec2 uv;
 };

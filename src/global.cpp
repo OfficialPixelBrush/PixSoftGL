@@ -3,6 +3,25 @@
 #include <cstddef>
 #include <cstdlib>
 
+namespace {
+
+Mat4x4 makeIdentity() {
+    return Mat4x4{
+        Vec4{1, 0, 0, 0},
+        Vec4{0, 1, 0, 0},
+        Vec4{0, 0, 1, 0},
+        Vec4{0, 0, 0, 1}
+    };
+}
+
+void fillIdentity(Mat4x4* mats, int count) {
+    for (int i = 0; i < count; ++i) {
+        mats[i] = makeIdentity();
+    }
+}
+
+} // namespace
+
 bool forwardToSystemGl = false;
 
 int vertexIndex = 0;
@@ -22,6 +41,20 @@ bool alphaTestActive = false;
 bool texture2dActive = false;
 
 GLenum depthFunction = GL_LESS;
+GLenum alphaFunc = GL_ALWAYS;
+GLfloat alphaRef = 0.0f;
+GLenum blendSrcFactor = GL_SRC_ALPHA;
+GLenum blendDstFactor = GL_ONE_MINUS_SRC_ALPHA;
+
+GLint scissorX = 0;
+GLint scissorY = 0;
+GLsizei scissorWidth = DEFAULT_RENDER_AREA_WIDTH;
+GLsizei scissorHeight = DEFAULT_RENDER_AREA_HEIGHT;
+
+GLint glViewportX = 0;
+GLint glViewportY = 0;
+GLsizei glViewportW = DEFAULT_RENDER_AREA_WIDTH;
+GLsizei glViewportH = DEFAULT_RENDER_AREA_HEIGHT;
 
 // Lights
 bool lightActive[MAX_LIGHTS];
@@ -44,7 +77,7 @@ GLenum matrixMode = GL_MODELVIEW;
 Col4 currentColor = Col4{1,1,1,1};
 Col4 clearColor = Col4{0,0,0,1};
 
-// Matrices
+// Matrices — OpenGL stacks start as identity.
 int projMatrixPtr = 0;
 int modelMatrixPtr = 0;
 int texMatrixPtr = 0;
@@ -52,6 +85,15 @@ Mat4x4 modelMatrices[MAX_MODELVIEW_STACK_DEPTH];
 Mat4x4 projMatrices[MAX_PROJECTION_STACK_DEPTH];
 Mat4x4 texMatrices[MAX_TEXTURE_STACK_DEPTH];
 Mat4x4* lastAccessedMatrix = &modelMatrices[0];
+
+struct MatrixInit {
+    MatrixInit() {
+        fillIdentity(modelMatrices, MAX_MODELVIEW_STACK_DEPTH);
+        fillIdentity(projMatrices, MAX_PROJECTION_STACK_DEPTH);
+        fillIdentity(texMatrices, MAX_TEXTURE_STACK_DEPTH);
+    }
+};
+static MatrixInit matrixInit;
 
 // Vertex buffer
 Vertex vertices[MAX_VERTICES];
@@ -82,6 +124,7 @@ bool compileAndExecute = false;
 
 // Textures
 Vec2 currentTextureUV = Vec2{0,0};
+GLenum textureType = 0;
 TextureSlot* lastAccessedTexture = nullptr;
 std::vector<TextureSlot> textureArray;
 

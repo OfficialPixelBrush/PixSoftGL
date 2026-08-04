@@ -4,6 +4,8 @@
 #include "global.h"
 #include "maths.h"
 #include <GL/gl.h>
+#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 
@@ -53,19 +55,26 @@ void Process_glTexCoord2f(GLfloat s, GLfloat t) {
 }
 
 void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
-    viewportOffsetX = x;
-    viewportOffsetY = y;
+    glViewportX = x;
+    glViewportY = y;
+    glViewportW = width;
+    glViewportH = height;
+
+    // OpenGL viewport origin is bottom-left. Our color buffer is top-left, so
+    // convert to a top-left offset for projection/rasterization.
     viewportAreaWidth = width;
     viewportAreaHeight = height;
     viewportAreaTotal = viewportAreaWidth * viewportAreaHeight;
+    viewportOffsetX = x;
+    viewportOffsetY = renderAreaHeight - (y + height);
+    if (viewportOffsetY < 0) viewportOffsetY = 0;
 
-    // Grow the drawable to fit the viewport when no X11/fb size is established yet.
-    const int neededW = viewportOffsetX + viewportAreaWidth;
-    const int neededH = viewportOffsetY + viewportAreaHeight;
+    const int neededW = std::max(renderAreaWidth, x + width);
+    const int neededH = std::max(renderAreaHeight, y + height);
     if (!frameBufferColor || neededW > renderAreaWidth || neededH > renderAreaHeight) {
-        EnsureRenderBuffers(
-            neededW > renderAreaWidth ? neededW : renderAreaWidth,
-            neededH > renderAreaHeight ? neededH : renderAreaHeight);
+        EnsureRenderBuffers(neededW, neededH);
+        viewportOffsetY = renderAreaHeight - (y + height);
+        if (viewportOffsetY < 0) viewportOffsetY = 0;
     }
 
     ReCreateWindow();
@@ -360,8 +369,8 @@ GLuint Process_glGenLists(GLsizei range) {
 }
 
 GLboolean Process_IsList(GLuint list) {
-    if (list == 0 || list > displayLists.size()) return false;
-    return displayLists[list - 1].commands.empty();
+    if (list == 0 || list > displayLists.size()) return GL_FALSE;
+    return displayLists[list - 1].commands.empty() ? GL_FALSE : GL_TRUE;
 }
 
 void Process_glDeleteLists(GLuint list, GLsizei range) {
@@ -375,150 +384,299 @@ void Process_glDeleteLists(GLuint list, GLsizei range) {
 }
 
 void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
-    if ((mode != GL_TRIANGLES && mode != GL_QUADS))
-        return;
+    if (!vertexArrayActive || !vertexArrayPointer || count <= 0) return;
 
-    // Each array needs its OWN stride!
+    auto typeBytes = [](GLenum type) -> int {
+        switch (type) {
+        case GL_BYTE:
+        case GL_UNSIGNED_BYTE: return 1;
+        case GL_SHORT:
+        case GL_UNSIGNED_SHORT: return 2;
+        case GL_INT:
+        case GL_UNSIGNED_INT:
+        case GL_FLOAT: return 4;
+        case GL_DOUBLE: return 8;
+        default: return 4;
+        }
+    };
+
+    auto readFloat = [](const uint8_t* p, GLenum type) -> float {
+        switch (type) {
+        case GL_BYTE: return *reinterpret_cast<const GLbyte*>(p) / 127.0f;
+        case GL_UNSIGNED_BYTE: return *p / 255.0f;
+        case GL_SHORT: return *reinterpret_cast<const GLshort*>(p) / 32767.0f;
+        case GL_UNSIGNED_SHORT: return *reinterpret_cast<const GLushort*>(p) / 65535.0f;
+        case GL_INT: return static_cast<float>(*reinterpret_cast<const GLint*>(p));
+        case GL_UNSIGNED_INT: return static_cast<float>(*reinterpret_cast<const GLuint*>(p));
+        case GL_FLOAT: return *reinterpret_cast<const GLfloat*>(p);
+        case GL_DOUBLE: return static_cast<float>(*reinterpret_cast<const GLdouble*>(p));
+        default: return *reinterpret_cast<const GLfloat*>(p);
+        }
+    };
+
+    auto elemPtr = [&](const void* base, GLsizei stride, GLint size, GLenum type, int index) -> const uint8_t* {
+        const int natural = size * typeBytes(type);
+        const int step = stride > 0 ? stride : natural;
+        return static_cast<const uint8_t*>(base) + index * step;
+    };
+
     auto fetchPos = [&](int i) -> Vec3 {
-        if (!vertexArrayPointer) return Vec3{0,0,0};
-        const uint8_t* base;
-        if (vertexArrayStride > 0) 
-            base = (const uint8_t*)vertexArrayPointer + (i*vertexArrayStride);
-        else
-            base = (const uint8_t*)vertexArrayPointer + (i * (sizeof(GLfloat)*vertexArrayTypeSize));
-        const float* p = (const float*)base;
-        return Vec3{p[0], p[1], p[2]};
+        const uint8_t* p = elemPtr(vertexArrayPointer, vertexArrayStride,
+                                   vertexArrayTypeSize, vertexArrayType, i);
+        const float x = readFloat(p, vertexArrayType);
+        const float y = vertexArrayTypeSize > 1 ? readFloat(p + typeBytes(vertexArrayType), vertexArrayType) : 0.0f;
+        const float z = vertexArrayTypeSize > 2 ? readFloat(p + 2 * typeBytes(vertexArrayType), vertexArrayType) : 0.0f;
+        // Positions are not normalized for FLOAT/INT — re-read raw floats for FLOAT.
+        if (vertexArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(p);
+            return Vec3{f[0], vertexArrayTypeSize > 1 ? f[1] : 0.0, vertexArrayTypeSize > 2 ? f[2] : 0.0};
+        }
+        return Vec3{x, y, z};
     };
 
     auto fetchCol = [&](int i) -> Col4 {
-        if (!colorArrayPointer) return Col4{1,1,1,1};
-        const uint8_t* base;
-        if (colorArrayStride > 0) 
-            base = (const uint8_t*)colorArrayPointer + (i*colorArrayStride);
-        else
-            base = (const uint8_t*)colorArrayPointer + (i * (sizeof(GLubyte)*colorArrayTypeSize));
-        const uint8_t* c = base;
-        return Col4{c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f};
+        if (!colorArrayActive || !colorArrayPointer) return currentColor;
+        const uint8_t* p = elemPtr(colorArrayPointer, colorArrayStride,
+                                   colorArrayTypeSize, colorArrayType, i);
+        if (colorArrayType == GL_UNSIGNED_BYTE) {
+            const float r = p[0] / 255.0f;
+            const float g = colorArrayTypeSize > 1 ? p[1] / 255.0f : r;
+            const float b = colorArrayTypeSize > 2 ? p[2] / 255.0f : r;
+            const float a = colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f;
+            return Col4{r, g, b, a};
+        }
+        if (colorArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(p);
+            return Col4{
+                f[0],
+                colorArrayTypeSize > 1 ? f[1] : f[0],
+                colorArrayTypeSize > 2 ? f[2] : f[0],
+                colorArrayTypeSize > 3 ? f[3] : 1.0f
+            };
+        }
+        return Col4{
+            readFloat(p, colorArrayType),
+            colorArrayTypeSize > 1 ? readFloat(p + typeBytes(colorArrayType), colorArrayType) : 1.0f,
+            colorArrayTypeSize > 2 ? readFloat(p + 2 * typeBytes(colorArrayType), colorArrayType) : 1.0f,
+            colorArrayTypeSize > 3 ? readFloat(p + 3 * typeBytes(colorArrayType), colorArrayType) : 1.0f
+        };
     };
 
     auto fetchUV = [&](int i) -> Vec2 {
-        if (!textureArrayPointer) return Vec2{0,0};
-        const uint8_t* base;
-        if (textureArrayStride > 0) 
-            base = (const uint8_t*)textureArrayPointer + (i*textureArrayStride);
-        else
-            base = (const uint8_t*)textureArrayPointer + (i * (sizeof(GLfloat)*textureArrayTypeSize));
-        const float* t = (const float*)base;
-        return Vec2{t[0], t[1]};
+        if (!textureArrayActive || !textureArrayPointer) return currentTextureUV;
+        const uint8_t* p = elemPtr(textureArrayPointer, textureArrayStride,
+                                   textureArrayTypeSize, textureArrayType, i);
+        if (textureArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(p);
+            return Vec2{f[0], textureArrayTypeSize > 1 ? f[1] : 0.0};
+        }
+        return Vec2{
+            readFloat(p, textureArrayType),
+            textureArrayTypeSize > 1 ? readFloat(p + typeBytes(textureArrayType), textureArrayType) : 0.0f
+        };
     };
 
-    auto drawTri = [&](int a, int b, int c){
-        Triangle tri;
-        tri.a.pos = fetchPos(a);
-        tri.b.pos = fetchPos(b);
-        tri.c.pos = fetchPos(c);
-
-        tri.a.col = fetchCol(a);
-        tri.b.col = fetchCol(b);
-        tri.c.col = fetchCol(c);
-
-        tri.a.uv = fetchUV(a);
-        tri.b.uv = fetchUV(b);
-        tri.c.uv = fetchUV(c);
-
-        RenderTriangle(tri);
+    auto makeVert = [&](int i) -> Vertex {
+        Vertex v{};
+        v.pos = fetchPos(i);
+        v.col = fetchCol(i);
+        v.uv = fetchUV(i);
+        return v;
     };
 
-    if (mode == GL_QUADS) {
-        for (int i = 0; i < count; i += 4) {
+    auto drawTri = [&](int a, int b, int c) {
+        RenderTriangle(Triangle{makeVert(a), makeVert(b), makeVert(c)});
+    };
+
+    switch (mode) {
+    case GL_TRIANGLES:
+        for (int i = 0; i + 2 < count; i += 3) {
+            drawTri(first + i, first + i + 1, first + i + 2);
+        }
+        break;
+    case GL_TRIANGLE_STRIP:
+        for (int i = 0; i + 2 < count; ++i) {
+            if (i & 1) drawTri(first + i + 1, first + i, first + i + 2);
+            else       drawTri(first + i, first + i + 1, first + i + 2);
+        }
+        break;
+    case GL_TRIANGLE_FAN:
+        for (int i = 1; i + 1 < count; ++i) {
+            drawTri(first, first + i, first + i + 1);
+        }
+        break;
+    case GL_QUADS:
+        for (int i = 0; i + 3 < count; i += 4) {
             drawTri(first + i, first + i + 1, first + i + 2);
             drawTri(first + i, first + i + 2, first + i + 3);
         }
-    } else { // GL_TRIANGLES
-        for (int i = 0; i < count; i += 3) {
+        break;
+    case GL_QUAD_STRIP:
+        for (int i = 0; i + 3 < count; i += 2) {
             drawTri(first + i, first + i + 1, first + i + 2);
+            drawTri(first + i + 1, first + i + 3, first + i + 2);
         }
+        break;
+    default:
+        break;
     }
 }
 
 void Process_glDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
 {
-    if (!vertexArrayPointer) {
+    if (!vertexArrayActive || !vertexArrayPointer) {
         errorState = GL_INVALID_OPERATION;
         return;
     }
-
     if (count < 0) {
         errorState = GL_INVALID_VALUE;
         return;
     }
+    if (!indices || count == 0) return;
 
-    if (!indices)
+    auto readIndex = [&](int i) -> GLuint {
+        switch (type) {
+        case GL_UNSIGNED_BYTE:  return static_cast<const uint8_t*>(indices)[i];
+        case GL_UNSIGNED_SHORT: return static_cast<const uint16_t*>(indices)[i];
+        case GL_UNSIGNED_INT:   return static_cast<const uint32_t*>(indices)[i];
+        default: return 0;
+        }
+    };
+    if (type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT) {
+        errorState = GL_INVALID_ENUM;
         return;
-
-    const uint8_t* indicesUByte = nullptr;
-    const uint16_t* indicesUShort = nullptr;
-    const uint32_t* indicesUInt = nullptr;
-
-    switch (type) {
-        case GL_UNSIGNED_BYTE:    indicesUByte = (const uint8_t*)indices; break;
-        case GL_UNSIGNED_SHORT:   indicesUShort = (const uint16_t*)indices; break;
-        case GL_UNSIGNED_INT:     indicesUInt = (const uint32_t*)indices; break;
-        default:
-            errorState = GL_INVALID_ENUM;
-            return;
     }
 
-    auto fetchPos = [&](int i) -> Vec3 {
-        if (!vertexArrayPointer) return Vec3{0,0,0};
-        const uint8_t* base = (const uint8_t*)vertexArrayPointer + i * (vertexArrayStride > 0 ? vertexArrayStride : sizeof(GLfloat)*3);
-        const GLfloat* p = (const GLfloat*)base;
-        return Vec3{p[0], p[1], p[2]};
+    // Reuse DrawArrays fetch path by temporarily building an index remap via
+    // direct triangle emission (no 4096 immediate-mode cap).
+    auto typeBytes = [](GLenum t) -> int {
+        switch (t) {
+        case GL_BYTE: case GL_UNSIGNED_BYTE: return 1;
+        case GL_SHORT: case GL_UNSIGNED_SHORT: return 2;
+        case GL_INT: case GL_UNSIGNED_INT: case GL_FLOAT: return 4;
+        case GL_DOUBLE: return 8;
+        default: return 4;
+        }
+    };
+    auto elemPtr = [&](const void* base, GLsizei stride, GLint size, GLenum t, int index) -> const uint8_t* {
+        const int natural = size * typeBytes(t);
+        const int step = stride > 0 ? stride : natural;
+        return static_cast<const uint8_t*>(base) + index * step;
+    };
+    auto fetchPos = [&](GLuint i) -> Vec3 {
+        const uint8_t* p = elemPtr(vertexArrayPointer, vertexArrayStride,
+                                   vertexArrayTypeSize, vertexArrayType, static_cast<int>(i));
+        if (vertexArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(p);
+            return Vec3{f[0], vertexArrayTypeSize > 1 ? f[1] : 0.0, vertexArrayTypeSize > 2 ? f[2] : 0.0};
+        }
+        return Vec3{0, 0, 0};
+    };
+    auto fetchCol = [&](GLuint i) -> Col4 {
+        if (!colorArrayActive || !colorArrayPointer) return currentColor;
+        const uint8_t* p = elemPtr(colorArrayPointer, colorArrayStride,
+                                   colorArrayTypeSize, colorArrayType, static_cast<int>(i));
+        if (colorArrayType == GL_UNSIGNED_BYTE) {
+            return Col4{
+                p[0] / 255.0f,
+                colorArrayTypeSize > 1 ? p[1] / 255.0f : p[0] / 255.0f,
+                colorArrayTypeSize > 2 ? p[2] / 255.0f : p[0] / 255.0f,
+                colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f
+            };
+        }
+        if (colorArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(p);
+            return Col4{
+                f[0],
+                colorArrayTypeSize > 1 ? f[1] : f[0],
+                colorArrayTypeSize > 2 ? f[2] : f[0],
+                colorArrayTypeSize > 3 ? f[3] : 1.0f
+            };
+        }
+        return currentColor;
+    };
+    auto fetchUV = [&](GLuint i) -> Vec2 {
+        if (!textureArrayActive || !textureArrayPointer) return currentTextureUV;
+        const uint8_t* p = elemPtr(textureArrayPointer, textureArrayStride,
+                                   textureArrayTypeSize, textureArrayType, static_cast<int>(i));
+        if (textureArrayType == GL_FLOAT) {
+            const float* f = reinterpret_cast<const float*>(p);
+            return Vec2{f[0], textureArrayTypeSize > 1 ? f[1] : 0.0};
+        }
+        return currentTextureUV;
+    };
+    auto makeVert = [&](GLuint i) -> Vertex {
+        Vertex v{};
+        v.pos = fetchPos(i);
+        v.col = fetchCol(i);
+        v.uv = fetchUV(i);
+        return v;
+    };
+    auto drawTri = [&](GLuint a, GLuint b, GLuint c) {
+        RenderTriangle(Triangle{makeVert(a), makeVert(b), makeVert(c)});
     };
 
-    auto fetchCol = [&](int i) -> Col4 {
-        if (!colorArrayPointer) return Col4{1,1,1,1};
-        const uint8_t* base = (const uint8_t*)colorArrayPointer + i * (colorArrayStride > 0 ? colorArrayStride : sizeof(GLubyte)*4);
-        const GLubyte* c = (const GLubyte*)base;
-        return Col4{ c[0]/255.f, c[1]/255.f, c[2]/255.f, c[3]/255.f };
-    };
-
-    auto fetchUV = [&](int i) -> Vec2 {
-        if (!textureArrayPointer) return Vec2{0,0};
-        const uint8_t* base = (const uint8_t*)textureArrayPointer + i * (textureArrayStride > 0 ? textureArrayStride : sizeof(GLfloat)*2);
-        const GLfloat* t = (const GLfloat*)base;
-        return Vec2{t[0], t[1]};
-    };
-
-    Process_glBegin(mode);
-    for (int i = 0; i < count; i++) {
-        GLuint index = indicesUByte ? indicesUByte[i] :
-            (indicesUShort ? indicesUShort[i] : indicesUInt[i]);
-        if (colorArrayPointer) {
-            Col4 col = fetchCol(index);
-            Process_glColor4f(col.r, col.g, col.b, col.a);
+    switch (mode) {
+    case GL_TRIANGLES:
+        for (int i = 0; i + 2 < count; i += 3) {
+            drawTri(readIndex(i), readIndex(i + 1), readIndex(i + 2));
         }
-        if (textureArrayPointer) {
-            Vec2 uv = fetchUV(index);
-            Process_glTexCoord2f(uv.x, uv.y);
+        break;
+    case GL_TRIANGLE_STRIP:
+        for (int i = 0; i + 2 < count; ++i) {
+            GLuint a = readIndex(i), b = readIndex(i + 1), c = readIndex(i + 2);
+            if (i & 1) drawTri(b, a, c);
+            else       drawTri(a, b, c);
         }
-        if (vertexArrayPointer) {
-            Vec3 pos = fetchPos(index);
-            Process_glVertex3f(pos.x, pos.y, pos.z);
+        break;
+    case GL_TRIANGLE_FAN:
+        if (count >= 3) {
+            GLuint first = readIndex(0);
+            for (int i = 1; i + 1 < count; ++i) {
+                drawTri(first, readIndex(i), readIndex(i + 1));
+            }
         }
+        break;
+    case GL_QUADS:
+        for (int i = 0; i + 3 < count; i += 4) {
+            drawTri(readIndex(i), readIndex(i + 1), readIndex(i + 2));
+            drawTri(readIndex(i), readIndex(i + 2), readIndex(i + 3));
+        }
+        break;
+    default:
+        break;
     }
-    Process_glEnd();
 }
 
 void Process_glGenTextures(GLsizei n, GLuint *textures) {
-    int count = 0;
-    for (int i = 0; i < n; i++) {
+    if (n < 0) {
+        errorState = GL_INVALID_VALUE;
+        return;
+    }
+    // Texture name 0 is reserved (unbind).
+    if (textureArray.empty()) {
         textureArray.push_back(TextureSlot{});
-        textures[i] = textureArray.size() - 1;
+    }
+    for (GLsizei i = 0; i < n; i++) {
+        textureArray.push_back(TextureSlot{});
+        auto& slot = textureArray.back();
+        slot.texture2D.textureWrapS = GL_REPEAT;
+        slot.texture2D.textureWrapT = GL_REPEAT;
+        slot.texture2D.textureMinFilter = GL_NEAREST;
+        slot.texture2D.textureMagFilter = GL_NEAREST;
+        textures[i] = static_cast<GLuint>(textureArray.size() - 1);
     }
 }
 
 void Process_glBindTexture(GLenum target, GLuint texture) {
+    if (texture == 0) {
+        lastAccessedTexture = nullptr;
+        return;
+    }
+    if (texture >= textureArray.size()) {
+        // Auto-create missing names (common with apps that invent IDs).
+        textureArray.resize(texture + 1);
+    }
     lastAccessedTexture = &textureArray[texture];
     lastAccessedTexture->textureType = target;
 }

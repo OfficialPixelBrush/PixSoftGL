@@ -22,6 +22,25 @@ static const int WIN_H = 256;
 
 struct TestResult { const char* name; bool pass; std::string msg; };
 
+static void resetGLState() {
+    glViewport(0, 0, WIN_W, WIN_H);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_FOG);
+    glDisable(GL_ALPHA_TEST);
+    glDepthMask(GL_TRUE);
+    glColor4f(1, 1, 1, 1);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, WIN_W, 0, WIN_H, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
 static void checkGLError(const char* where, std::string &out) {
     GLenum e;
     while ((e = glGetError()) != GL_NO_ERROR) {
@@ -61,6 +80,7 @@ static TestResult test_version() {
 
 static TestResult test_clear_and_readback() {
     TestResult t = {"ClearColor & glReadPixels", false, ""};
+    resetGLState();
     glViewport(0,0,WIN_W,WIN_H);
     glClearColor(0.2f, 0.4f, 0.6f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -79,6 +99,7 @@ static TestResult test_clear_and_readback() {
 
 static TestResult test_immediate_triangle() {
     TestResult t = {"Immediate-mode triangle", false, ""};
+    resetGLState();
     glMatrixMode(GL_PROJECTION); glLoadIdentity();
     glOrtho(0, WIN_W, 0, WIN_H, -1, 1);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
@@ -104,14 +125,17 @@ static TestResult test_immediate_triangle() {
 
 static TestResult test_viewport_scissor() {
     TestResult t = {"Viewport & scissor (viewport test)", false, ""};
+    resetGLState();
     glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, WIN_W, 0, WIN_H, -1,1);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     glDisable(GL_SCISSOR_TEST);
     glClearColor(0,0,1,1); glClear(GL_COLOR_BUFFER_BIT);
+    // Restrict drawing to the left half of the window. Ortho still maps the
+    // full [0, WIN_W] range into that viewport, so a full-width quad fills it.
     glViewport(0,0,WIN_W/2,WIN_H);
     glColor3f(1,0,0);
     glBegin(GL_QUADS);
-      glVertex2f(0,0); glVertex2f(WIN_W/2,0); glVertex2f(WIN_W/2,WIN_H); glVertex2f(0,WIN_H);
+      glVertex2f(0,0); glVertex2f(WIN_W,0); glVertex2f(WIN_W,WIN_H); glVertex2f(0,WIN_H);
     glEnd();
     glFlush();
     unsigned char left[4], right[4];
@@ -126,6 +150,7 @@ static TestResult test_viewport_scissor() {
 
 static TestResult test_modelview_translate() {
     TestResult t = {"Modelview transform (translate)", false, ""};
+    resetGLState();
     glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, WIN_W, 0, WIN_H, -1,1);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     glClearColor(0,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
@@ -153,6 +178,7 @@ static TestResult test_modelview_translate() {
 
 static TestResult test_display_list() {
     TestResult t = {"Display list (glNewList/glCallList)", false, ""};
+    resetGLState();
     glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, WIN_W, 0, WIN_H, -1,1);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     glClearColor(0,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
@@ -176,6 +202,7 @@ static TestResult test_display_list() {
 
 static TestResult test_texture_2x2() {
     TestResult t = {"2D texture upload & sample (2x2)", false, ""};
+    resetGLState();
     glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, WIN_W, 0, WIN_H, -1,1);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     glClearColor(0,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
@@ -209,6 +236,7 @@ static TestResult test_texture_2x2() {
 
 static TestResult test_blending() {
     TestResult t = {"Blending (SRC_ALPHA, ONE_MINUS_SRC_ALPHA)", false, ""};
+    resetGLState();
     glMatrixMode(GL_PROJECTION); glLoadIdentity(); glOrtho(0, WIN_W, 0, WIN_H, -1,1);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
     glClearColor(0,0,1,1); glClear(GL_COLOR_BUFFER_BIT);

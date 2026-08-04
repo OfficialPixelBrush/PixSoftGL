@@ -83,6 +83,14 @@ bool EnsureRenderBuffers(int width, int height) {
         viewportAreaWidth = width;
         viewportAreaHeight = height;
         viewportAreaTotal = total;
+        glViewportX = 0;
+        glViewportY = 0;
+        glViewportW = width;
+        glViewportH = height;
+        scissorX = 0;
+        scissorY = 0;
+        scissorWidth = width;
+        scissorHeight = height;
     }
 
     std::memset(frameBufferColor, 0, static_cast<size_t>(total) * sizeof(PixelValue));
