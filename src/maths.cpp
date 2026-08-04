@@ -54,12 +54,12 @@ Vec4 ProjectPosition(Vec3 pos) {
         return Vec4{0, 0, 1, clip.w};
     }
 
-    const double invW = 1.0 / clip.w;
+    const float invW = 1.0f / clip.w;
     Vec3 ndc = {clip.x * invW, clip.y * invW, clip.z * invW};
 
     return Vec4{
-        viewportOffsetX + (ndc.x + 1.0) * 0.5 * viewportAreaWidth,
-        viewportOffsetY + (1.0 - (ndc.y + 1.0) * 0.5) * viewportAreaHeight,
+        viewportOffsetX + (ndc.x + 1.0f) * 0.5f * viewportAreaWidth,
+        viewportOffsetY + (1.0f - (ndc.y + 1.0f) * 0.5f) * viewportAreaHeight,
         ndc.z,
         clip.w
     };
@@ -84,13 +84,13 @@ Vertex toWindowVertex(const ClipVert& v) {
         out.uv = v.uv;
         return out;
     }
-    const double invW = 1.0 / v.clip.w;
-    const double ndcX = v.clip.x * invW;
-    const double ndcY = v.clip.y * invW;
-    const double ndcZ = v.clip.z * invW;
+    const float invW = 1.0f / v.clip.w;
+    const float ndcX = v.clip.x * invW;
+    const float ndcY = v.clip.y * invW;
+    const float ndcZ = v.clip.z * invW;
     out.pos = Vec3{
-        viewportOffsetX + (ndcX + 1.0) * 0.5 * viewportAreaWidth,
-        viewportOffsetY + (1.0 - (ndcY + 1.0) * 0.5) * viewportAreaHeight,
+        viewportOffsetX + (ndcX + 1.0f) * 0.5f * viewportAreaWidth,
+        viewportOffsetY + (1.0f - (ndcY + 1.0f) * 0.5f) * viewportAreaHeight,
         ndcZ
     };
     out.w = v.clip.w;
@@ -100,7 +100,7 @@ Vertex toWindowVertex(const ClipVert& v) {
     return out;
 }
 
-ClipVert lerpClip(const ClipVert& a, const ClipVert& b, double t) {
+ClipVert lerpClip(const ClipVert& a, const ClipVert& b, float t) {
     ClipVert o{};
     o.clip = Vec4{
         a.clip.x + (b.clip.x - a.clip.x) * t,
@@ -108,12 +108,12 @@ ClipVert lerpClip(const ClipVert& a, const ClipVert& b, double t) {
         a.clip.z + (b.clip.z - a.clip.z) * t,
         a.clip.w + (b.clip.w - a.clip.w) * t
     };
-    o.col = lerp(a.col, b.col, static_cast<float>(t));
+    o.col = lerp(a.col, b.col, t);
     o.uv = Vec2{
         a.uv.x + (b.uv.x - a.uv.x) * t,
         a.uv.y + (b.uv.y - a.uv.y) * t
     };
-    o.eyeDist = lerp(a.eyeDist, b.eyeDist, static_cast<float>(t));
+    o.eyeDist = lerp(a.eyeDist, b.eyeDist, t);
     return o;
 }
 
@@ -123,16 +123,16 @@ int clipAgainstNear(const ClipVert* in, int nIn, ClipVert* out) {
     for (int i = 0; i < nIn; ++i) {
         const ClipVert& cur = in[i];
         const ClipVert& nxt = in[(i + 1) % nIn];
-        const double curD = cur.clip.z + cur.clip.w;
-        const double nxtD = nxt.clip.z + nxt.clip.w;
-        const bool curIn = curD >= 0.0;
-        const bool nxtIn = nxtD >= 0.0;
+        const float curD = cur.clip.z + cur.clip.w;
+        const float nxtD = nxt.clip.z + nxt.clip.w;
+        const bool curIn = curD >= 0.0f;
+        const bool nxtIn = nxtD >= 0.0f;
 
         if (curIn) {
             out[nOut++] = cur;
         }
         if (curIn != nxtIn) {
-            const double t = curD / (curD - nxtD);
+            const float t = curD / (curD - nxtD);
             out[nOut++] = lerpClip(cur, nxt, t);
         }
     }
@@ -148,20 +148,21 @@ int ProjectAndClipTriangle(const Triangle& tri, Triangle outTris[2]) {
         in[i].clip = TransformToClip(v.pos);
         in[i].col = v.col;
         in[i].uv = v.uv;
-        in[i].eyeDist = EyeDistance(v.pos);
+        // Eye-space length is only needed for fog — skip the extra model×v + sqrt.
+        in[i].eyeDist = fogActive ? EyeDistance(v.pos) : 0.0f;
     }
 
     // Fast reject: all behind near plane.
-    if ((in[0].clip.z + in[0].clip.w) < 0.0 &&
-        (in[1].clip.z + in[1].clip.w) < 0.0 &&
-        (in[2].clip.z + in[2].clip.w) < 0.0) {
+    if ((in[0].clip.z + in[0].clip.w) < 0.0f &&
+        (in[1].clip.z + in[1].clip.w) < 0.0f &&
+        (in[2].clip.z + in[2].clip.w) < 0.0f) {
         return 0;
     }
 
     // Fast path: fully in front of near plane.
-    if ((in[0].clip.z + in[0].clip.w) >= 0.0 &&
-        (in[1].clip.z + in[1].clip.w) >= 0.0 &&
-        (in[2].clip.z + in[2].clip.w) >= 0.0) {
+    if ((in[0].clip.z + in[0].clip.w) >= 0.0f &&
+        (in[1].clip.z + in[1].clip.w) >= 0.0f &&
+        (in[2].clip.z + in[2].clip.w) >= 0.0f) {
         // Also reject if any w is non-positive (behind camera / w-flip).
         if (in[0].clip.w <= CLIP_W_EPSILON ||
             in[1].clip.w <= CLIP_W_EPSILON ||
@@ -218,14 +219,13 @@ Triangle ProjectTriangle(Triangle tri) {
 }
 
 PixelValue Col3ToPixelValue(Col3 color) {
-    color.r = std::fmax(0.0f, std::fmin(1.0f, color.r));
-    color.g = std::fmax(0.0f, std::fmin(1.0f, color.g));
-    color.b = std::fmax(0.0f, std::fmin(1.0f, color.b));
-    return PixelValue{
-        static_cast<unsigned char>(color.r * 255.0f),
-        static_cast<unsigned char>(color.g * 255.0f),
-        static_cast<unsigned char>(color.b * 255.0f)
+    auto toU8 = [](float c) -> unsigned char {
+        const int v = static_cast<int>(c * 255.0f + 0.5f);
+        if (v <= 0) return 0;
+        if (v >= 255) return 255;
+        return static_cast<unsigned char>(v);
     };
+    return PixelValue{toU8(color.r), toU8(color.g), toU8(color.b)};
 }
 
 Col3 PixelValueToCol3(PixelValue color) {
@@ -332,26 +332,31 @@ Col4 sampleTexture(float u, float v) {
     const int th = slot->texture2D.height;
     if (tw <= 0 || th <= 0) return Col4{1, 1, 1, 1};
 
-    int tx, ty;
-    if (slot->texture2D.textureWrapS == GL_CLAMP ||
-        slot->texture2D.textureWrapS == GL_CLAMP_TO_EDGE) {
-        tx = std::clamp(static_cast<int>(u * (tw - 1)), 0, tw - 1);
-    } else {
-        int i = static_cast<int>(std::floor(u * tw));
-        tx = i % tw;
-        if (tx < 0) tx += tw;
-    }
-    if (slot->texture2D.textureWrapT == GL_CLAMP ||
-        slot->texture2D.textureWrapT == GL_CLAMP_TO_EDGE) {
-        ty = std::clamp(static_cast<int>(v * (th - 1)), 0, th - 1);
-    } else {
-        int j = static_cast<int>(std::floor(v * th));
-        ty = j % th;
-        if (ty < 0) ty += th;
-    }
+    auto wrapCoord = [](float t, int size, int wrapMode) -> int {
+        if (wrapMode == GL_CLAMP || wrapMode == GL_CLAMP_TO_EDGE) {
+            int i = static_cast<int>(t * (size - 1));
+            if (i < 0) return 0;
+            if (i >= size) return size - 1;
+            return i;
+        }
+        // REPEAT — prefer POT mask (Minecraft atlases are power-of-two).
+        if ((size & (size - 1)) == 0) {
+            // Truncate toward -inf for negatives without std::floor.
+            int i = static_cast<int>(t * size);
+            if (t < 0.0f && static_cast<float>(i) != t * size) --i;
+            return i & (size - 1);
+        }
+        int i = static_cast<int>(std::floor(t * size));
+        i %= size;
+        if (i < 0) i += size;
+        return i;
+    };
+
+    const int tx = wrapCoord(u, tw, slot->texture2D.textureWrapS);
+    const int ty = wrapCoord(v, th, slot->texture2D.textureWrapT);
     const unsigned char* p = slot->texture2D.textureData + (ty * tw + tx) * 4;
-    return Col4{p[0] * (1.0f / 255.0f), p[1] * (1.0f / 255.0f),
-                p[2] * (1.0f / 255.0f), p[3] * (1.0f / 255.0f)};
+    constexpr float inv255 = 1.0f / 255.0f;
+    return Col4{p[0] * inv255, p[1] * inv255, p[2] * inv255, p[3] * inv255};
 }
 
 FragmentAttrs ShadeFragment(const Triangle& tri, Vec3& p, bool sampleTex) {
@@ -365,9 +370,9 @@ FragmentAttrs ShadeFragment(const Triangle& tri, Vec3& p, bool sampleTex) {
         return out;
     }
 
-    const float invWA = (tri.a.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.a.w);
-    const float invWB = (tri.b.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.b.w);
-    const float invWC = (tri.c.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.c.w);
+    const float invWA = (tri.a.w == 0.0f) ? 0.0f : (1.0f / tri.a.w);
+    const float invWB = (tri.b.w == 0.0f) ? 0.0f : (1.0f / tri.b.w);
+    const float invWC = (tri.c.w == 0.0f) ? 0.0f : (1.0f / tri.c.w);
 
     float invW = w1 * invWA + w2 * invWB + w3 * invWC;
     if (invW == 0.0f) invW = 1e-9f;
@@ -425,9 +430,9 @@ Col4 BarycentricTexture(Triangle tri, Vec3& p) {
     if (!computeBarycentric(tri, p, w1, w2, w3)) {
         return sampleTexture(static_cast<float>(tri.a.uv.x), static_cast<float>(tri.a.uv.y));
     }
-    const float invWA = (tri.a.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.a.w);
-    const float invWB = (tri.b.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.b.w);
-    const float invWC = (tri.c.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.c.w);
+    const float invWA = (tri.a.w == 0.0f) ? 0.0f : (1.0f / tri.a.w);
+    const float invWB = (tri.b.w == 0.0f) ? 0.0f : (1.0f / tri.b.w);
+    const float invWC = (tri.c.w == 0.0f) ? 0.0f : (1.0f / tri.c.w);
     float invW = w1 * invWA + w2 * invWB + w3 * invWC;
     if (invW == 0.0f) invW = 1e-9f;
     const float W = 1.0f / invW;

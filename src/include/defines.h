@@ -1,7 +1,9 @@
 #pragma once
 
-#define DEFAULT_RENDER_AREA_WIDTH 800
-#define DEFAULT_RENDER_AREA_HEIGHT 600
+// Prefer 640x480 for weak S3 / Pentium II targets (override via drawable size /
+// PIXSOFTGL_MAX_W / PIXSOFTGL_MAX_H).
+#define DEFAULT_RENDER_AREA_WIDTH 640
+#define DEFAULT_RENDER_AREA_HEIGHT 480
 
 #define MAX_VERTICES 65536
 

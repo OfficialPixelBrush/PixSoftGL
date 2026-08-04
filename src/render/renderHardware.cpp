@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 void ClearFramebuffers(GLenum mask) {
@@ -13,9 +14,13 @@ void ClearFramebuffers(GLenum mask) {
             std::memset(frameBufferColor, fill.r,
                         static_cast<size_t>(renderAreaTotal) * sizeof(PixelValue));
         } else {
-            for (int i = 0; i < renderAreaTotal; i++) {
-                frameBufferColor[i] = fill;
+            PixelValue* dst = frameBufferColor;
+            const int n = renderAreaTotal;
+            int i = 0;
+            for (; i + 3 < n; i += 4) {
+                dst[i] = fill; dst[i + 1] = fill; dst[i + 2] = fill; dst[i + 3] = fill;
             }
+            for (; i < n; ++i) dst[i] = fill;
         }
     }
     if ((mask & GL_DEPTH_BUFFER_BIT) && frameBufferDepth) {
@@ -34,6 +39,16 @@ void ClearFramebuffers(GLenum mask) {
 }
 
 namespace {
+
+bool envFlagCached(const char* name) {
+    const char* v = std::getenv(name);
+    return v != nullptr && v[0] != '\0' && std::strcmp(v, "0") != 0;
+}
+
+bool forceAffineTexturing() {
+    static const bool on = envFlagCached("PIXSOFTGL_AFFINE");
+    return on;
+}
 
 bool alphaTestPasses(float alpha) {
     if (!alphaTestActive) return true;
@@ -66,27 +81,39 @@ float blendFactor(GLenum factor, float srcA, float dstA, float channelSrc, float
     }
 }
 
+void applyFogLinear(Col4& color, float eyeDist) {
+    float f;
+    if (fogEnd == fogStart) {
+        f = (eyeDist >= fogEnd) ? 0.0f : 1.0f;
+    } else {
+        f = (fogEnd - eyeDist) / (fogEnd - fogStart);
+    }
+    if (f <= 0.0f) {
+        color.r = fogColor.r;
+        color.g = fogColor.g;
+        color.b = fogColor.b;
+        return;
+    }
+    if (f >= 1.0f) return;
+    const float inv = 1.0f - f;
+    color.r = fogColor.r * inv + color.r * f;
+    color.g = fogColor.g * inv + color.g * f;
+    color.b = fogColor.b * inv + color.b * f;
+}
+
 void applyFog(Col4& color, float eyeDist) {
     if (!fogActive) return;
+    if (fogMode == GL_LINEAR) {
+        applyFogLinear(color, eyeDist);
+        return;
+    }
 
     float f = 1.0f;
-    switch (fogMode) {
-    default:
-    case GL_LINEAR:
-        if (fogEnd == fogStart) {
-            f = (eyeDist >= fogEnd) ? 0.0f : 1.0f;
-        } else {
-            f = (fogEnd - eyeDist) / (fogEnd - fogStart);
-        }
-        break;
-    case GL_EXP:
+    if (fogMode == GL_EXP) {
         f = std::exp(-fogDensity * eyeDist);
-        break;
-    case GL_EXP2: {
+    } else if (fogMode == GL_EXP2) {
         const float d = fogDensity * eyeDist;
         f = std::exp(-(d * d));
-        break;
-    }
     }
     f = std::clamp(f, 0.0f, 1.0f);
     color = Col4{
@@ -97,16 +124,41 @@ void applyFog(Col4& color, float eyeDist) {
     };
 }
 
+unsigned char packU8(float c) {
+    const int v = static_cast<int>(c * 255.0f + 0.5f);
+    if (v <= 0) return 0;
+    if (v >= 255) return 255;
+    return static_cast<unsigned char>(v);
+}
+
+PixelValue packPixel(float r, float g, float b) {
+    return PixelValue{packU8(r), packU8(g), packU8(b)};
+}
+
+bool depthPasses(float z, float oldZ) {
+    switch (depthFunction) {
+    case GL_NEVER:    return false;
+    case GL_LESS:     return z < oldZ;
+    case GL_EQUAL:    return z == oldZ;
+    case GL_LEQUAL:   return z <= oldZ;
+    case GL_GREATER:  return z > oldZ;
+    case GL_NOTEQUAL: return z != oldZ;
+    case GL_GEQUAL:   return z >= oldZ;
+    case GL_ALWAYS:   return true;
+    default:          return false;
+    }
+}
+
+} // namespace
+
+namespace {
+
 struct ScreenVert {
     float x, y, z;
     float r, g, b, a;
     float u, v;
     float invW;
     float eyeDist;
-};
-
-struct EdgeEq {
-    float a, b, c; // a*x + b*y + c >= 0 inside (or mirrored)
 };
 
 inline float orient2d(float ax, float ay, float bx, float by, float cx, float cy) {
@@ -118,27 +170,24 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
 
     ScreenVert sv[3] = {
         {
-            static_cast<float>(tri.a.pos.x), static_cast<float>(tri.a.pos.y),
-            static_cast<float>(tri.a.pos.z),
+            tri.a.pos.x, tri.a.pos.y, tri.a.pos.z,
             tri.a.col.r, tri.a.col.g, tri.a.col.b, tri.a.col.a,
-            static_cast<float>(tri.a.uv.x), static_cast<float>(tri.a.uv.y),
-            (tri.a.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.a.w),
+            tri.a.uv.x, tri.a.uv.y,
+            (tri.a.w == 0.0f) ? 0.0f : (1.0f / tri.a.w),
             tri.a.eyeDist
         },
         {
-            static_cast<float>(tri.b.pos.x), static_cast<float>(tri.b.pos.y),
-            static_cast<float>(tri.b.pos.z),
+            tri.b.pos.x, tri.b.pos.y, tri.b.pos.z,
             tri.b.col.r, tri.b.col.g, tri.b.col.b, tri.b.col.a,
-            static_cast<float>(tri.b.uv.x), static_cast<float>(tri.b.uv.y),
-            (tri.b.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.b.w),
+            tri.b.uv.x, tri.b.uv.y,
+            (tri.b.w == 0.0f) ? 0.0f : (1.0f / tri.b.w),
             tri.b.eyeDist
         },
         {
-            static_cast<float>(tri.c.pos.x), static_cast<float>(tri.c.pos.y),
-            static_cast<float>(tri.c.pos.z),
+            tri.c.pos.x, tri.c.pos.y, tri.c.pos.z,
             tri.c.col.r, tri.c.col.g, tri.c.col.b, tri.c.col.a,
-            static_cast<float>(tri.c.uv.x), static_cast<float>(tri.c.uv.y),
-            (tri.c.w == 0.0) ? 0.0f : static_cast<float>(1.0 / tri.c.w),
+            tri.c.uv.x, tri.c.uv.y,
+            (tri.c.w == 0.0f) ? 0.0f : (1.0f / tri.c.w),
             tri.c.eyeDist
         },
     };
@@ -169,7 +218,6 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
     yMax = std::min(yMax, renderAreaHeight - 1);
     if (xMin > xMax || yMin > yMax) return;
 
-    // Also clamp to viewport.
     xMin = std::max(xMin, viewportOffsetX);
     yMin = std::max(yMin, viewportOffsetY);
     xMax = std::min(xMax, viewportOffsetX + viewportAreaWidth - 1);
@@ -182,16 +230,38 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
     }
     if (xMin > xMax || yMin > yMax) return;
 
-    // Pre-multiply attributes by invW for perspective-correct interpolation.
-    float r0 = sv[0].r * sv[0].invW, g0 = sv[0].g * sv[0].invW, b0 = sv[0].b * sv[0].invW, a0 = sv[0].a * sv[0].invW;
-    float r1 = sv[1].r * sv[1].invW, g1 = sv[1].g * sv[1].invW, b1 = sv[1].b * sv[1].invW, a1 = sv[1].a * sv[1].invW;
-    float r2 = sv[2].r * sv[2].invW, g2 = sv[2].g * sv[2].invW, b2 = sv[2].b * sv[2].invW, a2 = sv[2].a * sv[2].invW;
-    float u0 = sv[0].u * sv[0].invW, v0 = sv[0].v * sv[0].invW;
-    float u1 = sv[1].u * sv[1].invW, v1 = sv[1].v * sv[1].invW;
-    float u2 = sv[2].u * sv[2].invW, v2 = sv[2].v * sv[2].invW;
-    float e0 = sv[0].eyeDist * sv[0].invW;
-    float e1 = sv[1].eyeDist * sv[1].invW;
-    float e2 = sv[2].eyeDist * sv[2].invW;
+    // Affine when forced, or when 1/w is nearly constant (ortho / UI / distant tris).
+    const float maxInv = std::max({std::fabs(sv[0].invW), std::fabs(sv[1].invW),
+                                   std::fabs(sv[2].invW), 1e-6f});
+    const bool useAffine = forceAffineTexturing() ||
+        (std::fabs(sv[0].invW - sv[1].invW) <= 1e-4f * maxInv &&
+         std::fabs(sv[0].invW - sv[2].invW) <= 1e-4f * maxInv);
+
+    float r0, g0, b0, a0, r1, g1, b1, a1, r2, g2, b2, a2;
+    float u0, v0, u1, v1, u2, v2;
+    float e0, e1, e2;
+    if (useAffine) {
+        r0 = sv[0].r; g0 = sv[0].g; b0 = sv[0].b; a0 = sv[0].a;
+        r1 = sv[1].r; g1 = sv[1].g; b1 = sv[1].b; a1 = sv[1].a;
+        r2 = sv[2].r; g2 = sv[2].g; b2 = sv[2].b; a2 = sv[2].a;
+        u0 = sv[0].u; v0 = sv[0].v;
+        u1 = sv[1].u; v1 = sv[1].v;
+        u2 = sv[2].u; v2 = sv[2].v;
+        e0 = sv[0].eyeDist; e1 = sv[1].eyeDist; e2 = sv[2].eyeDist;
+    } else {
+        r0 = sv[0].r * sv[0].invW; g0 = sv[0].g * sv[0].invW;
+        b0 = sv[0].b * sv[0].invW; a0 = sv[0].a * sv[0].invW;
+        r1 = sv[1].r * sv[1].invW; g1 = sv[1].g * sv[1].invW;
+        b1 = sv[1].b * sv[1].invW; a1 = sv[1].a * sv[1].invW;
+        r2 = sv[2].r * sv[2].invW; g2 = sv[2].g * sv[2].invW;
+        b2 = sv[2].b * sv[2].invW; a2 = sv[2].a * sv[2].invW;
+        u0 = sv[0].u * sv[0].invW; v0 = sv[0].v * sv[0].invW;
+        u1 = sv[1].u * sv[1].invW; v1 = sv[1].v * sv[1].invW;
+        u2 = sv[2].u * sv[2].invW; v2 = sv[2].v * sv[2].invW;
+        e0 = sv[0].eyeDist * sv[0].invW;
+        e1 = sv[1].eyeDist * sv[1].invW;
+        e2 = sv[2].eyeDist * sv[2].invW;
+    }
 
     const bool doTex = texture2dActive && resolveBoundTexture() &&
                        lastAccessedTexture->texture2D.textureData &&
@@ -200,9 +270,13 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
     const bool doBlend = blendActive;
     const bool doDepth = depthTestActive && frameBufferDepth;
     const bool doAlpha = alphaTestActive;
+    const bool depthLess = doDepth && depthFunction == GL_LESS;
+    const bool depthLequal = doDepth && depthFunction == GL_LEQUAL;
+    const bool blendSrcAlpha = doBlend &&
+        blendSrcFactor == GL_SRC_ALPHA &&
+        blendDstFactor == GL_ONE_MINUS_SRC_ALPHA;
+    const bool fogLinear = doFog && fogMode == GL_LINEAR;
 
-    // Lighting: evaluate once per triangle (flat), not per pixel.
-    // Real GL keeps ambient; pure Lambert blacks out the held-item hand.
     float lightScale = 1.0f;
     if (lightingActive && rawForLighting && lightActive[0]) {
         Vec4 eyeA4 = modelMatrices[modelMatrixPtr] *
@@ -217,7 +291,6 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
         Vec3 normal = Normalize(Cross3D(eyeB - eyeA, eyeC - eyeA));
         Vec3 lightDir;
         if (std::fabs(lights[0].w) < 1e-6f) {
-            // Directional light: (x,y,z) is the direction toward the light.
             lightDir = Normalize(lights[0].pos);
         } else {
             lightDir = Normalize(lights[0].pos - eyeA);
@@ -226,8 +299,6 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
         lightScale = 0.4f + 0.6f * diff;
     }
 
-    // Edge function deltas for walking +1 in x / +1 in y (screen space).
-    // w0 = orient(v1,v2,p), etc.
     const float a01 = sv[1].y - sv[2].y;
     const float b01 = sv[2].x - sv[1].x;
     const float a12 = sv[2].y - sv[0].y;
@@ -253,9 +324,12 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
                 const float bw1 = w1 * invArea;
                 const float bw2 = w2 * invArea;
 
-                float invW = bw0 * sv[0].invW + bw1 * sv[1].invW + bw2 * sv[2].invW;
-                if (invW == 0.0f) invW = 1e-9f;
-                const float W = 1.0f / invW;
+                float W = 1.0f;
+                if (!useAffine) {
+                    float invW = bw0 * sv[0].invW + bw1 * sv[1].invW + bw2 * sv[2].invW;
+                    if (invW == 0.0f) invW = 1e-9f;
+                    W = 1.0f / invW;
+                }
 
                 Col4 color{
                     (bw0 * r0 + bw1 * r1 + bw2 * r2) * W,
@@ -266,24 +340,22 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
 
                 const float z = bw0 * sv[0].z + bw1 * sv[1].z + bw2 * sv[2].z;
 
-            if (doTex) {
-                const float u = (bw0 * u0 + bw1 * u1 + bw2 * u2) * W;
-                const float v = (bw0 * v0 + bw1 * v1 + bw2 * v2) * W;
-                Col4 tex = sampleTexture(u, v);
-                // Some atlas texels are RGB-lit with A=0; alpha-test would
-                // erase entire terrain faces.
-                if (tex.a <= 0.0f && (tex.r + tex.g + tex.b) > 0.02f) {
-                    tex.a = 1.0f;
+                if (doTex) {
+                    const float u = (bw0 * u0 + bw1 * u1 + bw2 * u2) * W;
+                    const float v = (bw0 * v0 + bw1 * v1 + bw2 * v2) * W;
+                    Col4 tex = sampleTexture(u, v);
+                    if (tex.a <= 0.0f && (tex.r + tex.g + tex.b) > 0.02f) {
+                        tex.a = 1.0f;
+                    }
+                    if (textureEnvMode == GL_REPLACE) {
+                        color = tex;
+                    } else {
+                        color.r *= tex.r;
+                        color.g *= tex.g;
+                        color.b *= tex.b;
+                        color.a *= tex.a;
+                    }
                 }
-                if (textureEnvMode == GL_REPLACE) {
-                    color = tex;
-                } else {
-                    color.r *= tex.r;
-                    color.g *= tex.g;
-                    color.b *= tex.b;
-                    color.a *= tex.a;
-                }
-            }
 
                 if (lightScale != 1.0f) {
                     color.r *= lightScale;
@@ -293,29 +365,31 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
 
                 if (doFog) {
                     const float eye = (bw0 * e0 + bw1 * e1 + bw2 * e2) * W;
-                    applyFog(color, eye);
+                    if (fogLinear) applyFogLinear(color, eye);
+                    else applyFog(color, eye);
                 }
 
                 if (!(doAlpha && !alphaTestPasses(color.a))) {
                     const int index = x + rowBase;
                     bool depthOk = true;
-                    if (doDepth) {
-                        const float oldZ = frameBufferDepth[index];
-                        switch (depthFunction) {
-                        case GL_NEVER:    depthOk = false; break;
-                        case GL_LESS:     depthOk = z < oldZ; break;
-                        case GL_EQUAL:    depthOk = z == oldZ; break;
-                        case GL_LEQUAL:   depthOk = z <= oldZ; break;
-                        case GL_GREATER:  depthOk = z > oldZ; break;
-                        case GL_NOTEQUAL: depthOk = z != oldZ; break;
-                        case GL_GEQUAL:   depthOk = z >= oldZ; break;
-                        case GL_ALWAYS:   break;
-                        default:          depthOk = false; break;
-                        }
+                    if (depthLess) {
+                        depthOk = z < frameBufferDepth[index];
+                    } else if (depthLequal) {
+                        depthOk = z <= frameBufferDepth[index];
+                    } else if (doDepth) {
+                        depthOk = depthPasses(z, frameBufferDepth[index]);
                     }
 
                     if (depthOk) {
-                        if (doBlend) {
+                        if (blendSrcAlpha) {
+                            Col3 fb = PixelValueToCol3(frameBufferColor[index]);
+                            const float sa = color.a;
+                            const float da = 1.0f - sa;
+                            frameBufferColor[index] = packPixel(
+                                color.r * sa + fb.r * da,
+                                color.g * sa + fb.g * da,
+                                color.b * sa + fb.b * da);
+                        } else if (doBlend) {
                             Col3 fb = PixelValueToCol3(frameBufferColor[index]);
                             const float srcA = color.a;
                             const float dstA = 1.0f;
@@ -325,13 +399,12 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
                             const float dr = blendFactor(blendDstFactor, srcA, dstA, color.r, fb.r);
                             const float dg = blendFactor(blendDstFactor, srcA, dstA, color.g, fb.g);
                             const float db = blendFactor(blendDstFactor, srcA, dstA, color.b, fb.b);
-                            frameBufferColor[index] = Col3ToPixelValue(Col3{
+                            frameBufferColor[index] = packPixel(
                                 color.r * sr + fb.r * dr,
                                 color.g * sg + fb.g * dg,
-                                color.b * sb + fb.b * db
-                            });
+                                color.b * sb + fb.b * db);
                         } else {
-                            frameBufferColor[index] = Col3ToPixelValue(Col3{color.r, color.g, color.b});
+                            frameBufferColor[index] = packPixel(color.r, color.g, color.b);
                         }
 
                         if (frameBufferDepth && depthWriteActive) {
@@ -374,23 +447,23 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
 
     if (depthTestActive && frameBufferDepth) {
         const float oldZ = frameBufferDepth[index];
-        const float newZ = static_cast<float>(screenPos.z);
-        switch (depthFunction) {
-        case GL_NEVER:    return;
-        case GL_LESS:     if (newZ >= oldZ) return; break;
-        case GL_EQUAL:    if (newZ != oldZ) return; break;
-        case GL_LEQUAL:   if (newZ > oldZ) return; break;
-        case GL_GREATER:  if (newZ <= oldZ) return; break;
-        case GL_NOTEQUAL: if (newZ == oldZ) return; break;
-        case GL_GEQUAL:   if (newZ < oldZ) return; break;
-        case GL_ALWAYS:   break;
-        default:          return;
-        }
+        const float newZ = screenPos.z;
+        if (!depthPasses(newZ, oldZ)) return;
     }
 
     if (!frameBufferColor) return;
 
-    if (blendActive) {
+    if (blendActive &&
+        blendSrcFactor == GL_SRC_ALPHA &&
+        blendDstFactor == GL_ONE_MINUS_SRC_ALPHA) {
+        Col3 fb = PixelValueToCol3(frameBufferColor[index]);
+        const float sa = color.a;
+        const float da = 1.0f - sa;
+        frameBufferColor[index] = packPixel(
+            color.r * sa + fb.r * da,
+            color.g * sa + fb.g * da,
+            color.b * sa + fb.b * da);
+    } else if (blendActive) {
         Col3 fb = PixelValueToCol3(frameBufferColor[index]);
         const float srcA = color.a;
         const float dstA = 1.0f;
@@ -400,25 +473,24 @@ void RenderPixel(Vec3 screenPos, Col4 color) {
         const float dr = blendFactor(blendDstFactor, srcA, dstA, color.r, fb.r);
         const float dg = blendFactor(blendDstFactor, srcA, dstA, color.g, fb.g);
         const float db = blendFactor(blendDstFactor, srcA, dstA, color.b, fb.b);
-        frameBufferColor[index] = Col3ToPixelValue(Col3{
+        frameBufferColor[index] = packPixel(
             color.r * sr + fb.r * dr,
             color.g * sg + fb.g * dg,
-            color.b * sb + fb.b * db
-        });
+            color.b * sb + fb.b * db);
     } else {
-        frameBufferColor[index] = Col3ToPixelValue(Col3{color.r, color.g, color.b});
+        frameBufferColor[index] = packPixel(color.r, color.g, color.b);
     }
 
     if (frameBufferDepth && depthWriteActive) {
-        frameBufferDepth[index] = static_cast<float>(screenPos.z);
+        frameBufferDepth[index] = screenPos.z;
     }
 }
 
 void RenderLine(Vec3 posA, Col4 colA, Vec3 posB, Col4 colB) {
-    float x0 = static_cast<float>(posA.x), y0 = static_cast<float>(posA.y);
-    float x1 = static_cast<float>(posB.x), y1 = static_cast<float>(posB.y);
+    float x0 = posA.x, y0 = posA.y;
+    float x1 = posB.x, y1 = posB.y;
     Col4 c0 = colA, c1 = colB;
-    float z0 = static_cast<float>(posA.z), z1 = static_cast<float>(posB.z);
+    float z0 = posA.z, z1 = posB.z;
 
     bool steep = std::fabs(y1 - y0) > std::fabs(x1 - x0);
     if (steep) {

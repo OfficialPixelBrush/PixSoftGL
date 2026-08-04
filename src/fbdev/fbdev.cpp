@@ -278,7 +278,68 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
 
     const int bytesPerPixel = (screenBpp + 7) / 8;
 
-    // Fast path: packed 32bpp with contiguous writes.
+    // Fast path: standard RGB565 (S3 / many VGA fbdev modes).
+    if (bytesPerPixel == 2 &&
+        red_.offset == 11 && red_.length == 5 &&
+        green_.offset == 5 && green_.length == 6 &&
+        blue_.offset == 0 && blue_.length == 5) {
+        for (int y = 0; y < copyH; ++y) {
+            const PixelValue* srcRow = pixels + y * srcWidth;
+            auto* row = reinterpret_cast<uint16_t*>(
+                dst + static_cast<size_t>(y) * lineLength_);
+            for (int x = 0; x < copyW; ++x) {
+                const PixelValue& p = srcRow[x];
+                row[x] = static_cast<uint16_t>(
+                    ((p.r & 0xf8) << 8) | ((p.g & 0xfc) << 3) | (p.b >> 3));
+            }
+        }
+        return true;
+    }
+
+    // Fast path: BGR565
+    if (bytesPerPixel == 2 &&
+        blue_.offset == 11 && blue_.length == 5 &&
+        green_.offset == 5 && green_.length == 6 &&
+        red_.offset == 0 && red_.length == 5) {
+        for (int y = 0; y < copyH; ++y) {
+            const PixelValue* srcRow = pixels + y * srcWidth;
+            auto* row = reinterpret_cast<uint16_t*>(
+                dst + static_cast<size_t>(y) * lineLength_);
+            for (int x = 0; x < copyW; ++x) {
+                const PixelValue& p = srcRow[x];
+                row[x] = static_cast<uint16_t>(
+                    ((p.b & 0xf8) << 8) | ((p.g & 0xfc) << 3) | (p.r >> 3));
+            }
+        }
+        return true;
+    }
+
+    // Fast path: packed 32bpp x8r8g8b8 / x8b8g8r8 style with no channel math.
+    if (bytesPerPixel == 4 &&
+        red_.length == 8 && green_.length == 8 && blue_.length == 8) {
+        const bool rgb = (red_.offset == 16 && green_.offset == 8 && blue_.offset == 0);
+        const bool bgr = (blue_.offset == 16 && green_.offset == 8 && red_.offset == 0);
+        if (rgb || bgr) {
+            for (int y = 0; y < copyH; ++y) {
+                const PixelValue* srcRow = pixels + y * srcWidth;
+                auto* row = reinterpret_cast<uint32_t*>(
+                    dst + static_cast<size_t>(y) * lineLength_);
+                for (int x = 0; x < copyW; ++x) {
+                    const PixelValue& p = srcRow[x];
+                    row[x] = rgb
+                        ? (static_cast<uint32_t>(p.r) << 16) |
+                          (static_cast<uint32_t>(p.g) << 8) |
+                          static_cast<uint32_t>(p.b)
+                        : (static_cast<uint32_t>(p.b) << 16) |
+                          (static_cast<uint32_t>(p.g) << 8) |
+                          static_cast<uint32_t>(p.r);
+                }
+            }
+            return true;
+        }
+    }
+
+    // Fast path: packed 32bpp with contiguous writes (generic bitfields).
     if (bytesPerPixel == 4 && copyW > 0) {
         for (int y = 0; y < copyH; ++y) {
             const PixelValue* srcRow = pixels + y * srcWidth;

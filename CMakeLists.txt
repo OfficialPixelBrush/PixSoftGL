@@ -4,6 +4,10 @@ project(GL_Library LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 find_package(X11 REQUIRED)
 
 add_library(GL SHARED
@@ -42,6 +46,13 @@ else()
 endif()
 
 target_link_libraries(GL PRIVATE X11::X11 X11::Xext ${CMAKE_DL_LIBS})
+
+# Soft-float era CPUs: favor speed over strict IEEE; optional -march via CXXFLAGS.
+target_compile_options(GL PRIVATE
+    $<$<CONFIG:Release>:-O2 -ffast-math -fomit-frame-pointer>
+    $<$<CONFIG:RelWithDebInfo>:-O2 -ffast-math>
+)
+
 # LWJGL / many GLX apps dlopen("libGL.so.1") — ship that SONAME, not only libGL.so.
 set_target_properties(GL PROPERTIES
     OUTPUT_NAME "GL"

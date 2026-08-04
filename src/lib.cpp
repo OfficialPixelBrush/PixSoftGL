@@ -720,18 +720,17 @@ extern "C" {
         PrintInfo("\n");
     }
 
-    // Waits until all changes in GL state, connection state
-    // or framebuffer access are finished
+    // Completes outstanding GL work. Soft-GL is synchronous; do not present —
+    // SwapBuffers owns presentation (Flush/Finish present killed P2 fill-rate).
     void glFinish() {
         PrintInfo("glFinish ");
-        UpdateScreen();
         PrintInfo("\n");
     }
 
-    // Renders whatever is in the framebuffer instantly
+    // Flushes the command stream. Soft-GL has nothing async; presentation is
+    // glXSwapBuffers / UpdateScreen only.
     void glFlush() {
         PrintInfo("glFlush ");
-        UpdateScreen();
         PrintInfo("\n");
     }
 

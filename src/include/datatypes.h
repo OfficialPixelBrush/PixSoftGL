@@ -6,9 +6,9 @@ struct PixelValue {
     unsigned char r,g,b;
 };
 
-// 2D Vector
+// 2D Vector — float for P2-era FPU/cache (x87 prefers float; halves vertex traffic)
 struct Vec2 {
-    double x,y;
+    float x,y;
 
     Vec2 operator+(const Vec2& o) const {
         return Vec2{x + o.x, y + o.y};
@@ -30,7 +30,7 @@ struct Vec2 {
 
 // 3D Vector
 struct Vec3 {
-    double x,y,z;
+    float x,y,z;
 
     Vec3 operator+(const Vec3& o) const {
         return Vec3{x + o.x, y + o.y, z + o.z};
@@ -52,7 +52,7 @@ struct Vec3 {
 
 // 4D Vector
 struct Vec4 {
-    double x,y,z,w;
+    float x,y,z,w;
 
     Vec4 operator+(const Vec4& o) const {
         return Vec4{x + o.x, y + o.y, z + o.z, w + o.w};
@@ -168,7 +168,7 @@ struct Mat4x4 {
 // Vertex
 struct Vertex {
     Vec3 pos;
-    double w = 1.0;       // clip-space w (after projection)
+    float w = 1.0f;       // clip-space w (after projection)
     float eyeDist = 0.0f; // eye-space distance for fog
     Col4 col = Col4{1,0,1,1};
     Vec2 uv;

@@ -5,6 +5,7 @@
 #include "maths.h"
 #include <GL/gl.h>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -202,21 +203,18 @@ void Process_glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
         Vec4{1, 0, 0, 0},
         Vec4{0, 1, 0, 0},
         Vec4{0, 0, 1, 0},
-        Vec4{double(x), double(y), double(z), 1}
+        Vec4{x, y, z, 1}
     };
 
     *lastAccessedMatrix = (*lastAccessedMatrix) * T;
 }
 
 void Process_glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
-    // Convert to radians
-    double angle = angleDeg * M_PI / 180.0;
-
-    // Normalize axis
+    const float angle = angleDeg * static_cast<float>(M_PI / 180.0);
     Vec3 u = Normalize(Vec3{x, y, z});
-    double c = cos(angle);
-    double s = sin(angle);
-    double t = 1 - c;
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    const float t = 1.0f - c;
 
     Mat4x4 R = {
         Vec4{t*u.x*u.x + c,     t*u.x*u.y + s*u.z, t*u.x*u.z - s*u.y, 0},
@@ -229,9 +227,9 @@ void Process_glRotatef(GLfloat angleDeg, GLfloat x, GLfloat y, GLfloat z) {
 }
 void Process_glScalef(GLfloat x, GLfloat y, GLfloat z) {
     Mat4x4 S = {
-        Vec4{double(x), 0, 0, 0},
-        Vec4{0, double(y), 0, 0},
-        Vec4{0, 0, double(z), 0},
+        Vec4{x, 0, 0, 0},
+        Vec4{0, y, 0, 0},
+        Vec4{0, 0, z, 0},
         Vec4{0, 0, 0, 1}
     };
 
