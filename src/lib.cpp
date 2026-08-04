@@ -1,4 +1,6 @@
 #include "lib.h"
+#include <iostream>
+#include <dlfcn.h>
 #include "global.h"
 #include <GL/gl.h>
 

@@ -1,10 +1,10 @@
 #include "function.h"
 #include "render.h"
-#include "framebuffer.h"
 #include "global.h"
 #include "maths.h"
 #include <GL/gl.h>
 #include <cstdlib>
+#include <iostream>
 
 void Process_glVertex2f(GLfloat x, GLfloat y) {
     if (vertexIndex >= MAX_VERTICES) {
@@ -78,19 +78,19 @@ void Process_glBegin(GLenum mode) {
     vertexIndex = 0;
     switch(drawingMode) {
         case GL_POINTS:
-            PrintInfo("GL_POINTS ");
+            //PrintInfo("GL_POINTS ");
             break;
         case GL_LINES:
-            PrintInfo("GL_LINES ");
+            //PrintInfo("GL_LINES ");
             break;
         case GL_LINE_LOOP:
-            PrintInfo("GL_LINE_LOOP ");
+            //PrintInfo("GL_LINE_LOOP ");
             break;
         case GL_LINE_STRIP:
-            PrintInfo("GL_LINE_STRIP ");
+            //PrintInfo("GL_LINE_STRIP ");
             break;
         case GL_TRIANGLES:
-            PrintInfo("GL_TRIANGLES ");
+            //PrintInfo("GL_TRIANGLES ");
             break;
         case GL_TRIANGLE_STRIP:
             PrintInfo("GL_TRIANGLE_STRIP ");

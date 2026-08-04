@@ -1,4 +1,5 @@
 #include "renderHardware.h"
+#include <iostream>
 
 void ClearFramebuffers(GLenum mask) {
     // Clear color
