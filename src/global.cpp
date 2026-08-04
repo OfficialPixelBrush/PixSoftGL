@@ -128,6 +128,7 @@ bool compileAndExecute = false;
 // Textures
 Vec2 currentTextureUV = Vec2{0,0};
 GLenum textureType = 0;
+GLuint boundTexture2D = 0;
 TextureSlot* lastAccessedTexture = nullptr;
 std::vector<TextureSlot> textureArray;
 

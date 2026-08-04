@@ -105,8 +105,20 @@ extern bool compileAndExecute;
 // Textures
 extern Vec2 currentTextureUV;
 extern GLenum textureType;
+// Currently bound 2D texture name (0 = none). Prefer this over raw pointers —
+// textureArray reallocations would otherwise dangle lastAccessedTexture.
+extern GLuint boundTexture2D;
 extern TextureSlot* lastAccessedTexture;
 extern std::vector<TextureSlot> textureArray;
+
+inline TextureSlot* resolveBoundTexture() {
+    if (boundTexture2D == 0 || boundTexture2D >= textureArray.size()) {
+        lastAccessedTexture = nullptr;
+        return nullptr;
+    }
+    lastAccessedTexture = &textureArray[boundTexture2D];
+    return lastAccessedTexture;
+}
 
 // Arrays
 extern bool vertexArrayActive;

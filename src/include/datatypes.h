@@ -186,25 +186,24 @@ struct Triangle {
 
 // Light
 struct Light {
-    Vec3 pos = Vec3{0,0,1};
+    Vec3 pos = Vec3{0, 0, 1};
+    float w = 0.0f; // 0 = directional, 1 = positional
 };
 
 struct Texture2D {
-    int textureWrapS;
-    int textureWrapT;
-    int textureMinFilter;
-    int textureMagFilter;
-    Col4 textureBorderColor;
-    float texturePriority;
-    int width;
-    int height;
+    int textureWrapS = 0;
+    int textureWrapT = 0;
+    int textureMinFilter = 0;
+    int textureMagFilter = 0;
+    Col4 textureBorderColor = Col4{0, 0, 0, 0};
+    float texturePriority = 0.0f;
+    int width = 0;
+    int height = 0;
     // Tight RGBA8888 (4 bytes/texel) — much friendlier to P2-era caches than Col4 floats.
-    unsigned char* textureData;
+    unsigned char* textureData = nullptr;
 };
 
 struct TextureSlot {
     int textureType = 0;
-    union {
-        Texture2D texture2D;
-    };
+    Texture2D texture2D{};
 };

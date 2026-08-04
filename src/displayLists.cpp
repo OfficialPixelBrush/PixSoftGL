@@ -413,9 +413,20 @@ void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
         return static_cast<const uint8_t*>(base) + index * step;
     };
 
-    Record_glBegin(mode);
-    for (int i = 0; i < count; ++i) {
-        const int idx = first + i;
+    // Primitive stride so we can split huge chunk draws before MAX_VERTICES.
+    int primVerts = 1;
+    switch (mode) {
+    case GL_TRIANGLES: primVerts = 3; break;
+    case GL_QUADS: primVerts = 4; break;
+    case GL_LINES: primVerts = 2; break;
+    default: primVerts = 1; break;
+    }
+    // Leave headroom under MAX_VERTICES for strip/fan edge cases.
+    const int batchMax = (MAX_VERTICES > 64) ? ((MAX_VERTICES - 64) / primVerts) * primVerts : primVerts;
+    const int safeBatch = batchMax > 0 ? batchMax : primVerts;
+
+    int emitted = 0;
+    auto emitVertex = [&](int idx) {
         if (textureArrayActive && textureArrayPointer) {
             const uint8_t* p = elemPtr(textureArrayPointer, textureArrayStride,
                                        textureArrayTypeSize, textureArrayType, idx);
@@ -424,25 +435,39 @@ void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
                 Record_glTexCoord2f(f[0], textureArrayTypeSize > 1 ? f[1] : 0.0f);
             }
         }
-        // Only bake colors when a color array is enabled. Font glyph lists
-        // (Tessellator UV+pos only) must keep execute-time glColor4f / color lists.
+        // Bake colors whenever a color array is enabled. Font glyph lists leave
+        // the color array off so execute-time glColor4f still applies.
         if (colorArrayActive && colorArrayPointer) {
             const uint8_t* p = elemPtr(colorArrayPointer, colorArrayStride,
                                        colorArrayTypeSize, colorArrayType, idx);
-            if (colorArrayType == GL_UNSIGNED_BYTE) {
-                Record_glColor4f(
-                    p[0] / 255.0f,
-                    colorArrayTypeSize > 1 ? p[1] / 255.0f : p[0] / 255.0f,
-                    colorArrayTypeSize > 2 ? p[2] / 255.0f : p[0] / 255.0f,
-                    colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f);
+            float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
+            if (colorArrayType == GL_UNSIGNED_BYTE || colorArrayType == GL_BYTE) {
+                r = p[0] / 255.0f;
+                g = colorArrayTypeSize > 1 ? p[1] / 255.0f : r;
+                b = colorArrayTypeSize > 2 ? p[2] / 255.0f : r;
+                a = colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f;
             } else if (colorArrayType == GL_FLOAT) {
                 const float* f = reinterpret_cast<const float*>(p);
-                Record_glColor4f(
-                    f[0],
-                    colorArrayTypeSize > 1 ? f[1] : f[0],
-                    colorArrayTypeSize > 2 ? f[2] : f[0],
-                    colorArrayTypeSize > 3 ? f[3] : 1.0f);
+                r = f[0];
+                g = colorArrayTypeSize > 1 ? f[1] : f[0];
+                b = colorArrayTypeSize > 2 ? f[2] : f[0];
+                a = colorArrayTypeSize > 3 ? f[3] : 1.0f;
+            } else {
+                // Unknown type — still pull bytes so chunk lists aren't colorless.
+                r = p[0] / 255.0f;
+                g = colorArrayTypeSize > 1 ? p[1] / 255.0f : r;
+                b = colorArrayTypeSize > 2 ? p[2] / 255.0f : r;
+                a = colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f;
             }
+            // Opaque terrain sometimes packs A=0 while RGB is lit; alpha-test
+            // would discard every fragment. Treat zero-alpha lit verts as opaque.
+            if (a <= 0.0f && (r > 0.0f || g > 0.0f || b > 0.0f)) {
+                a = 1.0f;
+            }
+            if (a <= 0.0f) {
+                a = 1.0f;
+            }
+            Record_glColor4f(r, g, b, a);
         }
 
         const uint8_t* vp = elemPtr(vertexArrayPointer, vertexArrayStride,
@@ -453,6 +478,17 @@ void Record_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
                               vertexArrayTypeSize > 1 ? f[1] : 0.0f,
                               vertexArrayTypeSize > 2 ? f[2] : 0.0f);
         }
+    };
+
+    Record_glBegin(mode);
+    for (int i = 0; i < count; ++i) {
+        if (emitted > 0 && emitted >= safeBatch && (i % primVerts) == 0) {
+            Record_glEnd();
+            Record_glBegin(mode);
+            emitted = 0;
+        }
+        emitVertex(first + i);
+        ++emitted;
     }
     Record_glEnd();
 }

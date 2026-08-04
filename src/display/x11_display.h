@@ -24,6 +24,6 @@ void X11DisplayInit(Display* dpy, Window win, int width, int height);
 void X11DisplayShutdown();
 X11DisplayContext* X11DisplayGetContext();
 
-// Present an OpenGL bottom-left-origin RGB framebuffer into the X11 window
-// (top-left origin), vertically flipped. Returns false if X11 is inactive.
+// Present an OpenGL software color buffer (top-left origin) into the X11 window.
+// Returns false if X11 is inactive.
 bool X11DisplayPresent(const PixelValue* pixels, int width, int height);

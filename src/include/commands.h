@@ -76,11 +76,11 @@ struct CMD_PARAM_glScalef {
 };
 
 struct CMD_PARAM_glFrustum {
-    GLdouble l,r,t,b,n,f;
+    GLdouble l, r, b, t, n, f;
 };
 
 struct CMD_PARAM_glOrtho {
-    GLdouble l,r,t,b,n,f;
+    GLdouble l, r, b, t, n, f;
 };
 
 struct CMD_PARAM_glBindTexture {

@@ -4,6 +4,10 @@
 #include <cmath>
 #include <cstdlib>
 
+#ifndef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_TO_EDGE 0x812F
+#endif
+
 Col4 lerp(Col4 a, Col4 b, float t) {
     return Col4{
         a.r + t * (b.r - a.r),
@@ -177,22 +181,26 @@ int ProjectAndClipTriangle(const Triangle& tri, Triangle outTris[2]) {
     int n = clipAgainstNear(in, 3, clipped);
     if (n < 3) return 0;
 
-    // Guard remaining vertices with non-positive w.
+    // Drop only vertices with non-positive w; keep the rest (never kill the
+    // whole triangle because one homogeneous sample is near the eye).
+    ClipVert kept[8];
+    int nKept = 0;
     for (int i = 0; i < n; ++i) {
-        if (clipped[i].clip.w <= CLIP_W_EPSILON) return 0;
+        if (clipped[i].clip.w > CLIP_W_EPSILON) {
+            kept[nKept++] = clipped[i];
+        }
     }
+    if (nKept < 3) return 0;
 
     Vertex window[8];
-    for (int i = 0; i < n; ++i) {
-        window[i] = toWindowVertex(clipped[i]);
+    for (int i = 0; i < nKept; ++i) {
+        window[i] = toWindowVertex(kept[i]);
     }
 
     int count = 0;
-    for (int i = 1; i + 1 < n && count < 2; ++i) {
+    for (int i = 1; i + 1 < nKept && count < 2; ++i) {
         outTris[count++] = Triangle{window[0], window[i], window[i + 1]};
     }
-    // Fan can produce more than 2 tris if clip yields a quad+; emit up to n-2.
-    // Caller only has 2 slots — for near-plane clip of a triangle, max is a quad → 2 tris.
     return count;
 }
 
@@ -316,33 +324,32 @@ bool computeBarycentric(const Triangle& tri, const Vec3& p,
 } // namespace
 
 Col4 sampleTexture(float u, float v) {
-    if (!lastAccessedTexture || !lastAccessedTexture->texture2D.textureData) {
+    TextureSlot* slot = resolveBoundTexture();
+    if (!slot || !slot->texture2D.textureData) {
         return Col4{1, 1, 1, 1};
     }
-    const int tw = lastAccessedTexture->texture2D.width;
-    const int th = lastAccessedTexture->texture2D.height;
+    const int tw = slot->texture2D.width;
+    const int th = slot->texture2D.height;
     if (tw <= 0 || th <= 0) return Col4{1, 1, 1, 1};
 
     int tx, ty;
-    if (lastAccessedTexture->texture2D.textureWrapS == GL_CLAMP ||
-        lastAccessedTexture->texture2D.textureWrapS == GL_CLAMP_TO_EDGE) {
+    if (slot->texture2D.textureWrapS == GL_CLAMP ||
+        slot->texture2D.textureWrapS == GL_CLAMP_TO_EDGE) {
         tx = std::clamp(static_cast<int>(u * (tw - 1)), 0, tw - 1);
     } else {
         int i = static_cast<int>(std::floor(u * tw));
         tx = i % tw;
         if (tx < 0) tx += tw;
     }
-    if (lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP ||
-        lastAccessedTexture->texture2D.textureWrapT == GL_CLAMP_TO_EDGE) {
+    if (slot->texture2D.textureWrapT == GL_CLAMP ||
+        slot->texture2D.textureWrapT == GL_CLAMP_TO_EDGE) {
         ty = std::clamp(static_cast<int>(v * (th - 1)), 0, th - 1);
     } else {
         int j = static_cast<int>(std::floor(v * th));
         ty = j % th;
         if (ty < 0) ty += th;
     }
-    const unsigned char* p =
-        lastAccessedTexture->texture2D.textureData + (ty * tw + tx) * 4;
-    // Keep float conversion; hot path already avoided per-pixel orient2d.
+    const unsigned char* p = slot->texture2D.textureData + (ty * tw + tx) * 4;
     return Col4{p[0] * (1.0f / 255.0f), p[1] * (1.0f / 255.0f),
                 p[2] * (1.0f / 255.0f), p[3] * (1.0f / 255.0f)};
 }

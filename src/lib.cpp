@@ -339,8 +339,9 @@ extern "C" {
                 slot.texture2D.textureData = nullptr;
             }
             slot = TextureSlot{};
-            if (lastAccessedTexture == &textureArray[id]) {
+            if (lastAccessedTexture == &textureArray[id] || boundTexture2D == id) {
                 lastAccessedTexture = nullptr;
+                boundTexture2D = 0;
             }
         }
     }
@@ -388,6 +389,7 @@ extern "C" {
                     params[1],
                     params[2]
                 };
+                lights[light & 0xFF].w = params[3];
                 break;
         }
         PrintInfo("\n");
@@ -1068,6 +1070,21 @@ extern "C" {
             case GL_LIST_BASE:
                 params[0] = static_cast<GLint>(listBase);
                 break;
+            case GL_MAX_MODELVIEW_STACK_DEPTH:
+                params[0] = MAX_MODELVIEW_STACK_DEPTH;
+                break;
+            case GL_MAX_PROJECTION_STACK_DEPTH:
+                params[0] = MAX_PROJECTION_STACK_DEPTH;
+                break;
+            case GL_MAX_TEXTURE_STACK_DEPTH:
+                params[0] = MAX_TEXTURE_STACK_DEPTH;
+                break;
+            case GL_MODELVIEW_STACK_DEPTH:
+                params[0] = modelMatrixPtr + 1;
+                break;
+            case GL_PROJECTION_STACK_DEPTH:
+                params[0] = projMatrixPtr + 1;
+                break;
             default:
                 if (forwardToSystemGl) {
                     real_gl(pname, params);
@@ -1447,4 +1464,83 @@ extern "C" {
         errorState = GL_NO_ERROR;
         return err;
     };
+
+    void glGetFloatv(GLenum pname, GLfloat* params) {
+        if (!params) return;
+        if (forwardToSystemGl) {
+            static void (*real_gl)(GLenum, GLfloat*) = NULL;
+            if (!real_gl) {
+                real_gl = (void (*)(GLenum, GLfloat*)) dlsym(RTLD_NEXT, "glGetFloatv");
+            }
+            real_gl(pname, params);
+            return;
+        }
+
+        auto writeMat = [](const Mat4x4& m, GLfloat* p) {
+            // Column-major OpenGL memory layout.
+            p[0]  = static_cast<GLfloat>(m.a.x); p[1]  = static_cast<GLfloat>(m.a.y);
+            p[2]  = static_cast<GLfloat>(m.a.z); p[3]  = static_cast<GLfloat>(m.a.w);
+            p[4]  = static_cast<GLfloat>(m.b.x); p[5]  = static_cast<GLfloat>(m.b.y);
+            p[6]  = static_cast<GLfloat>(m.b.z); p[7]  = static_cast<GLfloat>(m.b.w);
+            p[8]  = static_cast<GLfloat>(m.c.x); p[9]  = static_cast<GLfloat>(m.c.y);
+            p[10] = static_cast<GLfloat>(m.c.z); p[11] = static_cast<GLfloat>(m.c.w);
+            p[12] = static_cast<GLfloat>(m.d.x); p[13] = static_cast<GLfloat>(m.d.y);
+            p[14] = static_cast<GLfloat>(m.d.z); p[15] = static_cast<GLfloat>(m.d.w);
+        };
+
+        switch (pname) {
+        case GL_MODELVIEW_MATRIX:
+            writeMat(modelMatrices[modelMatrixPtr], params);
+            break;
+        case GL_PROJECTION_MATRIX:
+            writeMat(projMatrices[projMatrixPtr], params);
+            break;
+        case GL_TEXTURE_MATRIX:
+            writeMat(texMatrices[texMatrixPtr], params);
+            break;
+        case GL_FOG_COLOR:
+            params[0] = fogColor.r;
+            params[1] = fogColor.g;
+            params[2] = fogColor.b;
+            params[3] = fogColor.a;
+            break;
+        case GL_FOG_DENSITY:
+            params[0] = fogDensity;
+            break;
+        case GL_FOG_START:
+            params[0] = fogStart;
+            break;
+        case GL_FOG_END:
+            params[0] = fogEnd;
+            break;
+        case GL_CURRENT_COLOR:
+            params[0] = currentColor.r;
+            params[1] = currentColor.g;
+            params[2] = currentColor.b;
+            params[3] = currentColor.a;
+            break;
+        case GL_COLOR_CLEAR_VALUE:
+            params[0] = clearColor.r;
+            params[1] = clearColor.g;
+            params[2] = clearColor.b;
+            params[3] = clearColor.a;
+            break;
+        case GL_ALPHA_TEST_REF:
+            params[0] = alphaRef;
+            break;
+        case GL_DEPTH_CLEAR_VALUE:
+            params[0] = 1.0f;
+            break;
+        default:
+            // Leave params untouched for unimplemented pnames (LWJGL rarely
+            // depends on them). Mark error for strict callers.
+            errorState = GL_INVALID_ENUM;
+            break;
+        }
+    }
+
+    // LWJGL 2 binds GL11.glGetFloat → glGetFloatv.
+    void glGetFloat(GLenum pname, GLfloat* params) {
+        glGetFloatv(pname, params);
+    }
 }

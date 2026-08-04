@@ -486,11 +486,12 @@ void Process_glDrawArrays(GLenum mode, GLint first, GLsizei count) {
         if (!colorArrayActive || !colorArrayPointer) return currentColor;
         const uint8_t* p = elemPtr(colorArrayPointer, colorArrayStride,
                                    colorArrayTypeSize, colorArrayType, i);
-        if (colorArrayType == GL_UNSIGNED_BYTE) {
+        if (colorArrayType == GL_UNSIGNED_BYTE || colorArrayType == GL_BYTE) {
             const float r = p[0] / 255.0f;
             const float g = colorArrayTypeSize > 1 ? p[1] / 255.0f : r;
             const float b = colorArrayTypeSize > 2 ? p[2] / 255.0f : r;
-            const float a = colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f;
+            float a = colorArrayTypeSize > 3 ? p[3] / 255.0f : 1.0f;
+            if (a <= 0.0f) a = 1.0f;
             return Col4{r, g, b, a};
         }
         if (colorArrayType == GL_FLOAT) {
@@ -718,6 +719,7 @@ void Process_glGenTextures(GLsizei n, GLuint *textures) {
 
 void Process_glBindTexture(GLenum target, GLuint texture) {
     if (texture == 0) {
+        boundTexture2D = 0;
         lastAccessedTexture = nullptr;
         return;
     }
@@ -725,6 +727,7 @@ void Process_glBindTexture(GLenum target, GLuint texture) {
         // Auto-create missing names (common with apps that invent IDs).
         textureArray.resize(texture + 1);
     }
+    boundTexture2D = texture;
     lastAccessedTexture = &textureArray[texture];
     lastAccessedTexture->textureType = target;
 }

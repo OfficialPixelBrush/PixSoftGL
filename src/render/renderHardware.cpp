@@ -93,7 +93,7 @@ void applyFog(Col4& color, float eyeDist) {
         fogColor.r * (1.0f - f) + color.r * f,
         fogColor.g * (1.0f - f) + color.g * f,
         fogColor.b * (1.0f - f) + color.b * f,
-        fogColor.a * (1.0f - f) + color.a * f
+        color.a // GL 1.1: fog must not change fragment alpha
     };
 }
 
@@ -143,18 +143,12 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
         },
     };
 
-    // Area in screen space (Y down). Positive => CW on screen ≈ CCW in GL.
+    // Area in our top-left / Y-down buffer. ProjectPosition already flipped Y,
+    // so GL-CCW (front) lands as negative orient2d here.
     float area = orient2d(sv[0].x, sv[0].y, sv[1].x, sv[1].y, sv[2].x, sv[2].y);
     if (area == 0.0f) return;
 
-    // Prefer: cull against OpenGL front face after accounting for Y flip.
-    bool isFront;
-    if (counterClockWiseWindingActive) {
-        // GL CCW front → after Y flip, screen area is negative (math CW).
-        isFront = area < 0.0f;
-    } else {
-        isFront = area > 0.0f;
-    }
+    bool isFront = counterClockWiseWindingActive ? (area < 0.0f) : (area > 0.0f);
     if (cullFaceActive && !isFront) return;
 
     // Ensure consistent positive area for barycentrics by swapping if needed.
@@ -199,7 +193,7 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
     float e1 = sv[1].eyeDist * sv[1].invW;
     float e2 = sv[2].eyeDist * sv[2].invW;
 
-    const bool doTex = texture2dActive && lastAccessedTexture &&
+    const bool doTex = texture2dActive && resolveBoundTexture() &&
                        lastAccessedTexture->texture2D.textureData &&
                        lastAccessedTexture->texture2D.width > 0;
     const bool doFog = fogActive;
@@ -208,6 +202,7 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
     const bool doAlpha = alphaTestActive;
 
     // Lighting: evaluate once per triangle (flat), not per pixel.
+    // Real GL keeps ambient; pure Lambert blacks out the held-item hand.
     float lightScale = 1.0f;
     if (lightingActive && rawForLighting && lightActive[0]) {
         Vec4 eyeA4 = modelMatrices[modelMatrixPtr] *
@@ -220,8 +215,15 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
         Vec3 eyeB{eyeB4.x, eyeB4.y, eyeB4.z};
         Vec3 eyeC{eyeC4.x, eyeC4.y, eyeC4.z};
         Vec3 normal = Normalize(Cross3D(eyeB - eyeA, eyeC - eyeA));
-        Vec3 lightDir = Normalize(lights[0].pos - eyeA);
-        lightScale = std::max(0.0f, Dot3D(normal, lightDir));
+        Vec3 lightDir;
+        if (std::fabs(lights[0].w) < 1e-6f) {
+            // Directional light: (x,y,z) is the direction toward the light.
+            lightDir = Normalize(lights[0].pos);
+        } else {
+            lightDir = Normalize(lights[0].pos - eyeA);
+        }
+        const float diff = std::max(0.0f, Dot3D(normal, lightDir));
+        lightScale = 0.4f + 0.6f * diff;
     }
 
     // Edge function deltas for walking +1 in x / +1 in y (screen space).
@@ -264,19 +266,24 @@ void rasterizeWindowTriangle(const Triangle& tri, const Triangle* rawForLighting
 
                 const float z = bw0 * sv[0].z + bw1 * sv[1].z + bw2 * sv[2].z;
 
-                if (doTex) {
-                    const float u = (bw0 * u0 + bw1 * u1 + bw2 * u2) * W;
-                    const float v = (bw0 * v0 + bw1 * v1 + bw2 * v2) * W;
-                    Col4 tex = sampleTexture(u, v);
-                    if (textureEnvMode == GL_REPLACE) {
-                        color = tex;
-                    } else {
-                        color.r *= tex.r;
-                        color.g *= tex.g;
-                        color.b *= tex.b;
-                        color.a *= tex.a;
-                    }
+            if (doTex) {
+                const float u = (bw0 * u0 + bw1 * u1 + bw2 * u2) * W;
+                const float v = (bw0 * v0 + bw1 * v1 + bw2 * v2) * W;
+                Col4 tex = sampleTexture(u, v);
+                // Some atlas texels are RGB-lit with A=0; alpha-test would
+                // erase entire terrain faces.
+                if (tex.a <= 0.0f && (tex.r + tex.g + tex.b) > 0.02f) {
+                    tex.a = 1.0f;
                 }
+                if (textureEnvMode == GL_REPLACE) {
+                    color = tex;
+                } else {
+                    color.r *= tex.r;
+                    color.g *= tex.g;
+                    color.b *= tex.b;
+                    color.a *= tex.a;
+                }
+            }
 
                 if (lightScale != 1.0f) {
                     color.r *= lightScale;
