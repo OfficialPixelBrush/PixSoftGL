@@ -5,6 +5,7 @@
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <algorithm>
+#include <cerrno>
 #include <climits>
 #include <csignal>
 #include <cstdlib>
@@ -12,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 namespace {
@@ -74,8 +76,25 @@ void PixSoftWM::publishWmProperty() {
     XFlush(dpy);
 }
 
-bool PixSoftWM::init(FbDevice* fb, const char* displayName) {
+bool PixSoftWM::init(FbDevice* fb, const char* displayName, bool wantX) {
     fbDevice = fb;
+
+    if (!wantX) {
+        // Pure fbdev / bare-metal path: no X server involved at all, so
+        // don't even try to open one. We just need screen dimensions (for
+        // bookkeeping) and to hand off to launchClient()/run() below.
+        headless = true;
+        screenW = fb && fb->isOpen() ? fb->width() : 0;
+        screenH = fb && fb->isOpen() ? fb->height() : 0;
+        running = true;
+        g_wm = this;
+        std::signal(SIGINT, onSignal);
+        std::signal(SIGTERM, onSignal);
+        std::cout << "PixSoftGL WM running headless (fbdev-only, "
+                  << screenW << 'x' << screenH << ")\n";
+        return true;
+    }
+
     dpy = XOpenDisplay(displayName);
     if (!dpy) {
         std::cerr << "PixSoftGL WM: failed to open X display\n";
@@ -130,6 +149,16 @@ void PixSoftWM::shutdown() {
         }
         XCloseDisplay(dpy);
         dpy = nullptr;
+    }
+    if (headless && clientPid > 0) {
+        // Best-effort: make sure we don't leave the client running if we're
+        // asked to shut down (e.g. Ctrl-C) before it exits on its own.
+        int status = 0;
+        if (waitpid(clientPid, &status, WNOHANG) == 0) {
+            kill(clientPid, SIGTERM);
+            waitpid(clientPid, &status, 0);
+        }
+        clientPid = -1;
     }
     if (g_wm == this) g_wm = nullptr;
 }
@@ -238,7 +267,33 @@ void PixSoftWM::handleEvent(XEvent& ev) {
     }
 }
 
+void PixSoftWM::runHeadless() {
+    // No X event loop to service — just supervise the client process until
+    // it exits or we're signaled to stop.
+    if (clientPid <= 0) {
+        std::cout << "PixSoftGL WM: no client to supervise, exiting\n";
+        return;
+    }
+
+    while (running) {
+        int status = 0;
+        pid_t res = waitpid(clientPid, &status, 0);
+        if (res == clientPid) {
+            clientPid = -1;
+            break;
+        }
+        if (res < 0 && errno == EINTR) {
+            continue; // interrupted by SIGINT/SIGTERM handler; check `running`
+        }
+        break;
+    }
+}
+
 void PixSoftWM::run() {
+    if (headless) {
+        runHeadless();
+        return;
+    }
     while (running) {
         XEvent ev{};
         XNextEvent(dpy, &ev);
@@ -283,8 +338,13 @@ bool PixSoftWM::launchClient(const std::string& command, const std::string& libP
 
         setenv("LD_LIBRARY_PATH", ldLibraryPath.c_str(), 1);
         setenv("LD_PRELOAD", absLib.c_str(), 1);
+        // PIXSOFTGL_WM=1 tells the shim to force software GLX even when it
+        // can't auto-detect us via the root-window atom (e.g. headless
+        // fbdev mode, where there's no X server/root window at all).
         setenv("PIXSOFTGL_WM", "1", 1);
-        setenv("DISPLAY", DisplayString(dpy), 1);
+        if (dpy) {
+            setenv("DISPLAY", DisplayString(dpy), 1);
+        }
 
         // Present path: inherit parent env (pixsoftwm main sets fbdev when
         // /dev/fb0 is open — required for S3 bare-metal). Only default to x11
@@ -314,5 +374,6 @@ bool PixSoftWM::launchClient(const std::string& command, const std::string& libP
         _exit(127);
     }
 
+    clientPid = pid;
     return true;
 }

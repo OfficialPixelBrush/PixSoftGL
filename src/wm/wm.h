@@ -4,14 +4,20 @@
 
 #include <X11/Xlib.h>
 #include <string>
+#include <sys/types.h>
 #include <vector>
 
 class PixSoftWM {
 public:
-    bool init(FbDevice* fb, const char* displayName = nullptr);
+    // wantX=false skips X11 entirely (pure fbdev/bare-metal, no X server
+    // available or desired). Used when the effective present mode is
+    // "fbdev" — the WM then only forks/supervises the client, it doesn't
+    // do any window management.
+    bool init(FbDevice* fb, const char* displayName = nullptr, bool wantX = true);
     void shutdown();
 
     bool isRunning() const { return running; }
+    bool isHeadless() const { return headless; }
     int screenWidth() const { return screenW; }
     int screenHeight() const { return screenH; }
     Display* display() const { return dpy; }
@@ -24,6 +30,7 @@ private:
     void handleEvent(XEvent& ev);
     void mapClientFullscreen(Window win);
     void unmanageClient(Window win);
+    void runHeadless();
 
     FbDevice* fbDevice = nullptr;
     Display* dpy = nullptr;
@@ -31,6 +38,8 @@ private:
     int screenW = 0;
     int screenH = 0;
     bool running = false;
+    bool headless = false;
+    pid_t clientPid = -1;
 
     Atom wmProtocols = 0;
     Atom wmDeleteWindow = 0;
