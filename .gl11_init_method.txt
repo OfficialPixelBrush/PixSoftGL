@@ -1,0 +1,3061 @@
+  private boolean GL11_initNativeFunctionAddresses(boolean);
+    Code:
+       0: iload_1
+       1: ifne          20
+       4: aload_0
+       5: ldc_w         #2149               // String glAccum
+       8: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      11: dup2_x1
+      12: putfield      #2150               // Field glAccum:J
+      15: lconst_0
+      16: lcmp
+      17: ifeq          24
+      20: iconst_1
+      21: goto          25
+      24: iconst_0
+      25: iload_1
+      26: ifne          45
+      29: aload_0
+      30: ldc_w         #2151               // String glAlphaFunc
+      33: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      36: dup2_x1
+      37: putfield      #2152               // Field glAlphaFunc:J
+      40: lconst_0
+      41: lcmp
+      42: ifeq          49
+      45: iconst_1
+      46: goto          50
+      49: iconst_0
+      50: iand
+      51: aload_0
+      52: ldc_w         #2153               // String glClearColor
+      55: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      58: dup2_x1
+      59: putfield      #2154               // Field glClearColor:J
+      62: lconst_0
+      63: lcmp
+      64: ifeq          71
+      67: iconst_1
+      68: goto          72
+      71: iconst_0
+      72: iand
+      73: iload_1
+      74: ifne          93
+      77: aload_0
+      78: ldc_w         #2155               // String glClearAccum
+      81: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      84: dup2_x1
+      85: putfield      #2156               // Field glClearAccum:J
+      88: lconst_0
+      89: lcmp
+      90: ifeq          97
+      93: iconst_1
+      94: goto          98
+      97: iconst_0
+      98: iand
+      99: aload_0
+     100: ldc_w         #2157               // String glClear
+     103: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     106: dup2_x1
+     107: putfield      #2158               // Field glClear:J
+     110: lconst_0
+     111: lcmp
+     112: ifeq          119
+     115: iconst_1
+     116: goto          120
+     119: iconst_0
+     120: iand
+     121: iload_1
+     122: ifne          141
+     125: aload_0
+     126: ldc_w         #2159               // String glCallLists
+     129: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     132: dup2_x1
+     133: putfield      #2160               // Field glCallLists:J
+     136: lconst_0
+     137: lcmp
+     138: ifeq          145
+     141: iconst_1
+     142: goto          146
+     145: iconst_0
+     146: iand
+     147: iload_1
+     148: ifne          167
+     151: aload_0
+     152: ldc_w         #2161               // String glCallList
+     155: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     158: dup2_x1
+     159: putfield      #2162               // Field glCallList:J
+     162: lconst_0
+     163: lcmp
+     164: ifeq          171
+     167: iconst_1
+     168: goto          172
+     171: iconst_0
+     172: iand
+     173: aload_0
+     174: ldc_w         #2163               // String glBlendFunc
+     177: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     180: dup2_x1
+     181: putfield      #2164               // Field glBlendFunc:J
+     184: lconst_0
+     185: lcmp
+     186: ifeq          193
+     189: iconst_1
+     190: goto          194
+     193: iconst_0
+     194: iand
+     195: iload_1
+     196: ifne          215
+     199: aload_0
+     200: ldc_w         #2165               // String glBitmap
+     203: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     206: dup2_x1
+     207: putfield      #2166               // Field glBitmap:J
+     210: lconst_0
+     211: lcmp
+     212: ifeq          219
+     215: iconst_1
+     216: goto          220
+     219: iconst_0
+     220: iand
+     221: aload_0
+     222: ldc_w         #2167               // String glBindTexture
+     225: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     228: dup2_x1
+     229: putfield      #2168               // Field glBindTexture:J
+     232: lconst_0
+     233: lcmp
+     234: ifeq          241
+     237: iconst_1
+     238: goto          242
+     241: iconst_0
+     242: iand
+     243: iload_1
+     244: ifne          263
+     247: aload_0
+     248: ldc_w         #2169               // String glPrioritizeTextures
+     251: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     254: dup2_x1
+     255: putfield      #2170               // Field glPrioritizeTextures:J
+     258: lconst_0
+     259: lcmp
+     260: ifeq          267
+     263: iconst_1
+     264: goto          268
+     267: iconst_0
+     268: iand
+     269: iload_1
+     270: ifne          289
+     273: aload_0
+     274: ldc_w         #2171               // String glAreTexturesResident
+     277: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     280: dup2_x1
+     281: putfield      #2172               // Field glAreTexturesResident:J
+     284: lconst_0
+     285: lcmp
+     286: ifeq          293
+     289: iconst_1
+     290: goto          294
+     293: iconst_0
+     294: iand
+     295: iload_1
+     296: ifne          315
+     299: aload_0
+     300: ldc_w         #2173               // String glBegin
+     303: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     306: dup2_x1
+     307: putfield      #2174               // Field glBegin:J
+     310: lconst_0
+     311: lcmp
+     312: ifeq          319
+     315: iconst_1
+     316: goto          320
+     319: iconst_0
+     320: iand
+     321: iload_1
+     322: ifne          341
+     325: aload_0
+     326: ldc_w         #2175               // String glEnd
+     329: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     332: dup2_x1
+     333: putfield      #2176               // Field glEnd:J
+     336: lconst_0
+     337: lcmp
+     338: ifeq          345
+     341: iconst_1
+     342: goto          346
+     345: iconst_0
+     346: iand
+     347: aload_0
+     348: ldc_w         #2177               // String glArrayElement
+     351: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     354: dup2_x1
+     355: putfield      #2178               // Field glArrayElement:J
+     358: lconst_0
+     359: lcmp
+     360: ifeq          367
+     363: iconst_1
+     364: goto          368
+     367: iconst_0
+     368: iand
+     369: aload_0
+     370: ldc_w         #2179               // String glClearDepth
+     373: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     376: dup2_x1
+     377: putfield      #2180               // Field glClearDepth:J
+     380: lconst_0
+     381: lcmp
+     382: ifeq          389
+     385: iconst_1
+     386: goto          390
+     389: iconst_0
+     390: iand
+     391: iload_1
+     392: ifne          411
+     395: aload_0
+     396: ldc_w         #2181               // String glDeleteLists
+     399: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     402: dup2_x1
+     403: putfield      #2182               // Field glDeleteLists:J
+     406: lconst_0
+     407: lcmp
+     408: ifeq          415
+     411: iconst_1
+     412: goto          416
+     415: iconst_0
+     416: iand
+     417: aload_0
+     418: ldc_w         #2183               // String glDeleteTextures
+     421: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     424: dup2_x1
+     425: putfield      #2184               // Field glDeleteTextures:J
+     428: lconst_0
+     429: lcmp
+     430: ifeq          437
+     433: iconst_1
+     434: goto          438
+     437: iconst_0
+     438: iand
+     439: aload_0
+     440: ldc_w         #2185               // String glCullFace
+     443: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     446: dup2_x1
+     447: putfield      #2186               // Field glCullFace:J
+     450: lconst_0
+     451: lcmp
+     452: ifeq          459
+     455: iconst_1
+     456: goto          460
+     459: iconst_0
+     460: iand
+     461: aload_0
+     462: ldc_w         #2187               // String glCopyTexSubImage2D
+     465: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     468: dup2_x1
+     469: putfield      #2188               // Field glCopyTexSubImage2D:J
+     472: lconst_0
+     473: lcmp
+     474: ifeq          481
+     477: iconst_1
+     478: goto          482
+     481: iconst_0
+     482: iand
+     483: aload_0
+     484: ldc_w         #2189               // String glCopyTexSubImage1D
+     487: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     490: dup2_x1
+     491: putfield      #2190               // Field glCopyTexSubImage1D:J
+     494: lconst_0
+     495: lcmp
+     496: ifeq          503
+     499: iconst_1
+     500: goto          504
+     503: iconst_0
+     504: iand
+     505: aload_0
+     506: ldc_w         #2191               // String glCopyTexImage2D
+     509: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     512: dup2_x1
+     513: putfield      #2192               // Field glCopyTexImage2D:J
+     516: lconst_0
+     517: lcmp
+     518: ifeq          525
+     521: iconst_1
+     522: goto          526
+     525: iconst_0
+     526: iand
+     527: aload_0
+     528: ldc_w         #2193               // String glCopyTexImage1D
+     531: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     534: dup2_x1
+     535: putfield      #2194               // Field glCopyTexImage1D:J
+     538: lconst_0
+     539: lcmp
+     540: ifeq          547
+     543: iconst_1
+     544: goto          548
+     547: iconst_0
+     548: iand
+     549: aload_0
+     550: ldc_w         #2195               // String glCopyPixels
+     553: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     556: dup2_x1
+     557: putfield      #2196               // Field glCopyPixels:J
+     560: lconst_0
+     561: lcmp
+     562: ifeq          569
+     565: iconst_1
+     566: goto          570
+     569: iconst_0
+     570: iand
+     571: iload_1
+     572: ifne          591
+     575: aload_0
+     576: ldc_w         #2197               // String glColorPointer
+     579: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     582: dup2_x1
+     583: putfield      #2198               // Field glColorPointer:J
+     586: lconst_0
+     587: lcmp
+     588: ifeq          595
+     591: iconst_1
+     592: goto          596
+     595: iconst_0
+     596: iand
+     597: iload_1
+     598: ifne          617
+     601: aload_0
+     602: ldc_w         #2199               // String glColorMaterial
+     605: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     608: dup2_x1
+     609: putfield      #2200               // Field glColorMaterial:J
+     612: lconst_0
+     613: lcmp
+     614: ifeq          621
+     617: iconst_1
+     618: goto          622
+     621: iconst_0
+     622: iand
+     623: aload_0
+     624: ldc_w         #2201               // String glColorMask
+     627: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     630: dup2_x1
+     631: putfield      #2202               // Field glColorMask:J
+     634: lconst_0
+     635: lcmp
+     636: ifeq          643
+     639: iconst_1
+     640: goto          644
+     643: iconst_0
+     644: iand
+     645: iload_1
+     646: ifne          665
+     649: aload_0
+     650: ldc_w         #2203               // String glColor3b
+     653: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     656: dup2_x1
+     657: putfield      #2204               // Field glColor3b:J
+     660: lconst_0
+     661: lcmp
+     662: ifeq          669
+     665: iconst_1
+     666: goto          670
+     669: iconst_0
+     670: iand
+     671: iload_1
+     672: ifne          691
+     675: aload_0
+     676: ldc_w         #2205               // String glColor3f
+     679: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     682: dup2_x1
+     683: putfield      #2206               // Field glColor3f:J
+     686: lconst_0
+     687: lcmp
+     688: ifeq          695
+     691: iconst_1
+     692: goto          696
+     695: iconst_0
+     696: iand
+     697: iload_1
+     698: ifne          717
+     701: aload_0
+     702: ldc_w         #2207               // String glColor3d
+     705: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     708: dup2_x1
+     709: putfield      #2208               // Field glColor3d:J
+     712: lconst_0
+     713: lcmp
+     714: ifeq          721
+     717: iconst_1
+     718: goto          722
+     721: iconst_0
+     722: iand
+     723: iload_1
+     724: ifne          743
+     727: aload_0
+     728: ldc_w         #2209               // String glColor3ub
+     731: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     734: dup2_x1
+     735: putfield      #2210               // Field glColor3ub:J
+     738: lconst_0
+     739: lcmp
+     740: ifeq          747
+     743: iconst_1
+     744: goto          748
+     747: iconst_0
+     748: iand
+     749: iload_1
+     750: ifne          769
+     753: aload_0
+     754: ldc_w         #2211               // String glColor4b
+     757: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     760: dup2_x1
+     761: putfield      #2212               // Field glColor4b:J
+     764: lconst_0
+     765: lcmp
+     766: ifeq          773
+     769: iconst_1
+     770: goto          774
+     773: iconst_0
+     774: iand
+     775: iload_1
+     776: ifne          795
+     779: aload_0
+     780: ldc_w         #2213               // String glColor4f
+     783: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     786: dup2_x1
+     787: putfield      #2214               // Field glColor4f:J
+     790: lconst_0
+     791: lcmp
+     792: ifeq          799
+     795: iconst_1
+     796: goto          800
+     799: iconst_0
+     800: iand
+     801: iload_1
+     802: ifne          821
+     805: aload_0
+     806: ldc_w         #2215               // String glColor4d
+     809: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     812: dup2_x1
+     813: putfield      #2216               // Field glColor4d:J
+     816: lconst_0
+     817: lcmp
+     818: ifeq          825
+     821: iconst_1
+     822: goto          826
+     825: iconst_0
+     826: iand
+     827: iload_1
+     828: ifne          847
+     831: aload_0
+     832: ldc_w         #2217               // String glColor4ub
+     835: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     838: dup2_x1
+     839: putfield      #2218               // Field glColor4ub:J
+     842: lconst_0
+     843: lcmp
+     844: ifeq          851
+     847: iconst_1
+     848: goto          852
+     851: iconst_0
+     852: iand
+     853: aload_0
+     854: ldc_w         #2219               // String glClipPlane
+     857: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     860: dup2_x1
+     861: putfield      #2220               // Field glClipPlane:J
+     864: lconst_0
+     865: lcmp
+     866: ifeq          873
+     869: iconst_1
+     870: goto          874
+     873: iconst_0
+     874: iand
+     875: aload_0
+     876: ldc_w         #2221               // String glClearStencil
+     879: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     882: dup2_x1
+     883: putfield      #2222               // Field glClearStencil:J
+     886: lconst_0
+     887: lcmp
+     888: ifeq          895
+     891: iconst_1
+     892: goto          896
+     895: iconst_0
+     896: iand
+     897: iload_1
+     898: ifne          917
+     901: aload_0
+     902: ldc_w         #2223               // String glEvalPoint1
+     905: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     908: dup2_x1
+     909: putfield      #2224               // Field glEvalPoint1:J
+     912: lconst_0
+     913: lcmp
+     914: ifeq          921
+     917: iconst_1
+     918: goto          922
+     921: iconst_0
+     922: iand
+     923: iload_1
+     924: ifne          943
+     927: aload_0
+     928: ldc_w         #2225               // String glEvalPoint2
+     931: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     934: dup2_x1
+     935: putfield      #2226               // Field glEvalPoint2:J
+     938: lconst_0
+     939: lcmp
+     940: ifeq          947
+     943: iconst_1
+     944: goto          948
+     947: iconst_0
+     948: iand
+     949: iload_1
+     950: ifne          969
+     953: aload_0
+     954: ldc_w         #2227               // String glEvalMesh1
+     957: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     960: dup2_x1
+     961: putfield      #2228               // Field glEvalMesh1:J
+     964: lconst_0
+     965: lcmp
+     966: ifeq          973
+     969: iconst_1
+     970: goto          974
+     973: iconst_0
+     974: iand
+     975: iload_1
+     976: ifne          995
+     979: aload_0
+     980: ldc_w         #2229               // String glEvalMesh2
+     983: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     986: dup2_x1
+     987: putfield      #2230               // Field glEvalMesh2:J
+     990: lconst_0
+     991: lcmp
+     992: ifeq          999
+     995: iconst_1
+     996: goto          1000
+     999: iconst_0
+    1000: iand
+    1001: iload_1
+    1002: ifne          1021
+    1005: aload_0
+    1006: ldc_w         #2231               // String glEvalCoord1f
+    1009: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1012: dup2_x1
+    1013: putfield      #2232               // Field glEvalCoord1f:J
+    1016: lconst_0
+    1017: lcmp
+    1018: ifeq          1025
+    1021: iconst_1
+    1022: goto          1026
+    1025: iconst_0
+    1026: iand
+    1027: iload_1
+    1028: ifne          1047
+    1031: aload_0
+    1032: ldc_w         #2233               // String glEvalCoord1d
+    1035: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1038: dup2_x1
+    1039: putfield      #2234               // Field glEvalCoord1d:J
+    1042: lconst_0
+    1043: lcmp
+    1044: ifeq          1051
+    1047: iconst_1
+    1048: goto          1052
+    1051: iconst_0
+    1052: iand
+    1053: iload_1
+    1054: ifne          1073
+    1057: aload_0
+    1058: ldc_w         #2235               // String glEvalCoord2f
+    1061: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1064: dup2_x1
+    1065: putfield      #2236               // Field glEvalCoord2f:J
+    1068: lconst_0
+    1069: lcmp
+    1070: ifeq          1077
+    1073: iconst_1
+    1074: goto          1078
+    1077: iconst_0
+    1078: iand
+    1079: iload_1
+    1080: ifne          1099
+    1083: aload_0
+    1084: ldc_w         #2237               // String glEvalCoord2d
+    1087: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1090: dup2_x1
+    1091: putfield      #2238               // Field glEvalCoord2d:J
+    1094: lconst_0
+    1095: lcmp
+    1096: ifeq          1103
+    1099: iconst_1
+    1100: goto          1104
+    1103: iconst_0
+    1104: iand
+    1105: iload_1
+    1106: ifne          1125
+    1109: aload_0
+    1110: ldc_w         #2239               // String glEnableClientState
+    1113: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1116: dup2_x1
+    1117: putfield      #2240               // Field glEnableClientState:J
+    1120: lconst_0
+    1121: lcmp
+    1122: ifeq          1129
+    1125: iconst_1
+    1126: goto          1130
+    1129: iconst_0
+    1130: iand
+    1131: iload_1
+    1132: ifne          1151
+    1135: aload_0
+    1136: ldc_w         #2241               // String glDisableClientState
+    1139: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1142: dup2_x1
+    1143: putfield      #2242               // Field glDisableClientState:J
+    1146: lconst_0
+    1147: lcmp
+    1148: ifeq          1155
+    1151: iconst_1
+    1152: goto          1156
+    1155: iconst_0
+    1156: iand
+    1157: aload_0
+    1158: ldc_w         #2243               // String glEnable
+    1161: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1164: dup2_x1
+    1165: putfield      #2244               // Field glEnable:J
+    1168: lconst_0
+    1169: lcmp
+    1170: ifeq          1177
+    1173: iconst_1
+    1174: goto          1178
+    1177: iconst_0
+    1178: iand
+    1179: aload_0
+    1180: ldc_w         #2245               // String glDisable
+    1183: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1186: dup2_x1
+    1187: putfield      #2246               // Field glDisable:J
+    1190: lconst_0
+    1191: lcmp
+    1192: ifeq          1199
+    1195: iconst_1
+    1196: goto          1200
+    1199: iconst_0
+    1200: iand
+    1201: iload_1
+    1202: ifne          1221
+    1205: aload_0
+    1206: ldc_w         #2247               // String glEdgeFlagPointer
+    1209: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1212: dup2_x1
+    1213: putfield      #2248               // Field glEdgeFlagPointer:J
+    1216: lconst_0
+    1217: lcmp
+    1218: ifeq          1225
+    1221: iconst_1
+    1222: goto          1226
+    1225: iconst_0
+    1226: iand
+    1227: iload_1
+    1228: ifne          1247
+    1231: aload_0
+    1232: ldc_w         #2249               // String glEdgeFlag
+    1235: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1238: dup2_x1
+    1239: putfield      #2250               // Field glEdgeFlag:J
+    1242: lconst_0
+    1243: lcmp
+    1244: ifeq          1251
+    1247: iconst_1
+    1248: goto          1252
+    1251: iconst_0
+    1252: iand
+    1253: iload_1
+    1254: ifne          1273
+    1257: aload_0
+    1258: ldc_w         #2251               // String glDrawPixels
+    1261: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1264: dup2_x1
+    1265: putfield      #2252               // Field glDrawPixels:J
+    1268: lconst_0
+    1269: lcmp
+    1270: ifeq          1277
+    1273: iconst_1
+    1274: goto          1278
+    1277: iconst_0
+    1278: iand
+    1279: aload_0
+    1280: ldc_w         #2253               // String glDrawElements
+    1283: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1286: dup2_x1
+    1287: putfield      #2254               // Field glDrawElements:J
+    1290: lconst_0
+    1291: lcmp
+    1292: ifeq          1299
+    1295: iconst_1
+    1296: goto          1300
+    1299: iconst_0
+    1300: iand
+    1301: aload_0
+    1302: ldc_w         #2255               // String glDrawBuffer
+    1305: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1308: dup2_x1
+    1309: putfield      #2256               // Field glDrawBuffer:J
+    1312: lconst_0
+    1313: lcmp
+    1314: ifeq          1321
+    1317: iconst_1
+    1318: goto          1322
+    1321: iconst_0
+    1322: iand
+    1323: aload_0
+    1324: ldc_w         #2257               // String glDrawArrays
+    1327: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1330: dup2_x1
+    1331: putfield      #2258               // Field glDrawArrays:J
+    1334: lconst_0
+    1335: lcmp
+    1336: ifeq          1343
+    1339: iconst_1
+    1340: goto          1344
+    1343: iconst_0
+    1344: iand
+    1345: aload_0
+    1346: ldc_w         #2259               // String glDepthRange
+    1349: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1352: dup2_x1
+    1353: putfield      #2260               // Field glDepthRange:J
+    1356: lconst_0
+    1357: lcmp
+    1358: ifeq          1365
+    1361: iconst_1
+    1362: goto          1366
+    1365: iconst_0
+    1366: iand
+    1367: aload_0
+    1368: ldc_w         #2261               // String glDepthMask
+    1371: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1374: dup2_x1
+    1375: putfield      #2262               // Field glDepthMask:J
+    1378: lconst_0
+    1379: lcmp
+    1380: ifeq          1387
+    1383: iconst_1
+    1384: goto          1388
+    1387: iconst_0
+    1388: iand
+    1389: aload_0
+    1390: ldc_w         #2263               // String glDepthFunc
+    1393: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1396: dup2_x1
+    1397: putfield      #2264               // Field glDepthFunc:J
+    1400: lconst_0
+    1401: lcmp
+    1402: ifeq          1409
+    1405: iconst_1
+    1406: goto          1410
+    1409: iconst_0
+    1410: iand
+    1411: iload_1
+    1412: ifne          1431
+    1415: aload_0
+    1416: ldc_w         #2265               // String glFeedbackBuffer
+    1419: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1422: dup2_x1
+    1423: putfield      #2266               // Field glFeedbackBuffer:J
+    1426: lconst_0
+    1427: lcmp
+    1428: ifeq          1435
+    1431: iconst_1
+    1432: goto          1436
+    1435: iconst_0
+    1436: iand
+    1437: iload_1
+    1438: ifne          1457
+    1441: aload_0
+    1442: ldc_w         #2267               // String glGetPixelMapfv
+    1445: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1448: dup2_x1
+    1449: putfield      #2268               // Field glGetPixelMapfv:J
+    1452: lconst_0
+    1453: lcmp
+    1454: ifeq          1461
+    1457: iconst_1
+    1458: goto          1462
+    1461: iconst_0
+    1462: iand
+    1463: iload_1
+    1464: ifne          1483
+    1467: aload_0
+    1468: ldc_w         #2269               // String glGetPixelMapuiv
+    1471: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1474: dup2_x1
+    1475: putfield      #2270               // Field glGetPixelMapuiv:J
+    1478: lconst_0
+    1479: lcmp
+    1480: ifeq          1487
+    1483: iconst_1
+    1484: goto          1488
+    1487: iconst_0
+    1488: iand
+    1489: iload_1
+    1490: ifne          1509
+    1493: aload_0
+    1494: ldc_w         #2271               // String glGetPixelMapusv
+    1497: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1500: dup2_x1
+    1501: putfield      #2272               // Field glGetPixelMapusv:J
+    1504: lconst_0
+    1505: lcmp
+    1506: ifeq          1513
+    1509: iconst_1
+    1510: goto          1514
+    1513: iconst_0
+    1514: iand
+    1515: iload_1
+    1516: ifne          1535
+    1519: aload_0
+    1520: ldc_w         #2273               // String glGetMaterialfv
+    1523: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1526: dup2_x1
+    1527: putfield      #2274               // Field glGetMaterialfv:J
+    1530: lconst_0
+    1531: lcmp
+    1532: ifeq          1539
+    1535: iconst_1
+    1536: goto          1540
+    1539: iconst_0
+    1540: iand
+    1541: iload_1
+    1542: ifne          1561
+    1545: aload_0
+    1546: ldc_w         #2275               // String glGetMaterialiv
+    1549: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1552: dup2_x1
+    1553: putfield      #2276               // Field glGetMaterialiv:J
+    1556: lconst_0
+    1557: lcmp
+    1558: ifeq          1565
+    1561: iconst_1
+    1562: goto          1566
+    1565: iconst_0
+    1566: iand
+    1567: iload_1
+    1568: ifne          1587
+    1571: aload_0
+    1572: ldc_w         #2277               // String glGetMapfv
+    1575: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1578: dup2_x1
+    1579: putfield      #2278               // Field glGetMapfv:J
+    1582: lconst_0
+    1583: lcmp
+    1584: ifeq          1591
+    1587: iconst_1
+    1588: goto          1592
+    1591: iconst_0
+    1592: iand
+    1593: iload_1
+    1594: ifne          1613
+    1597: aload_0
+    1598: ldc_w         #2279               // String glGetMapdv
+    1601: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1604: dup2_x1
+    1605: putfield      #2280               // Field glGetMapdv:J
+    1608: lconst_0
+    1609: lcmp
+    1610: ifeq          1617
+    1613: iconst_1
+    1614: goto          1618
+    1617: iconst_0
+    1618: iand
+    1619: iload_1
+    1620: ifne          1639
+    1623: aload_0
+    1624: ldc_w         #2281               // String glGetMapiv
+    1627: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1630: dup2_x1
+    1631: putfield      #2282               // Field glGetMapiv:J
+    1634: lconst_0
+    1635: lcmp
+    1636: ifeq          1643
+    1639: iconst_1
+    1640: goto          1644
+    1643: iconst_0
+    1644: iand
+    1645: iload_1
+    1646: ifne          1665
+    1649: aload_0
+    1650: ldc_w         #2283               // String glGetLightfv
+    1653: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1656: dup2_x1
+    1657: putfield      #2284               // Field glGetLightfv:J
+    1660: lconst_0
+    1661: lcmp
+    1662: ifeq          1669
+    1665: iconst_1
+    1666: goto          1670
+    1669: iconst_0
+    1670: iand
+    1671: iload_1
+    1672: ifne          1691
+    1675: aload_0
+    1676: ldc_w         #2285               // String glGetLightiv
+    1679: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1682: dup2_x1
+    1683: putfield      #2286               // Field glGetLightiv:J
+    1686: lconst_0
+    1687: lcmp
+    1688: ifeq          1695
+    1691: iconst_1
+    1692: goto          1696
+    1695: iconst_0
+    1696: iand
+    1697: aload_0
+    1698: ldc_w         #2287               // String glGetError
+    1701: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1704: dup2_x1
+    1705: putfield      #2288               // Field glGetError:J
+    1708: lconst_0
+    1709: lcmp
+    1710: ifeq          1717
+    1713: iconst_1
+    1714: goto          1718
+    1717: iconst_0
+    1718: iand
+    1719: aload_0
+    1720: ldc_w         #2289               // String glGetClipPlane
+    1723: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1726: dup2_x1
+    1727: putfield      #2290               // Field glGetClipPlane:J
+    1730: lconst_0
+    1731: lcmp
+    1732: ifeq          1739
+    1735: iconst_1
+    1736: goto          1740
+    1739: iconst_0
+    1740: iand
+    1741: aload_0
+    1742: ldc_w         #2291               // String glGetBooleanv
+    1745: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1748: dup2_x1
+    1749: putfield      #2292               // Field glGetBooleanv:J
+    1752: lconst_0
+    1753: lcmp
+    1754: ifeq          1761
+    1757: iconst_1
+    1758: goto          1762
+    1761: iconst_0
+    1762: iand
+    1763: aload_0
+    1764: ldc_w         #2293               // String glGetDoublev
+    1767: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1770: dup2_x1
+    1771: putfield      #2294               // Field glGetDoublev:J
+    1774: lconst_0
+    1775: lcmp
+    1776: ifeq          1783
+    1779: iconst_1
+    1780: goto          1784
+    1783: iconst_0
+    1784: iand
+    1785: aload_0
+    1786: ldc_w         #2295               // String glGetFloatv
+    1789: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1792: dup2_x1
+    1793: putfield      #2296               // Field glGetFloatv:J
+    1796: lconst_0
+    1797: lcmp
+    1798: ifeq          1805
+    1801: iconst_1
+    1802: goto          1806
+    1805: iconst_0
+    1806: iand
+    1807: aload_0
+    1808: ldc_w         #2297               // String glGetIntegerv
+    1811: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1814: dup2_x1
+    1815: putfield      #2298               // Field glGetIntegerv:J
+    1818: lconst_0
+    1819: lcmp
+    1820: ifeq          1827
+    1823: iconst_1
+    1824: goto          1828
+    1827: iconst_0
+    1828: iand
+    1829: aload_0
+    1830: ldc_w         #2299               // String glGenTextures
+    1833: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1836: dup2_x1
+    1837: putfield      #2300               // Field glGenTextures:J
+    1840: lconst_0
+    1841: lcmp
+    1842: ifeq          1849
+    1845: iconst_1
+    1846: goto          1850
+    1849: iconst_0
+    1850: iand
+    1851: iload_1
+    1852: ifne          1871
+    1855: aload_0
+    1856: ldc_w         #2301               // String glGenLists
+    1859: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1862: dup2_x1
+    1863: putfield      #2302               // Field glGenLists:J
+    1866: lconst_0
+    1867: lcmp
+    1868: ifeq          1875
+    1871: iconst_1
+    1872: goto          1876
+    1875: iconst_0
+    1876: iand
+    1877: iload_1
+    1878: ifne          1897
+    1881: aload_0
+    1882: ldc_w         #2303               // String glFrustum
+    1885: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1888: dup2_x1
+    1889: putfield      #2304               // Field glFrustum:J
+    1892: lconst_0
+    1893: lcmp
+    1894: ifeq          1901
+    1897: iconst_1
+    1898: goto          1902
+    1901: iconst_0
+    1902: iand
+    1903: aload_0
+    1904: ldc_w         #2305               // String glFrontFace
+    1907: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1910: dup2_x1
+    1911: putfield      #2306               // Field glFrontFace:J
+    1914: lconst_0
+    1915: lcmp
+    1916: ifeq          1923
+    1919: iconst_1
+    1920: goto          1924
+    1923: iconst_0
+    1924: iand
+    1925: iload_1
+    1926: ifne          1945
+    1929: aload_0
+    1930: ldc_w         #2307               // String glFogf
+    1933: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1936: dup2_x1
+    1937: putfield      #2308               // Field glFogf:J
+    1940: lconst_0
+    1941: lcmp
+    1942: ifeq          1949
+    1945: iconst_1
+    1946: goto          1950
+    1949: iconst_0
+    1950: iand
+    1951: iload_1
+    1952: ifne          1971
+    1955: aload_0
+    1956: ldc_w         #2309               // String glFogi
+    1959: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1962: dup2_x1
+    1963: putfield      #2310               // Field glFogi:J
+    1966: lconst_0
+    1967: lcmp
+    1968: ifeq          1975
+    1971: iconst_1
+    1972: goto          1976
+    1975: iconst_0
+    1976: iand
+    1977: iload_1
+    1978: ifne          1997
+    1981: aload_0
+    1982: ldc_w         #2311               // String glFogfv
+    1985: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    1988: dup2_x1
+    1989: putfield      #2312               // Field glFogfv:J
+    1992: lconst_0
+    1993: lcmp
+    1994: ifeq          2001
+    1997: iconst_1
+    1998: goto          2002
+    2001: iconst_0
+    2002: iand
+    2003: iload_1
+    2004: ifne          2023
+    2007: aload_0
+    2008: ldc_w         #2313               // String glFogiv
+    2011: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2014: dup2_x1
+    2015: putfield      #2314               // Field glFogiv:J
+    2018: lconst_0
+    2019: lcmp
+    2020: ifeq          2027
+    2023: iconst_1
+    2024: goto          2028
+    2027: iconst_0
+    2028: iand
+    2029: aload_0
+    2030: ldc_w         #2315               // String glFlush
+    2033: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2036: dup2_x1
+    2037: putfield      #2316               // Field glFlush:J
+    2040: lconst_0
+    2041: lcmp
+    2042: ifeq          2049
+    2045: iconst_1
+    2046: goto          2050
+    2049: iconst_0
+    2050: iand
+    2051: aload_0
+    2052: ldc_w         #2317               // String glFinish
+    2055: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2058: dup2_x1
+    2059: putfield      #2318               // Field glFinish:J
+    2062: lconst_0
+    2063: lcmp
+    2064: ifeq          2071
+    2067: iconst_1
+    2068: goto          2072
+    2071: iconst_0
+    2072: iand
+    2073: aload_0
+    2074: ldc_w         #2319               // String glGetPointerv
+    2077: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2080: dup2_x1
+    2081: putfield      #2320               // Field glGetPointerv:J
+    2084: lconst_0
+    2085: lcmp
+    2086: ifeq          2093
+    2089: iconst_1
+    2090: goto          2094
+    2093: iconst_0
+    2094: iand
+    2095: aload_0
+    2096: ldc_w         #2321               // String glIsEnabled
+    2099: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2102: dup2_x1
+    2103: putfield      #2322               // Field glIsEnabled:J
+    2106: lconst_0
+    2107: lcmp
+    2108: ifeq          2115
+    2111: iconst_1
+    2112: goto          2116
+    2115: iconst_0
+    2116: iand
+    2117: aload_0
+    2118: ldc_w         #2323               // String glInterleavedArrays
+    2121: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2124: dup2_x1
+    2125: putfield      #2324               // Field glInterleavedArrays:J
+    2128: lconst_0
+    2129: lcmp
+    2130: ifeq          2137
+    2133: iconst_1
+    2134: goto          2138
+    2137: iconst_0
+    2138: iand
+    2139: iload_1
+    2140: ifne          2159
+    2143: aload_0
+    2144: ldc_w         #2325               // String glInitNames
+    2147: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2150: dup2_x1
+    2151: putfield      #2326               // Field glInitNames:J
+    2154: lconst_0
+    2155: lcmp
+    2156: ifeq          2163
+    2159: iconst_1
+    2160: goto          2164
+    2163: iconst_0
+    2164: iand
+    2165: aload_0
+    2166: ldc_w         #2327               // String glHint
+    2169: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2172: dup2_x1
+    2173: putfield      #2328               // Field glHint:J
+    2176: lconst_0
+    2177: lcmp
+    2178: ifeq          2185
+    2181: iconst_1
+    2182: goto          2186
+    2185: iconst_0
+    2186: iand
+    2187: aload_0
+    2188: ldc_w         #2329               // String glGetTexParameterfv
+    2191: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2194: dup2_x1
+    2195: putfield      #2330               // Field glGetTexParameterfv:J
+    2198: lconst_0
+    2199: lcmp
+    2200: ifeq          2207
+    2203: iconst_1
+    2204: goto          2208
+    2207: iconst_0
+    2208: iand
+    2209: aload_0
+    2210: ldc_w         #2331               // String glGetTexParameteriv
+    2213: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2216: dup2_x1
+    2217: putfield      #2332               // Field glGetTexParameteriv:J
+    2220: lconst_0
+    2221: lcmp
+    2222: ifeq          2229
+    2225: iconst_1
+    2226: goto          2230
+    2229: iconst_0
+    2230: iand
+    2231: aload_0
+    2232: ldc_w         #2333               // String glGetTexLevelParameterfv
+    2235: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2238: dup2_x1
+    2239: putfield      #2334               // Field glGetTexLevelParameterfv:J
+    2242: lconst_0
+    2243: lcmp
+    2244: ifeq          2251
+    2247: iconst_1
+    2248: goto          2252
+    2251: iconst_0
+    2252: iand
+    2253: aload_0
+    2254: ldc_w         #2335               // String glGetTexLevelParameteriv
+    2257: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2260: dup2_x1
+    2261: putfield      #2336               // Field glGetTexLevelParameteriv:J
+    2264: lconst_0
+    2265: lcmp
+    2266: ifeq          2273
+    2269: iconst_1
+    2270: goto          2274
+    2273: iconst_0
+    2274: iand
+    2275: aload_0
+    2276: ldc_w         #2337               // String glGetTexImage
+    2279: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2282: dup2_x1
+    2283: putfield      #2338               // Field glGetTexImage:J
+    2286: lconst_0
+    2287: lcmp
+    2288: ifeq          2295
+    2291: iconst_1
+    2292: goto          2296
+    2295: iconst_0
+    2296: iand
+    2297: iload_1
+    2298: ifne          2317
+    2301: aload_0
+    2302: ldc_w         #2339               // String glGetTexGeniv
+    2305: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2308: dup2_x1
+    2309: putfield      #2340               // Field glGetTexGeniv:J
+    2312: lconst_0
+    2313: lcmp
+    2314: ifeq          2321
+    2317: iconst_1
+    2318: goto          2322
+    2321: iconst_0
+    2322: iand
+    2323: iload_1
+    2324: ifne          2343
+    2327: aload_0
+    2328: ldc_w         #2341               // String glGetTexGenfv
+    2331: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2334: dup2_x1
+    2335: putfield      #2342               // Field glGetTexGenfv:J
+    2338: lconst_0
+    2339: lcmp
+    2340: ifeq          2347
+    2343: iconst_1
+    2344: goto          2348
+    2347: iconst_0
+    2348: iand
+    2349: iload_1
+    2350: ifne          2369
+    2353: aload_0
+    2354: ldc_w         #2343               // String glGetTexGendv
+    2357: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2360: dup2_x1
+    2361: putfield      #2344               // Field glGetTexGendv:J
+    2364: lconst_0
+    2365: lcmp
+    2366: ifeq          2373
+    2369: iconst_1
+    2370: goto          2374
+    2373: iconst_0
+    2374: iand
+    2375: aload_0
+    2376: ldc_w         #2345               // String glGetTexEnviv
+    2379: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2382: dup2_x1
+    2383: putfield      #2346               // Field glGetTexEnviv:J
+    2386: lconst_0
+    2387: lcmp
+    2388: ifeq          2395
+    2391: iconst_1
+    2392: goto          2396
+    2395: iconst_0
+    2396: iand
+    2397: aload_0
+    2398: ldc_w         #2347               // String glGetTexEnvfv
+    2401: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2404: dup2_x1
+    2405: putfield      #2348               // Field glGetTexEnvfv:J
+    2408: lconst_0
+    2409: lcmp
+    2410: ifeq          2417
+    2413: iconst_1
+    2414: goto          2418
+    2417: iconst_0
+    2418: iand
+    2419: aload_0
+    2420: ldc_w         #2349               // String glGetString
+    2423: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2426: dup2_x1
+    2427: putfield      #2350               // Field glGetString:J
+    2430: lconst_0
+    2431: lcmp
+    2432: ifeq          2439
+    2435: iconst_1
+    2436: goto          2440
+    2439: iconst_0
+    2440: iand
+    2441: iload_1
+    2442: ifne          2461
+    2445: aload_0
+    2446: ldc_w         #2351               // String glGetPolygonStipple
+    2449: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2452: dup2_x1
+    2453: putfield      #2352               // Field glGetPolygonStipple:J
+    2456: lconst_0
+    2457: lcmp
+    2458: ifeq          2465
+    2461: iconst_1
+    2462: goto          2466
+    2465: iconst_0
+    2466: iand
+    2467: iload_1
+    2468: ifne          2487
+    2471: aload_0
+    2472: ldc_w         #2353               // String glIsList
+    2475: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2478: dup2_x1
+    2479: putfield      #2354               // Field glIsList:J
+    2482: lconst_0
+    2483: lcmp
+    2484: ifeq          2491
+    2487: iconst_1
+    2488: goto          2492
+    2491: iconst_0
+    2492: iand
+    2493: iload_1
+    2494: ifne          2513
+    2497: aload_0
+    2498: ldc_w         #2355               // String glMaterialf
+    2501: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2504: dup2_x1
+    2505: putfield      #2356               // Field glMaterialf:J
+    2508: lconst_0
+    2509: lcmp
+    2510: ifeq          2517
+    2513: iconst_1
+    2514: goto          2518
+    2517: iconst_0
+    2518: iand
+    2519: iload_1
+    2520: ifne          2539
+    2523: aload_0
+    2524: ldc_w         #2357               // String glMateriali
+    2527: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2530: dup2_x1
+    2531: putfield      #2358               // Field glMateriali:J
+    2534: lconst_0
+    2535: lcmp
+    2536: ifeq          2543
+    2539: iconst_1
+    2540: goto          2544
+    2543: iconst_0
+    2544: iand
+    2545: iload_1
+    2546: ifne          2565
+    2549: aload_0
+    2550: ldc_w         #2359               // String glMaterialfv
+    2553: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2556: dup2_x1
+    2557: putfield      #2360               // Field glMaterialfv:J
+    2560: lconst_0
+    2561: lcmp
+    2562: ifeq          2569
+    2565: iconst_1
+    2566: goto          2570
+    2569: iconst_0
+    2570: iand
+    2571: iload_1
+    2572: ifne          2591
+    2575: aload_0
+    2576: ldc_w         #2361               // String glMaterialiv
+    2579: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2582: dup2_x1
+    2583: putfield      #2362               // Field glMaterialiv:J
+    2586: lconst_0
+    2587: lcmp
+    2588: ifeq          2595
+    2591: iconst_1
+    2592: goto          2596
+    2595: iconst_0
+    2596: iand
+    2597: iload_1
+    2598: ifne          2617
+    2601: aload_0
+    2602: ldc_w         #2363               // String glMapGrid1f
+    2605: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2608: dup2_x1
+    2609: putfield      #2364               // Field glMapGrid1f:J
+    2612: lconst_0
+    2613: lcmp
+    2614: ifeq          2621
+    2617: iconst_1
+    2618: goto          2622
+    2621: iconst_0
+    2622: iand
+    2623: iload_1
+    2624: ifne          2643
+    2627: aload_0
+    2628: ldc_w         #2365               // String glMapGrid1d
+    2631: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2634: dup2_x1
+    2635: putfield      #2366               // Field glMapGrid1d:J
+    2638: lconst_0
+    2639: lcmp
+    2640: ifeq          2647
+    2643: iconst_1
+    2644: goto          2648
+    2647: iconst_0
+    2648: iand
+    2649: iload_1
+    2650: ifne          2669
+    2653: aload_0
+    2654: ldc_w         #2367               // String glMapGrid2f
+    2657: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2660: dup2_x1
+    2661: putfield      #2368               // Field glMapGrid2f:J
+    2664: lconst_0
+    2665: lcmp
+    2666: ifeq          2673
+    2669: iconst_1
+    2670: goto          2674
+    2673: iconst_0
+    2674: iand
+    2675: iload_1
+    2676: ifne          2695
+    2679: aload_0
+    2680: ldc_w         #2369               // String glMapGrid2d
+    2683: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2686: dup2_x1
+    2687: putfield      #2370               // Field glMapGrid2d:J
+    2690: lconst_0
+    2691: lcmp
+    2692: ifeq          2699
+    2695: iconst_1
+    2696: goto          2700
+    2699: iconst_0
+    2700: iand
+    2701: iload_1
+    2702: ifne          2721
+    2705: aload_0
+    2706: ldc_w         #2371               // String glMap2f
+    2709: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2712: dup2_x1
+    2713: putfield      #2372               // Field glMap2f:J
+    2716: lconst_0
+    2717: lcmp
+    2718: ifeq          2725
+    2721: iconst_1
+    2722: goto          2726
+    2725: iconst_0
+    2726: iand
+    2727: iload_1
+    2728: ifne          2747
+    2731: aload_0
+    2732: ldc_w         #2373               // String glMap2d
+    2735: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2738: dup2_x1
+    2739: putfield      #2374               // Field glMap2d:J
+    2742: lconst_0
+    2743: lcmp
+    2744: ifeq          2751
+    2747: iconst_1
+    2748: goto          2752
+    2751: iconst_0
+    2752: iand
+    2753: iload_1
+    2754: ifne          2773
+    2757: aload_0
+    2758: ldc_w         #2375               // String glMap1f
+    2761: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2764: dup2_x1
+    2765: putfield      #2376               // Field glMap1f:J
+    2768: lconst_0
+    2769: lcmp
+    2770: ifeq          2777
+    2773: iconst_1
+    2774: goto          2778
+    2777: iconst_0
+    2778: iand
+    2779: iload_1
+    2780: ifne          2799
+    2783: aload_0
+    2784: ldc_w         #2377               // String glMap1d
+    2787: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2790: dup2_x1
+    2791: putfield      #2378               // Field glMap1d:J
+    2794: lconst_0
+    2795: lcmp
+    2796: ifeq          2803
+    2799: iconst_1
+    2800: goto          2804
+    2803: iconst_0
+    2804: iand
+    2805: aload_0
+    2806: ldc_w         #2379               // String glLogicOp
+    2809: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2812: dup2_x1
+    2813: putfield      #2380               // Field glLogicOp:J
+    2816: lconst_0
+    2817: lcmp
+    2818: ifeq          2825
+    2821: iconst_1
+    2822: goto          2826
+    2825: iconst_0
+    2826: iand
+    2827: iload_1
+    2828: ifne          2847
+    2831: aload_0
+    2832: ldc_w         #2381               // String glLoadName
+    2835: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2838: dup2_x1
+    2839: putfield      #2382               // Field glLoadName:J
+    2842: lconst_0
+    2843: lcmp
+    2844: ifeq          2851
+    2847: iconst_1
+    2848: goto          2852
+    2851: iconst_0
+    2852: iand
+    2853: iload_1
+    2854: ifne          2873
+    2857: aload_0
+    2858: ldc_w         #2383               // String glLoadMatrixf
+    2861: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2864: dup2_x1
+    2865: putfield      #2384               // Field glLoadMatrixf:J
+    2868: lconst_0
+    2869: lcmp
+    2870: ifeq          2877
+    2873: iconst_1
+    2874: goto          2878
+    2877: iconst_0
+    2878: iand
+    2879: iload_1
+    2880: ifne          2899
+    2883: aload_0
+    2884: ldc_w         #2385               // String glLoadMatrixd
+    2887: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2890: dup2_x1
+    2891: putfield      #2386               // Field glLoadMatrixd:J
+    2894: lconst_0
+    2895: lcmp
+    2896: ifeq          2903
+    2899: iconst_1
+    2900: goto          2904
+    2903: iconst_0
+    2904: iand
+    2905: iload_1
+    2906: ifne          2925
+    2909: aload_0
+    2910: ldc_w         #2387               // String glLoadIdentity
+    2913: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2916: dup2_x1
+    2917: putfield      #2388               // Field glLoadIdentity:J
+    2920: lconst_0
+    2921: lcmp
+    2922: ifeq          2929
+    2925: iconst_1
+    2926: goto          2930
+    2929: iconst_0
+    2930: iand
+    2931: iload_1
+    2932: ifne          2951
+    2935: aload_0
+    2936: ldc_w         #2389               // String glListBase
+    2939: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2942: dup2_x1
+    2943: putfield      #2390               // Field glListBase:J
+    2946: lconst_0
+    2947: lcmp
+    2948: ifeq          2955
+    2951: iconst_1
+    2952: goto          2956
+    2955: iconst_0
+    2956: iand
+    2957: aload_0
+    2958: ldc_w         #2391               // String glLineWidth
+    2961: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2964: dup2_x1
+    2965: putfield      #2392               // Field glLineWidth:J
+    2968: lconst_0
+    2969: lcmp
+    2970: ifeq          2977
+    2973: iconst_1
+    2974: goto          2978
+    2977: iconst_0
+    2978: iand
+    2979: iload_1
+    2980: ifne          2999
+    2983: aload_0
+    2984: ldc_w         #2393               // String glLineStipple
+    2987: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    2990: dup2_x1
+    2991: putfield      #2394               // Field glLineStipple:J
+    2994: lconst_0
+    2995: lcmp
+    2996: ifeq          3003
+    2999: iconst_1
+    3000: goto          3004
+    3003: iconst_0
+    3004: iand
+    3005: iload_1
+    3006: ifne          3025
+    3009: aload_0
+    3010: ldc_w         #2395               // String glLightModelf
+    3013: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3016: dup2_x1
+    3017: putfield      #2396               // Field glLightModelf:J
+    3020: lconst_0
+    3021: lcmp
+    3022: ifeq          3029
+    3025: iconst_1
+    3026: goto          3030
+    3029: iconst_0
+    3030: iand
+    3031: iload_1
+    3032: ifne          3051
+    3035: aload_0
+    3036: ldc_w         #2397               // String glLightModeli
+    3039: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3042: dup2_x1
+    3043: putfield      #2398               // Field glLightModeli:J
+    3046: lconst_0
+    3047: lcmp
+    3048: ifeq          3055
+    3051: iconst_1
+    3052: goto          3056
+    3055: iconst_0
+    3056: iand
+    3057: iload_1
+    3058: ifne          3077
+    3061: aload_0
+    3062: ldc_w         #2399               // String glLightModelfv
+    3065: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3068: dup2_x1
+    3069: putfield      #2400               // Field glLightModelfv:J
+    3072: lconst_0
+    3073: lcmp
+    3074: ifeq          3081
+    3077: iconst_1
+    3078: goto          3082
+    3081: iconst_0
+    3082: iand
+    3083: iload_1
+    3084: ifne          3103
+    3087: aload_0
+    3088: ldc_w         #2401               // String glLightModeliv
+    3091: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3094: dup2_x1
+    3095: putfield      #2402               // Field glLightModeliv:J
+    3098: lconst_0
+    3099: lcmp
+    3100: ifeq          3107
+    3103: iconst_1
+    3104: goto          3108
+    3107: iconst_0
+    3108: iand
+    3109: iload_1
+    3110: ifne          3129
+    3113: aload_0
+    3114: ldc_w         #2403               // String glLightf
+    3117: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3120: dup2_x1
+    3121: putfield      #2404               // Field glLightf:J
+    3124: lconst_0
+    3125: lcmp
+    3126: ifeq          3133
+    3129: iconst_1
+    3130: goto          3134
+    3133: iconst_0
+    3134: iand
+    3135: iload_1
+    3136: ifne          3155
+    3139: aload_0
+    3140: ldc_w         #2405               // String glLighti
+    3143: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3146: dup2_x1
+    3147: putfield      #2406               // Field glLighti:J
+    3150: lconst_0
+    3151: lcmp
+    3152: ifeq          3159
+    3155: iconst_1
+    3156: goto          3160
+    3159: iconst_0
+    3160: iand
+    3161: iload_1
+    3162: ifne          3181
+    3165: aload_0
+    3166: ldc_w         #2407               // String glLightfv
+    3169: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3172: dup2_x1
+    3173: putfield      #2408               // Field glLightfv:J
+    3176: lconst_0
+    3177: lcmp
+    3178: ifeq          3185
+    3181: iconst_1
+    3182: goto          3186
+    3185: iconst_0
+    3186: iand
+    3187: iload_1
+    3188: ifne          3207
+    3191: aload_0
+    3192: ldc_w         #2409               // String glLightiv
+    3195: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3198: dup2_x1
+    3199: putfield      #2410               // Field glLightiv:J
+    3202: lconst_0
+    3203: lcmp
+    3204: ifeq          3211
+    3207: iconst_1
+    3208: goto          3212
+    3211: iconst_0
+    3212: iand
+    3213: aload_0
+    3214: ldc_w         #2411               // String glIsTexture
+    3217: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3220: dup2_x1
+    3221: putfield      #2412               // Field glIsTexture:J
+    3224: lconst_0
+    3225: lcmp
+    3226: ifeq          3233
+    3229: iconst_1
+    3230: goto          3234
+    3233: iconst_0
+    3234: iand
+    3235: iload_1
+    3236: ifne          3255
+    3239: aload_0
+    3240: ldc_w         #2413               // String glMatrixMode
+    3243: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3246: dup2_x1
+    3247: putfield      #2414               // Field glMatrixMode:J
+    3250: lconst_0
+    3251: lcmp
+    3252: ifeq          3259
+    3255: iconst_1
+    3256: goto          3260
+    3259: iconst_0
+    3260: iand
+    3261: iload_1
+    3262: ifne          3281
+    3265: aload_0
+    3266: ldc_w         #2415               // String glPolygonStipple
+    3269: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3272: dup2_x1
+    3273: putfield      #2416               // Field glPolygonStipple:J
+    3276: lconst_0
+    3277: lcmp
+    3278: ifeq          3285
+    3281: iconst_1
+    3282: goto          3286
+    3285: iconst_0
+    3286: iand
+    3287: aload_0
+    3288: ldc_w         #2417               // String glPolygonOffset
+    3291: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3294: dup2_x1
+    3295: putfield      #2418               // Field glPolygonOffset:J
+    3298: lconst_0
+    3299: lcmp
+    3300: ifeq          3307
+    3303: iconst_1
+    3304: goto          3308
+    3307: iconst_0
+    3308: iand
+    3309: aload_0
+    3310: ldc_w         #2419               // String glPolygonMode
+    3313: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3316: dup2_x1
+    3317: putfield      #2420               // Field glPolygonMode:J
+    3320: lconst_0
+    3321: lcmp
+    3322: ifeq          3329
+    3325: iconst_1
+    3326: goto          3330
+    3329: iconst_0
+    3330: iand
+    3331: aload_0
+    3332: ldc_w         #2421               // String glPointSize
+    3335: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3338: dup2_x1
+    3339: putfield      #2422               // Field glPointSize:J
+    3342: lconst_0
+    3343: lcmp
+    3344: ifeq          3351
+    3347: iconst_1
+    3348: goto          3352
+    3351: iconst_0
+    3352: iand
+    3353: iload_1
+    3354: ifne          3373
+    3357: aload_0
+    3358: ldc_w         #2423               // String glPixelZoom
+    3361: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3364: dup2_x1
+    3365: putfield      #2424               // Field glPixelZoom:J
+    3368: lconst_0
+    3369: lcmp
+    3370: ifeq          3377
+    3373: iconst_1
+    3374: goto          3378
+    3377: iconst_0
+    3378: iand
+    3379: iload_1
+    3380: ifne          3399
+    3383: aload_0
+    3384: ldc_w         #2425               // String glPixelTransferf
+    3387: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3390: dup2_x1
+    3391: putfield      #2426               // Field glPixelTransferf:J
+    3394: lconst_0
+    3395: lcmp
+    3396: ifeq          3403
+    3399: iconst_1
+    3400: goto          3404
+    3403: iconst_0
+    3404: iand
+    3405: iload_1
+    3406: ifne          3425
+    3409: aload_0
+    3410: ldc_w         #2427               // String glPixelTransferi
+    3413: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3416: dup2_x1
+    3417: putfield      #2428               // Field glPixelTransferi:J
+    3420: lconst_0
+    3421: lcmp
+    3422: ifeq          3429
+    3425: iconst_1
+    3426: goto          3430
+    3429: iconst_0
+    3430: iand
+    3431: aload_0
+    3432: ldc_w         #2429               // String glPixelStoref
+    3435: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3438: dup2_x1
+    3439: putfield      #2430               // Field glPixelStoref:J
+    3442: lconst_0
+    3443: lcmp
+    3444: ifeq          3451
+    3447: iconst_1
+    3448: goto          3452
+    3451: iconst_0
+    3452: iand
+    3453: aload_0
+    3454: ldc_w         #2431               // String glPixelStorei
+    3457: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3460: dup2_x1
+    3461: putfield      #2432               // Field glPixelStorei:J
+    3464: lconst_0
+    3465: lcmp
+    3466: ifeq          3473
+    3469: iconst_1
+    3470: goto          3474
+    3473: iconst_0
+    3474: iand
+    3475: iload_1
+    3476: ifne          3495
+    3479: aload_0
+    3480: ldc_w         #2433               // String glPixelMapfv
+    3483: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3486: dup2_x1
+    3487: putfield      #2434               // Field glPixelMapfv:J
+    3490: lconst_0
+    3491: lcmp
+    3492: ifeq          3499
+    3495: iconst_1
+    3496: goto          3500
+    3499: iconst_0
+    3500: iand
+    3501: iload_1
+    3502: ifne          3521
+    3505: aload_0
+    3506: ldc_w         #2435               // String glPixelMapuiv
+    3509: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3512: dup2_x1
+    3513: putfield      #2436               // Field glPixelMapuiv:J
+    3516: lconst_0
+    3517: lcmp
+    3518: ifeq          3525
+    3521: iconst_1
+    3522: goto          3526
+    3525: iconst_0
+    3526: iand
+    3527: iload_1
+    3528: ifne          3547
+    3531: aload_0
+    3532: ldc_w         #2437               // String glPixelMapusv
+    3535: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3538: dup2_x1
+    3539: putfield      #2438               // Field glPixelMapusv:J
+    3542: lconst_0
+    3543: lcmp
+    3544: ifeq          3551
+    3547: iconst_1
+    3548: goto          3552
+    3551: iconst_0
+    3552: iand
+    3553: iload_1
+    3554: ifne          3573
+    3557: aload_0
+    3558: ldc_w         #2439               // String glPassThrough
+    3561: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3564: dup2_x1
+    3565: putfield      #2440               // Field glPassThrough:J
+    3568: lconst_0
+    3569: lcmp
+    3570: ifeq          3577
+    3573: iconst_1
+    3574: goto          3578
+    3577: iconst_0
+    3578: iand
+    3579: iload_1
+    3580: ifne          3599
+    3583: aload_0
+    3584: ldc_w         #2441               // String glOrtho
+    3587: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3590: dup2_x1
+    3591: putfield      #2442               // Field glOrtho:J
+    3594: lconst_0
+    3595: lcmp
+    3596: ifeq          3603
+    3599: iconst_1
+    3600: goto          3604
+    3603: iconst_0
+    3604: iand
+    3605: iload_1
+    3606: ifne          3625
+    3609: aload_0
+    3610: ldc_w         #2443               // String glNormalPointer
+    3613: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3616: dup2_x1
+    3617: putfield      #2444               // Field glNormalPointer:J
+    3620: lconst_0
+    3621: lcmp
+    3622: ifeq          3629
+    3625: iconst_1
+    3626: goto          3630
+    3629: iconst_0
+    3630: iand
+    3631: iload_1
+    3632: ifne          3651
+    3635: aload_0
+    3636: ldc_w         #2445               // String glNormal3b
+    3639: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3642: dup2_x1
+    3643: putfield      #2446               // Field glNormal3b:J
+    3646: lconst_0
+    3647: lcmp
+    3648: ifeq          3655
+    3651: iconst_1
+    3652: goto          3656
+    3655: iconst_0
+    3656: iand
+    3657: iload_1
+    3658: ifne          3677
+    3661: aload_0
+    3662: ldc_w         #2447               // String glNormal3f
+    3665: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3668: dup2_x1
+    3669: putfield      #2448               // Field glNormal3f:J
+    3672: lconst_0
+    3673: lcmp
+    3674: ifeq          3681
+    3677: iconst_1
+    3678: goto          3682
+    3681: iconst_0
+    3682: iand
+    3683: iload_1
+    3684: ifne          3703
+    3687: aload_0
+    3688: ldc_w         #2449               // String glNormal3d
+    3691: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3694: dup2_x1
+    3695: putfield      #2450               // Field glNormal3d:J
+    3698: lconst_0
+    3699: lcmp
+    3700: ifeq          3707
+    3703: iconst_1
+    3704: goto          3708
+    3707: iconst_0
+    3708: iand
+    3709: iload_1
+    3710: ifne          3729
+    3713: aload_0
+    3714: ldc_w         #2451               // String glNormal3i
+    3717: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3720: dup2_x1
+    3721: putfield      #2452               // Field glNormal3i:J
+    3724: lconst_0
+    3725: lcmp
+    3726: ifeq          3733
+    3729: iconst_1
+    3730: goto          3734
+    3733: iconst_0
+    3734: iand
+    3735: iload_1
+    3736: ifne          3755
+    3739: aload_0
+    3740: ldc_w         #2453               // String glNewList
+    3743: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3746: dup2_x1
+    3747: putfield      #2454               // Field glNewList:J
+    3750: lconst_0
+    3751: lcmp
+    3752: ifeq          3759
+    3755: iconst_1
+    3756: goto          3760
+    3759: iconst_0
+    3760: iand
+    3761: iload_1
+    3762: ifne          3781
+    3765: aload_0
+    3766: ldc_w         #2455               // String glEndList
+    3769: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3772: dup2_x1
+    3773: putfield      #2456               // Field glEndList:J
+    3776: lconst_0
+    3777: lcmp
+    3778: ifeq          3785
+    3781: iconst_1
+    3782: goto          3786
+    3785: iconst_0
+    3786: iand
+    3787: iload_1
+    3788: ifne          3807
+    3791: aload_0
+    3792: ldc_w         #2457               // String glMultMatrixf
+    3795: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3798: dup2_x1
+    3799: putfield      #2458               // Field glMultMatrixf:J
+    3802: lconst_0
+    3803: lcmp
+    3804: ifeq          3811
+    3807: iconst_1
+    3808: goto          3812
+    3811: iconst_0
+    3812: iand
+    3813: iload_1
+    3814: ifne          3833
+    3817: aload_0
+    3818: ldc_w         #2459               // String glMultMatrixd
+    3821: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3824: dup2_x1
+    3825: putfield      #2460               // Field glMultMatrixd:J
+    3828: lconst_0
+    3829: lcmp
+    3830: ifeq          3837
+    3833: iconst_1
+    3834: goto          3838
+    3837: iconst_0
+    3838: iand
+    3839: aload_0
+    3840: ldc_w         #2461               // String glShadeModel
+    3843: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3846: dup2_x1
+    3847: putfield      #2462               // Field glShadeModel:J
+    3850: lconst_0
+    3851: lcmp
+    3852: ifeq          3859
+    3855: iconst_1
+    3856: goto          3860
+    3859: iconst_0
+    3860: iand
+    3861: iload_1
+    3862: ifne          3881
+    3865: aload_0
+    3866: ldc_w         #2463               // String glSelectBuffer
+    3869: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3872: dup2_x1
+    3873: putfield      #2464               // Field glSelectBuffer:J
+    3876: lconst_0
+    3877: lcmp
+    3878: ifeq          3885
+    3881: iconst_1
+    3882: goto          3886
+    3885: iconst_0
+    3886: iand
+    3887: aload_0
+    3888: ldc_w         #2465               // String glScissor
+    3891: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3894: dup2_x1
+    3895: putfield      #2466               // Field glScissor:J
+    3898: lconst_0
+    3899: lcmp
+    3900: ifeq          3907
+    3903: iconst_1
+    3904: goto          3908
+    3907: iconst_0
+    3908: iand
+    3909: iload_1
+    3910: ifne          3929
+    3913: aload_0
+    3914: ldc_w         #2467               // String glScalef
+    3917: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3920: dup2_x1
+    3921: putfield      #2468               // Field glScalef:J
+    3924: lconst_0
+    3925: lcmp
+    3926: ifeq          3933
+    3929: iconst_1
+    3930: goto          3934
+    3933: iconst_0
+    3934: iand
+    3935: iload_1
+    3936: ifne          3955
+    3939: aload_0
+    3940: ldc_w         #2469               // String glScaled
+    3943: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3946: dup2_x1
+    3947: putfield      #2470               // Field glScaled:J
+    3950: lconst_0
+    3951: lcmp
+    3952: ifeq          3959
+    3955: iconst_1
+    3956: goto          3960
+    3959: iconst_0
+    3960: iand
+    3961: iload_1
+    3962: ifne          3981
+    3965: aload_0
+    3966: ldc_w         #2471               // String glRotatef
+    3969: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3972: dup2_x1
+    3973: putfield      #2472               // Field glRotatef:J
+    3976: lconst_0
+    3977: lcmp
+    3978: ifeq          3985
+    3981: iconst_1
+    3982: goto          3986
+    3985: iconst_0
+    3986: iand
+    3987: iload_1
+    3988: ifne          4007
+    3991: aload_0
+    3992: ldc_w         #2473               // String glRotated
+    3995: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    3998: dup2_x1
+    3999: putfield      #2474               // Field glRotated:J
+    4002: lconst_0
+    4003: lcmp
+    4004: ifeq          4011
+    4007: iconst_1
+    4008: goto          4012
+    4011: iconst_0
+    4012: iand
+    4013: iload_1
+    4014: ifne          4033
+    4017: aload_0
+    4018: ldc_w         #2475               // String glRenderMode
+    4021: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4024: dup2_x1
+    4025: putfield      #2476               // Field glRenderMode:J
+    4028: lconst_0
+    4029: lcmp
+    4030: ifeq          4037
+    4033: iconst_1
+    4034: goto          4038
+    4037: iconst_0
+    4038: iand
+    4039: iload_1
+    4040: ifne          4059
+    4043: aload_0
+    4044: ldc_w         #2477               // String glRectf
+    4047: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4050: dup2_x1
+    4051: putfield      #2478               // Field glRectf:J
+    4054: lconst_0
+    4055: lcmp
+    4056: ifeq          4063
+    4059: iconst_1
+    4060: goto          4064
+    4063: iconst_0
+    4064: iand
+    4065: iload_1
+    4066: ifne          4085
+    4069: aload_0
+    4070: ldc_w         #2479               // String glRectd
+    4073: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4076: dup2_x1
+    4077: putfield      #2480               // Field glRectd:J
+    4080: lconst_0
+    4081: lcmp
+    4082: ifeq          4089
+    4085: iconst_1
+    4086: goto          4090
+    4089: iconst_0
+    4090: iand
+    4091: iload_1
+    4092: ifne          4111
+    4095: aload_0
+    4096: ldc_w         #2481               // String glRecti
+    4099: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4102: dup2_x1
+    4103: putfield      #2482               // Field glRecti:J
+    4106: lconst_0
+    4107: lcmp
+    4108: ifeq          4115
+    4111: iconst_1
+    4112: goto          4116
+    4115: iconst_0
+    4116: iand
+    4117: aload_0
+    4118: ldc_w         #2483               // String glReadPixels
+    4121: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4124: dup2_x1
+    4125: putfield      #2484               // Field glReadPixels:J
+    4128: lconst_0
+    4129: lcmp
+    4130: ifeq          4137
+    4133: iconst_1
+    4134: goto          4138
+    4137: iconst_0
+    4138: iand
+    4139: aload_0
+    4140: ldc_w         #2485               // String glReadBuffer
+    4143: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4146: dup2_x1
+    4147: putfield      #2486               // Field glReadBuffer:J
+    4150: lconst_0
+    4151: lcmp
+    4152: ifeq          4159
+    4155: iconst_1
+    4156: goto          4160
+    4159: iconst_0
+    4160: iand
+    4161: iload_1
+    4162: ifne          4181
+    4165: aload_0
+    4166: ldc_w         #2487               // String glRasterPos2f
+    4169: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4172: dup2_x1
+    4173: putfield      #2488               // Field glRasterPos2f:J
+    4176: lconst_0
+    4177: lcmp
+    4178: ifeq          4185
+    4181: iconst_1
+    4182: goto          4186
+    4185: iconst_0
+    4186: iand
+    4187: iload_1
+    4188: ifne          4207
+    4191: aload_0
+    4192: ldc_w         #2489               // String glRasterPos2d
+    4195: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4198: dup2_x1
+    4199: putfield      #2490               // Field glRasterPos2d:J
+    4202: lconst_0
+    4203: lcmp
+    4204: ifeq          4211
+    4207: iconst_1
+    4208: goto          4212
+    4211: iconst_0
+    4212: iand
+    4213: iload_1
+    4214: ifne          4233
+    4217: aload_0
+    4218: ldc_w         #2491               // String glRasterPos2i
+    4221: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4224: dup2_x1
+    4225: putfield      #2492               // Field glRasterPos2i:J
+    4228: lconst_0
+    4229: lcmp
+    4230: ifeq          4237
+    4233: iconst_1
+    4234: goto          4238
+    4237: iconst_0
+    4238: iand
+    4239: iload_1
+    4240: ifne          4259
+    4243: aload_0
+    4244: ldc_w         #2493               // String glRasterPos3f
+    4247: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4250: dup2_x1
+    4251: putfield      #2494               // Field glRasterPos3f:J
+    4254: lconst_0
+    4255: lcmp
+    4256: ifeq          4263
+    4259: iconst_1
+    4260: goto          4264
+    4263: iconst_0
+    4264: iand
+    4265: iload_1
+    4266: ifne          4285
+    4269: aload_0
+    4270: ldc_w         #2495               // String glRasterPos3d
+    4273: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4276: dup2_x1
+    4277: putfield      #2496               // Field glRasterPos3d:J
+    4280: lconst_0
+    4281: lcmp
+    4282: ifeq          4289
+    4285: iconst_1
+    4286: goto          4290
+    4289: iconst_0
+    4290: iand
+    4291: iload_1
+    4292: ifne          4311
+    4295: aload_0
+    4296: ldc_w         #2497               // String glRasterPos3i
+    4299: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4302: dup2_x1
+    4303: putfield      #2498               // Field glRasterPos3i:J
+    4306: lconst_0
+    4307: lcmp
+    4308: ifeq          4315
+    4311: iconst_1
+    4312: goto          4316
+    4315: iconst_0
+    4316: iand
+    4317: iload_1
+    4318: ifne          4337
+    4321: aload_0
+    4322: ldc_w         #2499               // String glRasterPos4f
+    4325: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4328: dup2_x1
+    4329: putfield      #2500               // Field glRasterPos4f:J
+    4332: lconst_0
+    4333: lcmp
+    4334: ifeq          4341
+    4337: iconst_1
+    4338: goto          4342
+    4341: iconst_0
+    4342: iand
+    4343: iload_1
+    4344: ifne          4363
+    4347: aload_0
+    4348: ldc_w         #2501               // String glRasterPos4d
+    4351: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4354: dup2_x1
+    4355: putfield      #2502               // Field glRasterPos4d:J
+    4358: lconst_0
+    4359: lcmp
+    4360: ifeq          4367
+    4363: iconst_1
+    4364: goto          4368
+    4367: iconst_0
+    4368: iand
+    4369: iload_1
+    4370: ifne          4389
+    4373: aload_0
+    4374: ldc_w         #2503               // String glRasterPos4i
+    4377: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4380: dup2_x1
+    4381: putfield      #2504               // Field glRasterPos4i:J
+    4384: lconst_0
+    4385: lcmp
+    4386: ifeq          4393
+    4389: iconst_1
+    4390: goto          4394
+    4393: iconst_0
+    4394: iand
+    4395: iload_1
+    4396: ifne          4415
+    4399: aload_0
+    4400: ldc_w         #2505               // String glPushName
+    4403: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4406: dup2_x1
+    4407: putfield      #2506               // Field glPushName:J
+    4410: lconst_0
+    4411: lcmp
+    4412: ifeq          4419
+    4415: iconst_1
+    4416: goto          4420
+    4419: iconst_0
+    4420: iand
+    4421: iload_1
+    4422: ifne          4441
+    4425: aload_0
+    4426: ldc_w         #2507               // String glPopName
+    4429: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4432: dup2_x1
+    4433: putfield      #2508               // Field glPopName:J
+    4436: lconst_0
+    4437: lcmp
+    4438: ifeq          4445
+    4441: iconst_1
+    4442: goto          4446
+    4445: iconst_0
+    4446: iand
+    4447: iload_1
+    4448: ifne          4467
+    4451: aload_0
+    4452: ldc_w         #2509               // String glPushMatrix
+    4455: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4458: dup2_x1
+    4459: putfield      #2510               // Field glPushMatrix:J
+    4462: lconst_0
+    4463: lcmp
+    4464: ifeq          4471
+    4467: iconst_1
+    4468: goto          4472
+    4471: iconst_0
+    4472: iand
+    4473: iload_1
+    4474: ifne          4493
+    4477: aload_0
+    4478: ldc_w         #2511               // String glPopMatrix
+    4481: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4484: dup2_x1
+    4485: putfield      #2512               // Field glPopMatrix:J
+    4488: lconst_0
+    4489: lcmp
+    4490: ifeq          4497
+    4493: iconst_1
+    4494: goto          4498
+    4497: iconst_0
+    4498: iand
+    4499: iload_1
+    4500: ifne          4519
+    4503: aload_0
+    4504: ldc_w         #2513               // String glPushClientAttrib
+    4507: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4510: dup2_x1
+    4511: putfield      #2514               // Field glPushClientAttrib:J
+    4514: lconst_0
+    4515: lcmp
+    4516: ifeq          4523
+    4519: iconst_1
+    4520: goto          4524
+    4523: iconst_0
+    4524: iand
+    4525: iload_1
+    4526: ifne          4545
+    4529: aload_0
+    4530: ldc_w         #2515               // String glPopClientAttrib
+    4533: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4536: dup2_x1
+    4537: putfield      #2516               // Field glPopClientAttrib:J
+    4540: lconst_0
+    4541: lcmp
+    4542: ifeq          4549
+    4545: iconst_1
+    4546: goto          4550
+    4549: iconst_0
+    4550: iand
+    4551: iload_1
+    4552: ifne          4571
+    4555: aload_0
+    4556: ldc_w         #2517               // String glPushAttrib
+    4559: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4562: dup2_x1
+    4563: putfield      #2518               // Field glPushAttrib:J
+    4566: lconst_0
+    4567: lcmp
+    4568: ifeq          4575
+    4571: iconst_1
+    4572: goto          4576
+    4575: iconst_0
+    4576: iand
+    4577: iload_1
+    4578: ifne          4597
+    4581: aload_0
+    4582: ldc_w         #2519               // String glPopAttrib
+    4585: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4588: dup2_x1
+    4589: putfield      #2520               // Field glPopAttrib:J
+    4592: lconst_0
+    4593: lcmp
+    4594: ifeq          4601
+    4597: iconst_1
+    4598: goto          4602
+    4601: iconst_0
+    4602: iand
+    4603: aload_0
+    4604: ldc_w         #2521               // String glStencilFunc
+    4607: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4610: dup2_x1
+    4611: putfield      #2522               // Field glStencilFunc:J
+    4614: lconst_0
+    4615: lcmp
+    4616: ifeq          4623
+    4619: iconst_1
+    4620: goto          4624
+    4623: iconst_0
+    4624: iand
+    4625: iload_1
+    4626: ifne          4645
+    4629: aload_0
+    4630: ldc_w         #2523               // String glVertexPointer
+    4633: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4636: dup2_x1
+    4637: putfield      #2524               // Field glVertexPointer:J
+    4640: lconst_0
+    4641: lcmp
+    4642: ifeq          4649
+    4645: iconst_1
+    4646: goto          4650
+    4649: iconst_0
+    4650: iand
+    4651: iload_1
+    4652: ifne          4671
+    4655: aload_0
+    4656: ldc_w         #2525               // String glVertex2f
+    4659: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4662: dup2_x1
+    4663: putfield      #2526               // Field glVertex2f:J
+    4666: lconst_0
+    4667: lcmp
+    4668: ifeq          4675
+    4671: iconst_1
+    4672: goto          4676
+    4675: iconst_0
+    4676: iand
+    4677: iload_1
+    4678: ifne          4697
+    4681: aload_0
+    4682: ldc_w         #2527               // String glVertex2d
+    4685: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4688: dup2_x1
+    4689: putfield      #2528               // Field glVertex2d:J
+    4692: lconst_0
+    4693: lcmp
+    4694: ifeq          4701
+    4697: iconst_1
+    4698: goto          4702
+    4701: iconst_0
+    4702: iand
+    4703: iload_1
+    4704: ifne          4723
+    4707: aload_0
+    4708: ldc_w         #2529               // String glVertex2i
+    4711: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4714: dup2_x1
+    4715: putfield      #2530               // Field glVertex2i:J
+    4718: lconst_0
+    4719: lcmp
+    4720: ifeq          4727
+    4723: iconst_1
+    4724: goto          4728
+    4727: iconst_0
+    4728: iand
+    4729: iload_1
+    4730: ifne          4749
+    4733: aload_0
+    4734: ldc_w         #2531               // String glVertex3f
+    4737: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4740: dup2_x1
+    4741: putfield      #2532               // Field glVertex3f:J
+    4744: lconst_0
+    4745: lcmp
+    4746: ifeq          4753
+    4749: iconst_1
+    4750: goto          4754
+    4753: iconst_0
+    4754: iand
+    4755: iload_1
+    4756: ifne          4775
+    4759: aload_0
+    4760: ldc_w         #2533               // String glVertex3d
+    4763: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4766: dup2_x1
+    4767: putfield      #2534               // Field glVertex3d:J
+    4770: lconst_0
+    4771: lcmp
+    4772: ifeq          4779
+    4775: iconst_1
+    4776: goto          4780
+    4779: iconst_0
+    4780: iand
+    4781: iload_1
+    4782: ifne          4801
+    4785: aload_0
+    4786: ldc_w         #2535               // String glVertex3i
+    4789: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4792: dup2_x1
+    4793: putfield      #2536               // Field glVertex3i:J
+    4796: lconst_0
+    4797: lcmp
+    4798: ifeq          4805
+    4801: iconst_1
+    4802: goto          4806
+    4805: iconst_0
+    4806: iand
+    4807: iload_1
+    4808: ifne          4827
+    4811: aload_0
+    4812: ldc_w         #2537               // String glVertex4f
+    4815: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4818: dup2_x1
+    4819: putfield      #2538               // Field glVertex4f:J
+    4822: lconst_0
+    4823: lcmp
+    4824: ifeq          4831
+    4827: iconst_1
+    4828: goto          4832
+    4831: iconst_0
+    4832: iand
+    4833: iload_1
+    4834: ifne          4853
+    4837: aload_0
+    4838: ldc_w         #2539               // String glVertex4d
+    4841: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4844: dup2_x1
+    4845: putfield      #2540               // Field glVertex4d:J
+    4848: lconst_0
+    4849: lcmp
+    4850: ifeq          4857
+    4853: iconst_1
+    4854: goto          4858
+    4857: iconst_0
+    4858: iand
+    4859: iload_1
+    4860: ifne          4879
+    4863: aload_0
+    4864: ldc_w         #2541               // String glVertex4i
+    4867: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4870: dup2_x1
+    4871: putfield      #2542               // Field glVertex4i:J
+    4874: lconst_0
+    4875: lcmp
+    4876: ifeq          4883
+    4879: iconst_1
+    4880: goto          4884
+    4883: iconst_0
+    4884: iand
+    4885: iload_1
+    4886: ifne          4905
+    4889: aload_0
+    4890: ldc_w         #2543               // String glTranslatef
+    4893: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4896: dup2_x1
+    4897: putfield      #2544               // Field glTranslatef:J
+    4900: lconst_0
+    4901: lcmp
+    4902: ifeq          4909
+    4905: iconst_1
+    4906: goto          4910
+    4909: iconst_0
+    4910: iand
+    4911: iload_1
+    4912: ifne          4931
+    4915: aload_0
+    4916: ldc_w         #2545               // String glTranslated
+    4919: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4922: dup2_x1
+    4923: putfield      #2546               // Field glTranslated:J
+    4926: lconst_0
+    4927: lcmp
+    4928: ifeq          4935
+    4931: iconst_1
+    4932: goto          4936
+    4935: iconst_0
+    4936: iand
+    4937: aload_0
+    4938: ldc_w         #2547               // String glTexImage1D
+    4941: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4944: dup2_x1
+    4945: putfield      #2548               // Field glTexImage1D:J
+    4948: lconst_0
+    4949: lcmp
+    4950: ifeq          4957
+    4953: iconst_1
+    4954: goto          4958
+    4957: iconst_0
+    4958: iand
+    4959: aload_0
+    4960: ldc_w         #2549               // String glTexImage2D
+    4963: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4966: dup2_x1
+    4967: putfield      #2550               // Field glTexImage2D:J
+    4970: lconst_0
+    4971: lcmp
+    4972: ifeq          4979
+    4975: iconst_1
+    4976: goto          4980
+    4979: iconst_0
+    4980: iand
+    4981: aload_0
+    4982: ldc_w         #2551               // String glTexSubImage1D
+    4985: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    4988: dup2_x1
+    4989: putfield      #2552               // Field glTexSubImage1D:J
+    4992: lconst_0
+    4993: lcmp
+    4994: ifeq          5001
+    4997: iconst_1
+    4998: goto          5002
+    5001: iconst_0
+    5002: iand
+    5003: aload_0
+    5004: ldc_w         #2553               // String glTexSubImage2D
+    5007: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5010: dup2_x1
+    5011: putfield      #2554               // Field glTexSubImage2D:J
+    5014: lconst_0
+    5015: lcmp
+    5016: ifeq          5023
+    5019: iconst_1
+    5020: goto          5024
+    5023: iconst_0
+    5024: iand
+    5025: aload_0
+    5026: ldc_w         #2555               // String glTexParameterf
+    5029: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5032: dup2_x1
+    5033: putfield      #2556               // Field glTexParameterf:J
+    5036: lconst_0
+    5037: lcmp
+    5038: ifeq          5045
+    5041: iconst_1
+    5042: goto          5046
+    5045: iconst_0
+    5046: iand
+    5047: aload_0
+    5048: ldc_w         #2557               // String glTexParameteri
+    5051: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5054: dup2_x1
+    5055: putfield      #2558               // Field glTexParameteri:J
+    5058: lconst_0
+    5059: lcmp
+    5060: ifeq          5067
+    5063: iconst_1
+    5064: goto          5068
+    5067: iconst_0
+    5068: iand
+    5069: aload_0
+    5070: ldc_w         #2559               // String glTexParameterfv
+    5073: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5076: dup2_x1
+    5077: putfield      #2560               // Field glTexParameterfv:J
+    5080: lconst_0
+    5081: lcmp
+    5082: ifeq          5089
+    5085: iconst_1
+    5086: goto          5090
+    5089: iconst_0
+    5090: iand
+    5091: aload_0
+    5092: ldc_w         #2561               // String glTexParameteriv
+    5095: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5098: dup2_x1
+    5099: putfield      #2562               // Field glTexParameteriv:J
+    5102: lconst_0
+    5103: lcmp
+    5104: ifeq          5111
+    5107: iconst_1
+    5108: goto          5112
+    5111: iconst_0
+    5112: iand
+    5113: iload_1
+    5114: ifne          5133
+    5117: aload_0
+    5118: ldc_w         #2563               // String glTexGenf
+    5121: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5124: dup2_x1
+    5125: putfield      #2564               // Field glTexGenf:J
+    5128: lconst_0
+    5129: lcmp
+    5130: ifeq          5137
+    5133: iconst_1
+    5134: goto          5138
+    5137: iconst_0
+    5138: iand
+    5139: iload_1
+    5140: ifne          5159
+    5143: aload_0
+    5144: ldc_w         #2565               // String glTexGend
+    5147: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5150: dup2_x1
+    5151: putfield      #2566               // Field glTexGend:J
+    5154: lconst_0
+    5155: lcmp
+    5156: ifeq          5163
+    5159: iconst_1
+    5160: goto          5164
+    5163: iconst_0
+    5164: iand
+    5165: iload_1
+    5166: ifne          5185
+    5169: aload_0
+    5170: ldc_w         #2567               // String glTexGenfv
+    5173: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5176: dup2_x1
+    5177: putfield      #2568               // Field glTexGenfv:J
+    5180: lconst_0
+    5181: lcmp
+    5182: ifeq          5189
+    5185: iconst_1
+    5186: goto          5190
+    5189: iconst_0
+    5190: iand
+    5191: iload_1
+    5192: ifne          5211
+    5195: aload_0
+    5196: ldc_w         #2569               // String glTexGendv
+    5199: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5202: dup2_x1
+    5203: putfield      #2570               // Field glTexGendv:J
+    5206: lconst_0
+    5207: lcmp
+    5208: ifeq          5215
+    5211: iconst_1
+    5212: goto          5216
+    5215: iconst_0
+    5216: iand
+    5217: iload_1
+    5218: ifne          5237
+    5221: aload_0
+    5222: ldc_w         #2571               // String glTexGeni
+    5225: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5228: dup2_x1
+    5229: putfield      #2572               // Field glTexGeni:J
+    5232: lconst_0
+    5233: lcmp
+    5234: ifeq          5241
+    5237: iconst_1
+    5238: goto          5242
+    5241: iconst_0
+    5242: iand
+    5243: iload_1
+    5244: ifne          5263
+    5247: aload_0
+    5248: ldc_w         #2573               // String glTexGeniv
+    5251: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5254: dup2_x1
+    5255: putfield      #2574               // Field glTexGeniv:J
+    5258: lconst_0
+    5259: lcmp
+    5260: ifeq          5267
+    5263: iconst_1
+    5264: goto          5268
+    5267: iconst_0
+    5268: iand
+    5269: aload_0
+    5270: ldc_w         #2575               // String glTexEnvf
+    5273: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5276: dup2_x1
+    5277: putfield      #2576               // Field glTexEnvf:J
+    5280: lconst_0
+    5281: lcmp
+    5282: ifeq          5289
+    5285: iconst_1
+    5286: goto          5290
+    5289: iconst_0
+    5290: iand
+    5291: aload_0
+    5292: ldc_w         #2577               // String glTexEnvi
+    5295: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5298: dup2_x1
+    5299: putfield      #2578               // Field glTexEnvi:J
+    5302: lconst_0
+    5303: lcmp
+    5304: ifeq          5311
+    5307: iconst_1
+    5308: goto          5312
+    5311: iconst_0
+    5312: iand
+    5313: aload_0
+    5314: ldc_w         #2579               // String glTexEnvfv
+    5317: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5320: dup2_x1
+    5321: putfield      #2580               // Field glTexEnvfv:J
+    5324: lconst_0
+    5325: lcmp
+    5326: ifeq          5333
+    5329: iconst_1
+    5330: goto          5334
+    5333: iconst_0
+    5334: iand
+    5335: aload_0
+    5336: ldc_w         #2581               // String glTexEnviv
+    5339: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5342: dup2_x1
+    5343: putfield      #2582               // Field glTexEnviv:J
+    5346: lconst_0
+    5347: lcmp
+    5348: ifeq          5355
+    5351: iconst_1
+    5352: goto          5356
+    5355: iconst_0
+    5356: iand
+    5357: iload_1
+    5358: ifne          5377
+    5361: aload_0
+    5362: ldc_w         #2583               // String glTexCoordPointer
+    5365: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5368: dup2_x1
+    5369: putfield      #2584               // Field glTexCoordPointer:J
+    5372: lconst_0
+    5373: lcmp
+    5374: ifeq          5381
+    5377: iconst_1
+    5378: goto          5382
+    5381: iconst_0
+    5382: iand
+    5383: iload_1
+    5384: ifne          5403
+    5387: aload_0
+    5388: ldc_w         #2585               // String glTexCoord1f
+    5391: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5394: dup2_x1
+    5395: putfield      #2586               // Field glTexCoord1f:J
+    5398: lconst_0
+    5399: lcmp
+    5400: ifeq          5407
+    5403: iconst_1
+    5404: goto          5408
+    5407: iconst_0
+    5408: iand
+    5409: iload_1
+    5410: ifne          5429
+    5413: aload_0
+    5414: ldc_w         #2587               // String glTexCoord1d
+    5417: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5420: dup2_x1
+    5421: putfield      #2588               // Field glTexCoord1d:J
+    5424: lconst_0
+    5425: lcmp
+    5426: ifeq          5433
+    5429: iconst_1
+    5430: goto          5434
+    5433: iconst_0
+    5434: iand
+    5435: iload_1
+    5436: ifne          5455
+    5439: aload_0
+    5440: ldc_w         #2589               // String glTexCoord2f
+    5443: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5446: dup2_x1
+    5447: putfield      #2590               // Field glTexCoord2f:J
+    5450: lconst_0
+    5451: lcmp
+    5452: ifeq          5459
+    5455: iconst_1
+    5456: goto          5460
+    5459: iconst_0
+    5460: iand
+    5461: iload_1
+    5462: ifne          5481
+    5465: aload_0
+    5466: ldc_w         #2591               // String glTexCoord2d
+    5469: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5472: dup2_x1
+    5473: putfield      #2592               // Field glTexCoord2d:J
+    5476: lconst_0
+    5477: lcmp
+    5478: ifeq          5485
+    5481: iconst_1
+    5482: goto          5486
+    5485: iconst_0
+    5486: iand
+    5487: iload_1
+    5488: ifne          5507
+    5491: aload_0
+    5492: ldc_w         #2593               // String glTexCoord3f
+    5495: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5498: dup2_x1
+    5499: putfield      #2594               // Field glTexCoord3f:J
+    5502: lconst_0
+    5503: lcmp
+    5504: ifeq          5511
+    5507: iconst_1
+    5508: goto          5512
+    5511: iconst_0
+    5512: iand
+    5513: iload_1
+    5514: ifne          5533
+    5517: aload_0
+    5518: ldc_w         #2595               // String glTexCoord3d
+    5521: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5524: dup2_x1
+    5525: putfield      #2596               // Field glTexCoord3d:J
+    5528: lconst_0
+    5529: lcmp
+    5530: ifeq          5537
+    5533: iconst_1
+    5534: goto          5538
+    5537: iconst_0
+    5538: iand
+    5539: iload_1
+    5540: ifne          5559
+    5543: aload_0
+    5544: ldc_w         #2597               // String glTexCoord4f
+    5547: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5550: dup2_x1
+    5551: putfield      #2598               // Field glTexCoord4f:J
+    5554: lconst_0
+    5555: lcmp
+    5556: ifeq          5563
+    5559: iconst_1
+    5560: goto          5564
+    5563: iconst_0
+    5564: iand
+    5565: iload_1
+    5566: ifne          5585
+    5569: aload_0
+    5570: ldc_w         #2599               // String glTexCoord4d
+    5573: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5576: dup2_x1
+    5577: putfield      #2600               // Field glTexCoord4d:J
+    5580: lconst_0
+    5581: lcmp
+    5582: ifeq          5589
+    5585: iconst_1
+    5586: goto          5590
+    5589: iconst_0
+    5590: iand
+    5591: aload_0
+    5592: ldc_w         #2601               // String glStencilOp
+    5595: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5598: dup2_x1
+    5599: putfield      #2602               // Field glStencilOp:J
+    5602: lconst_0
+    5603: lcmp
+    5604: ifeq          5611
+    5607: iconst_1
+    5608: goto          5612
+    5611: iconst_0
+    5612: iand
+    5613: aload_0
+    5614: ldc_w         #2603               // String glStencilMask
+    5617: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5620: dup2_x1
+    5621: putfield      #2604               // Field glStencilMask:J
+    5624: lconst_0
+    5625: lcmp
+    5626: ifeq          5633
+    5629: iconst_1
+    5630: goto          5634
+    5633: iconst_0
+    5634: iand
+    5635: aload_0
+    5636: ldc_w         #2605               // String glViewport
+    5639: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+    5642: dup2_x1
+    5643: putfield      #2606               // Field glViewport:J
+    5646: lconst_0
+    5647: lcmp
+    5648: ifeq          5655
+    5651: iconst_1
+    5652: goto          5656
+    5655: iconst_0
+    5656: iand
+    5657: ireturn
+

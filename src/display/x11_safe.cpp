@@ -5,21 +5,33 @@
 namespace {
 
 int g_trappedError = Success;
+unsigned long g_trappedSerial = 0;
 
 int trapXError(Display*, XErrorEvent* ev) {
     g_trappedError = ev->error_code;
+    g_trappedSerial = ev->serial;
     return 0;
 }
 
 bool getAttrs(Display* dpy, Window win, XWindowAttributes* attrs) {
     if (!dpy || win == None || !attrs) return false;
 
+    XLockDisplay(dpy);
     g_trappedError = Success;
+    g_trappedSerial = 0;
     XErrorHandler prev = XSetErrorHandler(trapXError);
+
+    // Only treat errors from THIS request as failure (ignore stale BadWindow).
+    const unsigned long serial = NextRequest(dpy);
     const Status ok = XGetWindowAttributes(dpy, win, attrs);
     XSync(dpy, False);
+
     XSetErrorHandler(prev);
-    return ok != 0 && g_trappedError == Success;
+    XUnlockDisplay(dpy);
+
+    const bool ourError =
+        g_trappedError != Success && g_trappedSerial == serial;
+    return ok != 0 && !ourError;
 }
 
 } // namespace

@@ -94,8 +94,8 @@ bool EnsureRenderBuffers(int width, int height) {
         scissorHeight = height;
     }
 
-    // Only clear on first allocation. Resizes must not wipe a rendered frame
-    // (glXSwapBuffers used to trigger that and present pure black).
+    // Only clear on first allocation. Resizing from SwapBuffers happens after
+    // the app has already drawn — wiping here would present black.
     if (firstAlloc) {
         std::memset(frameBufferColor, 0, static_cast<size_t>(total) * sizeof(PixelValue));
         for (int i = 0; i < total; ++i) {

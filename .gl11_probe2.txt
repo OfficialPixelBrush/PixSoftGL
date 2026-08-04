@@ -1,0 +1,191 @@
+=== find javap ===
+default-java
+java-1.21.0-openjdk-amd64
+java-21-openjdk-amd64
+/home/torben/PixSoftGL/x64_jdk1.8.0_202/bin/javap
+/home/torben/PixSoftGL/x86_jdk1.8.0_491/bin/javap
+java is /usr/bin/java
+java is /bin/java
+
+=== nearby strings ===
+254:OpenGL11
+2226:supported_extensions
+2345: GL11_initNativeFunctionAddresses
+2402:initAllStubs
+2426:8 was reported as available but an entry point is missing
+2429:GL11 not supported
+
+-rw-r--r-- 1 torben torben 187118 Apr 21  2013 /tmp/lwjgl_cc/org/lwjgl/opengl/ContextCapabilities.class
+b'GL11 not supported' at 89703
+b'GL11_initNativeFunctionAddresses' at 77258
+b'OpenGL11' at 25512
+b'initAllStubs' at 79765
+b'entry point is missing' at 89593
+--- context 253
+GL_EXT_texture_compression_rgtc
+GL_EXT_texture_compression_s3tc
+GL_EXT_texture_env_combine
+GL_EXT_texture_env_dot3
+!GL_EXT_texture_filter_anisotropic
+GL_EXT_texture_integer
+GL_EXT_texture_lod_bias
+GL_EXT_texture_mirror_clamp
+GL_EXT_texture_rectangle
+GL_EXT_texture_sRGB
+GL_EXT_texture_sRGB_decode
+GL_EXT_texture_shared_exponent
+GL_EXT_texture_snorm
+GL_EXT_texture_swizzle
+GL_EXT_timer_query
+GL_EXT_transform_feedback
+GL_EXT_vertex_array_bgra
+GL_EXT_vertex_attrib_64bit
+GL_EXT_vertex_shader
+GL_EXT_vertex_weighting
+OpenGL11
+OpenGL12
+OpenGL13
+OpenGL14
+OpenGL15
+OpenGL20
+OpenGL21
+OpenGL30
+OpenGL31
+OpenGL32
+OpenGL33
+OpenGL40
+OpenGL41
+OpenGL42
+OpenGL43
+GL_GREMEDY_frame_terminator
+GL_GREMEDY_string_marker
+GL_HP_occlusion_test
+GL_IBM_rasterpos_clip
+GL_INTEL_map_texture
+
+--- context 2344
+0EXT_geometry_shader4_initNativeFunctionAddresses
+6EXT_gpu_program_parameters_initNativeFunctionAddresses
++EXT_gpu_shader4_initNativeFunctionAddresses
+1EXT_multi_draw_arrays_initNativeFunctionAddresses
+0EXT_paletted_texture_initNativeFunctionAddresses
+0EXT_point_parameters_initNativeFunctionAddresses
+0EXT_provoking_vertex_initNativeFunctionAddresses
+/EXT_secondary_color_initNativeFunctionAddresses
+7EXT_separate_shader_objects_initNativeFunctionAddresses
+7EXT_shader_image_load_store_initNativeFunctionAddresses
+1EXT_stencil_clear_tag_initNativeFunctionAddresses
+0EXT_stencil_two_side_initNativeFunctionAddresses
+-EXT_texture_array_initNativeFunctionAddresses
+5EXT_texture_buffer_object_initNativeFunctionAddresses
+/EXT_texture_integer_initNativeFunctionAddresses
++EXT_timer_query_initNativeFunctionAddresses
+2EXT_transform_feedback_initNativeFunctionAddresses
+3EXT_vertex_attrib_64bit_initNativeFunctionAddresses
+-EXT_vertex_shader_initNativeFunctionAddresses
+0EXT_vertex_weighting_initNativeFunctionAddresses
+ GL11_initNativeFunctionAddresses
+ GL12_initNativeFunctionAddresses
+ GL13_initNativeFunctionAddresses
+ GL14_initNativeFunctionAddresses
+ GL15_initNativeFunctionAddresses
+ GL20_initNativeFunctionAddresses
+ GL21_initNativeFunctionAddresses
+ GL30_initNativeFunctionAddresses
+ GL31_initNativeFunctionAddresses
+ GL32_initNativeFunctionAddresses
+ GL33_initNativeFunctionAddresses
+ GL40_initNativeFunctionAddresses
+ GL41_initNativeFunctionAddresses
+ GL42_initNativeFunctionAddresses
+ GL43_initNativeFunctionAddresses
+4GREMEDY_frame_terminator_initNativeFunctionAddresses
+1GREMEDY_string_marker_initNativeFunctionAddresses
+-INTEL_map_texture_initNativeFunctionAddresses
+%KHR_debug_initNativeFunctionAddresses
+/NV_bindless_texture_initNativeFunctionAddresses
+
+--- context 2401
++NV_point_sprite_initNativeFunctionAddresses
+,NV_present_video_initNativeFunctionAddresses
+0NV_primitive_restart_initNativeFunctionAddresses
+&NV_program_initNativeFunctionAddresses
+1NV_register_combiners_initNativeFunctionAddresses
+2NV_register_combiners2_initNativeFunctionAddresses
+1NV_shader_buffer_load_initNativeFunctionAddresses
+.NV_texture_barrier_initNativeFunctionAddresses
+2NV_texture_multisample_initNativeFunctionAddresses
+1NV_transform_feedback_initNativeFunctionAddresses
+2NV_transform_feedback2_initNativeFunctionAddresses
+1NV_vertex_array_range_initNativeFunctionAddresses
+:NV_vertex_attrib_integer_64bit_initNativeFunctionAddresses
+;NV_vertex_buffer_unified_memory_initNativeFunctionAddresses
+-NV_vertex_program_initNativeFunctionAddresses
+,NV_video_capture_initNativeFunctionAddresses
+remove
+$(Ljava/util/Set;Ljava/lang/String;)V
+	extension
+Ljava/lang/String;
+initAllStubs
+(Z)Ljava/util/Set;
+profileMask
+Exceptions
+&(Z)Ljava/util/Set<Ljava/lang/String;>;
+unloadAllStubs
+<init>
+(Z)V
+SourceFile
+ContextCapabilities.java
+java/lang/String
+glDebugMessageEnableAMDX
+glDebugMessageInsertAMDX
+glDebugMessageCallbackAMDX
+glGetDebugMessageLogAMDX
+glTexStorage1DEXT
+glTexStorage2DEXT
+glTexStorage3DEXT
+glTextureStorage1DEXTEXT
+glTextureStorage2DEXTEXT
+
+--- context 2428
+(Z)V
+SourceFile
+ContextCapabilities.java
+java/lang/String
+glDebugMessageEnableAMDX
+glDebugMessageInsertAMDX
+glDebugMessageCallbackAMDX
+glGetDebugMessageLogAMDX
+glTexStorage1DEXT
+glTexStorage2DEXT
+glTexStorage3DEXT
+glTextureStorage1DEXTEXT
+glTextureStorage2DEXTEXT
+glTextureStorage3DEXTEXT
+Windows
+Linux
+java/lang/StringBuilder
+8 was reported as available but an entry point is missing
+java/util/HashSet
+org/lwjgl/LWJGLException
+GL11 not supported
+GL_ARB_program
+GL_ARB_buffer_object
+GL_NV_program
+GL_AMDX_debug_output
+GL_EXT_texture_storage
+org/lwjgl/opengl/APIUtil
+org/lwjgl/opengl/StateTracker
+"GL_EXT_texture_buffer_object_rgb32
+GL_EXT_texture_compression_bptc
+$org/lwjgl/opengl/ContextCapabilities
+java/lang/Object
+org/lwjgl/opengl/GLContext
+getFunctionAddress
+([Ljava/lang/String;)J
+(Ljava/lang/String;)J
+java/util/Set
+contains
+(Ljava/lang/Object;)Z
+"getPlatformSpecificFunctionAddress
+

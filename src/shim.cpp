@@ -23,6 +23,7 @@ struct PixSoftGLXContext {
 };
 
 PixSoftGLXContext currentCtx{};
+GLXContext currentGlxContext = nullptr;
 bool modeResolved = false;
 bool softwareGlx = true;
 
@@ -159,8 +160,12 @@ Bool glXQueryVersion(Display* dpy, int* major, int* minor) {
         auto fn = realFn<Bool(*)(Display*, int*, int*)>("glXQueryVersion");
         return fn ? fn(dpy, major, minor) : False;
     }
+    // Advertise 1.2 so LWJGL uses the legacy path where the GLX drawable is
+    // the X11 Window. Reporting 1.3+ makes LWJGL call system glXCreateWindow
+    // (via GetProcAddress fallthrough), store a GLXWindow XID, and every
+    // XGetWindowAttributes/PutImage then fails with BadWindow → blank screen.
     if (major) *major = 1;
-    if (minor) *minor = 4;
+    if (minor) *minor = 2;
     return True;
 }
 
@@ -229,6 +234,7 @@ Bool glXMakeCurrent(Display* dpy, GLXDrawable drawable, GLXContext ctx) {
 
     if (!ctx || drawable == None) {
         currentCtx = {};
+        currentGlxContext = nullptr;
         X11DisplayShutdown();
         return True;
     }
@@ -244,15 +250,21 @@ Bool glXMakeCurrent(Display* dpy, GLXDrawable drawable, GLXContext ctx) {
         pixCtx->height = height;
     }
 
-    // Under PixSoftWM clients are forced fullscreen to the FB/screen size.
-    // Fall back to a sensible default if the window is not mapped yet.
+    // Prefer last known size over full-screen guess — a too-large FB + clipped
+    // present used to sample empty rows and look permanently black.
     if (pixCtx->width <= 0 || pixCtx->height <= 0) {
-        const int screen = DefaultScreen(dpy);
-        pixCtx->width = DisplayWidth(dpy, screen);
-        pixCtx->height = DisplayHeight(dpy, screen);
+        if (currentCtx.width > 0 && currentCtx.height > 0 &&
+            currentCtx.win == pixCtx->win) {
+            pixCtx->width = currentCtx.width;
+            pixCtx->height = currentCtx.height;
+        } else {
+            pixCtx->width = 854;
+            pixCtx->height = 480;
+        }
     }
 
     currentCtx = *pixCtx;
+    currentGlxContext = ctx;
     X11DisplayInit(dpy, pixCtx->win, pixCtx->width, pixCtx->height);
     EnsureRenderBuffers(pixCtx->width, pixCtx->height);
     return True;
@@ -266,11 +278,86 @@ void glXDestroyContext(Display* dpy, GLXContext ctx) {
     }
     if (!ctx) return;
     auto* pixCtx = reinterpret_cast<PixSoftGLXContext*>(ctx);
-    if (currentCtx.dpy == pixCtx->dpy && currentCtx.win == pixCtx->win) {
+    if (currentGlxContext == ctx) {
+        currentGlxContext = nullptr;
+        currentCtx = {};
+        X11DisplayShutdown();
+    } else if (currentCtx.dpy == pixCtx->dpy && currentCtx.win == pixCtx->win) {
         currentCtx = {};
         X11DisplayShutdown();
     }
     delete pixCtx;
+}
+
+void glXCopyContext(Display* dpy, GLXContext src, GLXContext dst, unsigned long mask) {
+    if (!useSoftwareGlx(dpy)) {
+        auto fn = realFn<void(*)(Display*, GLXContext, GLXContext, unsigned long)>("glXCopyContext");
+        if (fn) fn(dpy, src, dst, mask);
+        return;
+    }
+    (void)src;
+    (void)dst;
+    (void)mask;
+}
+
+GLXPixmap glXCreateGLXPixmap(Display* dpy, XVisualInfo* vis, Pixmap pixmap) {
+    if (!useSoftwareGlx(dpy)) {
+        auto fn = realFn<GLXPixmap(*)(Display*, XVisualInfo*, Pixmap)>("glXCreateGLXPixmap");
+        return fn ? fn(dpy, vis, pixmap) : None;
+    }
+    (void)vis;
+    return static_cast<GLXPixmap>(pixmap);
+}
+
+void glXDestroyGLXPixmap(Display* dpy, GLXPixmap pix) {
+    if (!useSoftwareGlx(dpy)) {
+        auto fn = realFn<void(*)(Display*, GLXPixmap)>("glXDestroyGLXPixmap");
+        if (fn) fn(dpy, pix);
+        return;
+    }
+    (void)pix;
+}
+
+GLXContext glXGetCurrentContext() {
+    if (!softwareGlx && modeResolved) {
+        auto fn = realFn<GLXContext(*)()>("glXGetCurrentContext");
+        return fn ? fn() : nullptr;
+    }
+    return currentGlxContext;
+}
+
+GLXDrawable glXGetCurrentDrawable() {
+    if (!softwareGlx && modeResolved) {
+        auto fn = realFn<GLXDrawable(*)()>("glXGetCurrentDrawable");
+        return fn ? fn() : None;
+    }
+    return currentCtx.win;
+}
+
+void glXWaitGL() {
+    if (!softwareGlx && modeResolved) {
+        auto fn = realFn<void(*)()>("glXWaitGL");
+        if (fn) fn();
+    }
+}
+
+void glXWaitX() {
+    if (!softwareGlx && modeResolved) {
+        auto fn = realFn<void(*)()>("glXWaitX");
+        if (fn) fn();
+    }
+}
+
+void glXUseXFont(Font font, int first, int count, int listBase) {
+    if (!softwareGlx && modeResolved) {
+        auto fn = realFn<void(*)(Font, int, int, int)>("glXUseXFont");
+        if (fn) fn(font, first, count, listBase);
+        return;
+    }
+    (void)font;
+    (void)first;
+    (void)count;
+    (void)listBase;
 }
 
 void glXSwapBuffers(Display* dpy, GLXDrawable drawable) {
@@ -280,12 +367,11 @@ void glXSwapBuffers(Display* dpy, GLXDrawable drawable) {
         return;
     }
 
-    // Prefer the drawable being swapped (LWJGL passes this). Never reallocate /
-    // clear the software color buffer here — that wiped finished frames and
-    // produced a permanent black screen.
+    // Prefer the drawable being swapped (LWJGL passes this). Never clear the
+    // software color buffer here — that wiped finished frames.
     //
-    // Also: never let BadWindow reach LWJGL's X error handler. Display.create()
-    // swaps once during initContext; a trapped async X error there aborts startup.
+    // Never let BadWindow reach LWJGL's X error handler (Display.create swaps
+    // once during initContext).
     Window win = drawable ? static_cast<Window>(drawable) : currentCtx.win;
     if (dpy && win) {
         int width = 0;
@@ -296,22 +382,21 @@ void glXSwapBuffers(Display* dpy, GLXDrawable drawable) {
             currentCtx.width = width;
             currentCtx.height = height;
             X11DisplayInit(dpy, win, width, height);
-            // Grow buffers if the window is larger than what MakeCurrent saw
-            // (common once the desktop WM applies a configure). Do not shrink /
-            // clear mid-frame.
-            if (width > renderAreaWidth || height > renderAreaHeight) {
+            // Keep the software FB matched to the live window. Mismatched sizes
+            // + clipped present previously showed empty (black) regions.
+            if (width != renderAreaWidth || height != renderAreaHeight) {
                 EnsureRenderBuffers(width, height);
             }
         } else if (currentCtx.win == None || currentCtx.dpy != dpy) {
-            // Window not queryable yet (unmapped / racing WM). Still bind with
-            // last known or screen-sized buffers so Present has a target.
-            const int screen = DefaultScreen(dpy);
             currentCtx.dpy = dpy;
             currentCtx.win = win;
-            if (currentCtx.width <= 0) currentCtx.width = DisplayWidth(dpy, screen);
-            if (currentCtx.height <= 0) currentCtx.height = DisplayHeight(dpy, screen);
+            if (currentCtx.width <= 0) currentCtx.width = 854;
+            if (currentCtx.height <= 0) currentCtx.height = 480;
             X11DisplayInit(dpy, win, currentCtx.width, currentCtx.height);
             EnsureRenderBuffers(currentCtx.width, currentCtx.height);
+        } else {
+            // Same window, not queryable this frame — still try present.
+            X11DisplayInit(dpy, win, currentCtx.width, currentCtx.height);
         }
     }
     UpdateScreen();
@@ -342,7 +427,7 @@ const char* glXGetClientString(Display* dpy, int name) {
     }
     switch (name) {
     case GLX_VENDOR: return "PixSoftGL";
-    case GLX_VERSION: return "1.4 PixSoftGL";
+    case GLX_VERSION: return "1.2 PixSoftGL";
     case GLX_EXTENSIONS: return "GLX_ARB_get_proc_address";
     default: return nullptr;
     }
@@ -359,24 +444,76 @@ const char* glXQueryServerString(Display* dpy, int screen, int name) {
 
 typedef void (*GLFuncPtr)(void);
 
+// LWJGL ContextCapabilities requires a non-null pointer for every GL 1.1 entry.
+// Unimplemented commands get this no-op; x86-64 ignores unused args. Prefer
+// real exports from our .so whenever present.
+static void glUnimplementedStub() {}
+
+static void* selfLibHandle() {
+    static void* handle = nullptr;
+    static bool attempted = false;
+    if (attempted) return handle;
+    attempted = true;
+
+    Dl_info info{};
+    if (dladdr(reinterpret_cast<const void*>(&glXQueryVersion), &info) && info.dli_fname) {
+        handle = dlopen(info.dli_fname, RTLD_NOW | RTLD_NOLOAD);
+        if (!handle) {
+            handle = dlopen(info.dli_fname, RTLD_NOW | RTLD_LOCAL);
+        }
+    }
+    return handle;
+}
+
+static bool isGlxName(const char* name) {
+    return name && name[0] == 'g' && name[1] == 'l' && name[2] == 'X';
+}
+
+static bool isGlName(const char* name) {
+    return name && name[0] == 'g' && name[1] == 'l' && name[2] != '\0';
+}
+
 static GLFuncPtr lookupLocalGl(const char* name) {
-    // Resolve against our own DT_SYMTAB (LD_PRELOAD exports).
-    void* sym = dlsym(RTLD_DEFAULT, name);
-    return reinterpret_cast<GLFuncPtr>(sym);
+    if (void* self = selfLibHandle()) {
+        if (void* sym = dlsym(self, name)) {
+            return reinterpret_cast<GLFuncPtr>(sym);
+        }
+    }
+
+    // Our lib is LD_PRELOAD'd / opened as libGL.so.1 (global). System libGL is
+    // opened RTLD_LOCAL by realLibGL(), so it should not appear here — but never
+    // accept glX* from the default namespace (avoids a real GLXWindow drawable).
+    if (!isGlxName(name)) {
+        if (void* sym = dlsym(RTLD_DEFAULT, name)) {
+            return reinterpret_cast<GLFuncPtr>(sym);
+        }
+    }
+    return nullptr;
 }
 
 GLFuncPtr glXGetProcAddress(const GLubyte* name) {
     Display* dpy = currentCtx.dpy;
     const char* str = reinterpret_cast<const char*>(name);
+    if (!str) return nullptr;
 
     if (useSoftwareGlx(dpy)) {
         if (GLFuncPtr local = lookupLocalGl(str)) {
             return local;
         }
+        // LWJGL refuses to create a context unless every GL11 stub resolves.
+        // Return a no-op for unimplemented gl* commands; keep glX* as null so
+        // LWJGL cannot pick up system GLX 1.3 entry points.
+        if (isGlName(str) && !isGlxName(str)) {
+            return reinterpret_cast<GLFuncPtr>(&glUnimplementedStub);
+        }
+        return nullptr;
     }
 
     auto orig = realFn<GLFuncPtr(*)(const GLubyte*)>("glXGetProcAddress");
-    return orig ? orig(name) : lookupLocalGl(str);
+    if (orig) {
+        if (GLFuncPtr fn = orig(name)) return fn;
+    }
+    return lookupLocalGl(str);
 }
 
 GLFuncPtr glXGetProcAddressARB(const GLubyte* name) {

@@ -1,0 +1,180 @@
+     166: ifeq          173
+     169: iconst_1
+     170: goto          174
+     173: iconst_0
+     174: iand
+     175: aload_0
+     176: ldc_w         #3732               // String glVideoCaptureNV
+     179: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     182: dup2_x1
+     183: putfield      #3733               // Field glVideoCaptureNV:J
+     186: lconst_0
+     187: lcmp
+     188: ifeq          195
+     191: iconst_1
+     192: goto          196
+     195: iconst_0
+     196: iand
+     197: aload_0
+     198: ldc_w         #3734               // String glVideoCaptureStreamParameterivNV
+     201: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     204: dup2_x1
+     205: putfield      #3735               // Field glVideoCaptureStreamParameterivNV:J
+     208: lconst_0
+     209: lcmp
+     210: ifeq          217
+     213: iconst_1
+     214: goto          218
+     217: iconst_0
+     218: iand
+     219: aload_0
+     220: ldc_w         #3736               // String glVideoCaptureStreamParameterfvNV
+     223: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     226: dup2_x1
+     227: putfield      #3737               // Field glVideoCaptureStreamParameterfvNV:J
+     230: lconst_0
+     231: lcmp
+     232: ifeq          239
+     235: iconst_1
+     236: goto          240
+     239: iconst_0
+     240: iand
+     241: aload_0
+     242: ldc_w         #3738               // String glVideoCaptureStreamParameterdvNV
+     245: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+     248: dup2_x1
+     249: putfield      #3739               // Field glVideoCaptureStreamParameterdvNV:J
+     252: lconst_0
+     253: lcmp
+     254: ifeq          261
+     257: iconst_1
+     258: goto          262
+     261: iconst_0
+     262: iand
+     263: ireturn
+
+  private static void remove(java.util.Set, java.lang.String);
+    Code:
+       0: new           #3740               // class java/lang/StringBuilder
+       3: dup
+       4: invokespecial #3741               // Method java/lang/StringBuilder."<init>":()V
+       7: aload_1
+       8: invokevirtual #3742               // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      11: ldc_w         #3743               // String  was reported as available but an entry point is missing
+      14: invokevirtual #3742               // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      17: invokevirtual #3744               // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+      20: invokestatic  #3745               // Method org/lwjgl/LWJGLUtil.log:(Ljava/lang/CharSequence;)V
+      23: aload_0
+      24: aload_1
+      25: invokeinterface #3746,  2         // InterfaceMethod java/util/Set.remove:(Ljava/lang/Object;)Z
+      30: pop
+      31: return
+
+  private java.util.Set<java.lang.String> initAllStubs(boolean) throws org.lwjgl.LWJGLException;
+    Code:
+       0: aload_0
+       1: ldc_w         #2287               // String glGetError
+       4: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+       7: putfield      #2288               // Field glGetError:J
+      10: aload_0
+      11: ldc_w         #2349               // String glGetString
+      14: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      17: putfield      #2350               // Field glGetString:J
+      20: aload_0
+      21: ldc_w         #2297               // String glGetIntegerv
+      24: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      27: putfield      #2298               // Field glGetIntegerv:J
+      30: aload_0
+      31: ldc_w         #2889               // String glGetStringi
+      34: invokestatic  #16                 // Method org/lwjgl/opengl/GLContext.getFunctionAddress:(Ljava/lang/String;)J
+      37: putfield      #2890               // Field glGetStringi:J
+      40: aload_0
+      41: invokestatic  #3747               // Method org/lwjgl/opengl/GLContext.setCapabilities:(Lorg/lwjgl/opengl/ContextCapabilities;)V
+      44: new           #3748               // class java/util/HashSet
+      47: dup
+      48: sipush        256
+      51: invokespecial #3749               // Method java/util/HashSet."<init>":(I)V
+      54: astore_2
+      55: aload_2
+      56: invokestatic  #3750               // Method org/lwjgl/opengl/GLContext.getSupportedExtensions:(Ljava/util/Set;)I
+      59: istore_3
+      60: aload_2
+      61: ldc_w         #1776               // String OpenGL31
+      64: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+      69: ifeq          92
+      72: aload_2
+      73: ldc_w         #3751               // String GL_ARB_compatibility
+      76: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+      81: ifne          92
+      84: iload_3
+      85: iconst_2
+      86: iand
+      87: ifne          92
+      90: iconst_1
+      91: istore_1
+      92: aload_0
+      93: iload_1
+      94: invokespecial #3752               // Method GL11_initNativeFunctionAddresses:(Z)Z
+      97: ifne          111
+     100: new           #3753               // class org/lwjgl/LWJGLException
+     103: dup
+     104: ldc_w         #3754               // String GL11 not supported
+     107: invokespecial #3755               // Method org/lwjgl/LWJGLException."<init>":(Ljava/lang/String;)V
+     110: athrow
+     111: aload_2
+     112: ldc_w         #3756               // String GL_ARB_fragment_program
+     115: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     120: ifeq          133
+     123: aload_2
+     124: ldc_w         #3757               // String GL_ARB_program
+     127: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     132: pop
+     133: aload_2
+     134: ldc_w         #3759               // String GL_ARB_pixel_buffer_object
+     137: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     142: ifeq          155
+     145: aload_2
+     146: ldc_w         #3760               // String GL_ARB_buffer_object
+     149: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     154: pop
+     155: aload_2
+     156: ldc_w         #3761               // String GL_ARB_vertex_buffer_object
+     159: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     164: ifeq          177
+     167: aload_2
+     168: ldc_w         #3760               // String GL_ARB_buffer_object
+     171: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     176: pop
+     177: aload_2
+     178: ldc_w         #1561               // String GL_ARB_vertex_program
+     181: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     186: ifeq          199
+     189: aload_2
+     190: ldc_w         #3757               // String GL_ARB_program
+     193: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     198: pop
+     199: aload_2
+     200: ldc_w         #3762               // String GL_EXT_pixel_buffer_object
+     203: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     208: ifeq          221
+     211: aload_2
+     212: ldc_w         #3760               // String GL_ARB_buffer_object
+     215: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     220: pop
+     221: aload_2
+     222: ldc_w         #3763               // String GL_NV_fragment_program
+     225: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     230: ifeq          243
+     233: aload_2
+     234: ldc_w         #3764               // String GL_NV_program
+     237: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     242: pop
+     243: aload_2
+     244: ldc_w         #3765               // String GL_NV_vertex_program
+     247: invokeinterface #185,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     252: ifeq          265
+     255: aload_2
+     256: ldc_w         #3764               // String GL_NV_program
+     259: invokeinterface #3758,  2         // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     264: pop
+     265: aload_2

@@ -1,0 +1,20 @@
+=== strings not supported ===
+2424-Linux
+2425-java/lang/StringBuilder
+2426-8 was reported as available but an entry point is missing
+2427-java/util/HashSet
+2428-org/lwjgl/LWJGLException
+2429:GL11 not supported
+2430-GL_ARB_program
+2431-GL_ARB_buffer_object
+2432-GL_NV_program
+2433-GL_AMDX_debug_output
+2434-GL_EXT_texture_storage
+
+=== strings GL11 ===
+254:OpenGL11
+2345: GL11_initNativeFunctionAddresses
+2429:GL11 not supported
+
+=== javap ===
+/home/torben/PixSoftGL/.gl11_probe.sh: line 14: javap: command not found
