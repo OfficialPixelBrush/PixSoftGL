@@ -105,6 +105,9 @@ int renderAreaWidth = DEFAULT_RENDER_AREA_WIDTH;
 int renderAreaHeight = DEFAULT_RENDER_AREA_HEIGHT;
 int renderAreaTotal = renderAreaWidth*renderAreaHeight;
 
+int presentWidth = DEFAULT_RENDER_AREA_WIDTH;
+int presentHeight = DEFAULT_RENDER_AREA_HEIGHT;
+
 // Viewport size
 int viewportOffsetX = 0;
 int viewportOffsetY = 0;
@@ -113,8 +116,9 @@ int viewportAreaHeight = renderAreaHeight;
 int viewportAreaTotal = viewportAreaWidth*viewportAreaHeight;
 
 // Screen framebuffer
-PixelValue* frameBufferColor;
-float* frameBufferDepth;
+PixelValue* frameBufferColor = nullptr;
+float* frameBufferDepth = nullptr;
+uint16_t* frameBufferDepth16 = nullptr;
 
 // Display lists
 GLint activeDisplayListIndex = 0;

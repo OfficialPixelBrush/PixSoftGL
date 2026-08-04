@@ -382,9 +382,9 @@ void glXSwapBuffers(Display* dpy, GLXDrawable drawable) {
             currentCtx.width = width;
             currentCtx.height = height;
             X11DisplayInit(dpy, win, width, height);
-            // Keep the software FB matched to the live window. Mismatched sizes
-            // + clipped present previously showed empty (black) regions.
-            if (width != renderAreaWidth || height != renderAreaHeight) {
+            // Keep soft buffer matched to the live window (internal size may be
+            // smaller when PIXSOFTGL_SCALE>1 — EnsureRenderBuffers applies scale).
+            if (width != presentWidth || height != presentHeight) {
                 EnsureRenderBuffers(width, height);
             }
         } else if (currentCtx.win == None || currentCtx.dpy != dpy) {

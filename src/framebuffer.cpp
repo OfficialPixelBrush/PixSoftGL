@@ -1,7 +1,9 @@
 #include "framebuffer.h"
 
 #include "display/x11_display.h"
+#include "pixConfig.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -15,16 +17,18 @@ FbDevice g_fb;
 bool printInfo = false;
 bool g_fbInitialized = false;
 bool g_fbAvailable = false;
+bool g_loggedScale = false;
+
+PixelValue* g_presentScratch = nullptr;
+int g_presentScratchW = 0;
+int g_presentScratchH = 0;
 
 bool envFlag(const char* name) {
-    const char* v = std::getenv(name);
-    return v != nullptr && v[0] != '\0' && std::strcmp(v, "0") != 0;
+    return pix::envFlag(name);
 }
 
 int envPositiveInt(const char* name) {
-    const char* v = std::getenv(name);
-    if (!v || !*v) return 0;
-    const int n = std::atoi(v);
+    const int n = pix::envInt(name, 0);
     return n > 0 ? n : 0;
 }
 
@@ -42,7 +46,6 @@ bool wantFbdevPresent() {
     const char* mode = presentModeOverride();
     if (mode && std::strcmp(mode, "x11") == 0) return false;
     if (mode && std::strcmp(mode, "fbdev") == 0) return true;
-    // Default: use fbdev only when no X11 window is bound.
     return X11DisplayGetContext() == nullptr;
 }
 
@@ -70,7 +73,6 @@ bool ensureFramebuffer() {
         return false;
     }
 
-    // Optional mode set for bare-metal S3: PIXSOFTGL_FB_MODE=640x480x16
     int mw = 0, mh = 0, mb = 16;
     if (parseFbMode(std::getenv("PIXSOFTGL_FB_MODE"), mw, mh, mb)) {
         VideoMode mode{mw, mh, mb, {}};
@@ -89,7 +91,7 @@ bool ensureFramebuffer() {
     return true;
 }
 
-void fillDepthOnes(float* depth, int total) {
+void fillDepthFloatOnes(float* depth, int total) {
     auto* words = reinterpret_cast<uint32_t*>(depth);
     const uint32_t one = 0x3f800000u;
     int i = 0;
@@ -98,6 +100,91 @@ void fillDepthOnes(float* depth, int total) {
         words[i + 4] = one; words[i + 5] = one; words[i + 6] = one; words[i + 7] = one;
     }
     for (; i < total; ++i) words[i] = one;
+}
+
+void fillDepth16Far(uint16_t* depth, int total) {
+    // Map float clear 1.0 → far. NDC z≈1 is far under our LESS convention.
+    std::memset(depth, 0xff, static_cast<size_t>(total) * sizeof(uint16_t));
+}
+
+PixelValue* ensurePresentScratch(int w, int h) {
+    if (g_presentScratch && g_presentScratchW == w && g_presentScratchH == h) {
+        return g_presentScratch;
+    }
+    auto* p = static_cast<PixelValue*>(std::realloc(
+        g_presentScratch, static_cast<size_t>(w) * static_cast<size_t>(h) * sizeof(PixelValue)));
+    if (!p) return nullptr;
+    g_presentScratch = p;
+    g_presentScratchW = w;
+    g_presentScratchH = h;
+    return g_presentScratch;
+}
+
+// Doom/Quake-style nearest upscale (integer scale factor fast path).
+void nearestUpscale(const PixelValue* src, int sw, int sh,
+                    PixelValue* dst, int dw, int dh) {
+    if (!src || !dst || sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0) return;
+
+    if (dw == sw && dh == sh) {
+        std::memcpy(dst, src, static_cast<size_t>(sw) * sh * sizeof(PixelValue));
+        return;
+    }
+
+    // Exact integer scale (SCALE=2 → 2x2 pixel blocks).
+    if (dw % sw == 0 && dh % sh == 0) {
+        const int sx = dw / sw;
+        const int sy = dh / sh;
+        if (sx == 2 && sy == 2) {
+            for (int y = 0; y < sh; ++y) {
+                const PixelValue* srow = src + y * sw;
+                PixelValue* d0 = dst + (y * 2) * dw;
+                PixelValue* d1 = d0 + dw;
+                for (int x = 0; x < sw; ++x) {
+                    const PixelValue p = srow[x];
+                    d0[x * 2] = p; d0[x * 2 + 1] = p;
+                    d1[x * 2] = p; d1[x * 2 + 1] = p;
+                }
+            }
+            return;
+        }
+        if (sx == 3 && sy == 3) {
+            for (int y = 0; y < sh; ++y) {
+                const PixelValue* srow = src + y * sw;
+                for (int yy = 0; yy < 3; ++yy) {
+                    PixelValue* drow = dst + (y * 3 + yy) * dw;
+                    for (int x = 0; x < sw; ++x) {
+                        const PixelValue p = srow[x];
+                        drow[x * 3] = p; drow[x * 3 + 1] = p; drow[x * 3 + 2] = p;
+                    }
+                }
+            }
+            return;
+        }
+        if (sx == 4 && sy == 4) {
+            for (int y = 0; y < sh; ++y) {
+                const PixelValue* srow = src + y * sw;
+                for (int yy = 0; yy < 4; ++yy) {
+                    PixelValue* drow = dst + (y * 4 + yy) * dw;
+                    for (int x = 0; x < sw; ++x) {
+                        const PixelValue p = srow[x];
+                        const int xo = x * 4;
+                        drow[xo] = p; drow[xo + 1] = p; drow[xo + 2] = p; drow[xo + 3] = p;
+                    }
+                }
+            }
+            return;
+        }
+    }
+
+    // General nearest-neighbor (arbitrary drawable vs internal size).
+    for (int y = 0; y < dh; ++y) {
+        const int sy = y * sh / dh;
+        const PixelValue* srow = src + sy * sw;
+        PixelValue* drow = dst + y * dw;
+        for (int x = 0; x < dw; ++x) {
+            drow[x] = srow[x * sw / dw];
+        }
+    }
 }
 
 } // namespace
@@ -110,74 +197,122 @@ bool EnsureRenderBuffers(int width, int height) {
     if (maxW > 0 && width > maxW) width = maxW;
     if (maxH > 0 && height > maxH) height = maxH;
 
-    // When presenting only to fbdev, never allocate a larger soft buffer than the panel.
     if (wantFbdevPresent() && ensureFramebuffer()) {
         if (g_fb.width() > 0 && width > g_fb.width()) width = g_fb.width();
         if (g_fb.height() > 0 && height > g_fb.height()) height = g_fb.height();
     }
 
-    const int total = width * height;
+    // Drawable / present size (what the window or panel actually is).
+    presentWidth = width;
+    presentHeight = height;
+
+    const int scale = pix::renderScale();
+    int rw = width / scale;
+    int rh = height / scale;
+    if (rw < 1) rw = 1;
+    if (rh < 1) rh = 1;
+
+    if (!g_loggedScale && (scale > 1 || pix::fixedRaster() || pix::depth16() || pix::fastPreset())) {
+        g_loggedScale = true;
+        std::cout << "PixSoftGL: internal " << rw << 'x' << rh
+                  << " → present " << width << 'x' << height
+                  << " (scale=" << scale
+                  << (pix::fixedRaster() ? " fixed" : "")
+                  << (pix::depth16() ? " depth16" : "")
+                  << (pix::forceAffine() ? " affine" : "")
+                  << (pix::fastPreset() ? " FAST" : "")
+                  << ")\n";
+    }
+
+    const int total = rw * rh;
+    const bool wantDepth16 = pix::depth16();
+
     if (frameBufferColor &&
-        renderAreaWidth == width &&
-        renderAreaHeight == height) {
+        renderAreaWidth == rw &&
+        renderAreaHeight == rh &&
+        (wantDepth16 ? frameBufferDepth16 != nullptr : frameBufferDepth != nullptr)) {
         return true;
     }
 
     const bool firstAlloc = (frameBufferColor == nullptr);
     auto* color = static_cast<PixelValue*>(std::realloc(
         frameBufferColor, static_cast<size_t>(total) * sizeof(PixelValue)));
-    auto* depth = static_cast<float*>(std::realloc(
-        frameBufferDepth, static_cast<size_t>(total) * sizeof(float)));
 
-    if (!color || !depth) {
+    float* depthF = frameBufferDepth;
+    uint16_t* depth16 = frameBufferDepth16;
+
+    if (wantDepth16) {
+        if (depthF) {
+            std::free(depthF);
+            depthF = nullptr;
+            frameBufferDepth = nullptr;
+        }
+        depth16 = static_cast<uint16_t*>(std::realloc(
+            depth16, static_cast<size_t>(total) * sizeof(uint16_t)));
+    } else {
+        if (depth16) {
+            std::free(depth16);
+            depth16 = nullptr;
+            frameBufferDepth16 = nullptr;
+        }
+        depthF = static_cast<float*>(std::realloc(
+            depthF, static_cast<size_t>(total) * sizeof(float)));
+    }
+
+    if (!color || (wantDepth16 ? !depth16 : !depthF)) {
         std::free(color);
-        std::free(depth);
+        std::free(depthF);
+        std::free(depth16);
         std::cerr << "PixSoftGL: failed to allocate render buffers "
-                  << width << 'x' << height << '\n';
+                  << rw << 'x' << rh << '\n';
         return false;
     }
 
     frameBufferColor = color;
-    frameBufferDepth = depth;
-    renderAreaWidth = width;
-    renderAreaHeight = height;
+    frameBufferDepth = depthF;
+    frameBufferDepth16 = depth16;
+    renderAreaWidth = rw;
+    renderAreaHeight = rh;
     renderAreaTotal = total;
 
-    // Match viewport to the drawable unless the app already set one that fits.
+    // Internal viewport covers the soft buffer unless the app set a tighter one.
     if (viewportAreaWidth <= 0 || viewportAreaHeight <= 0 ||
-        viewportOffsetX + viewportAreaWidth > width ||
-        viewportOffsetY + viewportAreaHeight > height) {
+        viewportOffsetX + viewportAreaWidth > rw ||
+        viewportOffsetY + viewportAreaHeight > rh) {
         viewportOffsetX = 0;
         viewportOffsetY = 0;
-        viewportAreaWidth = width;
-        viewportAreaHeight = height;
+        viewportAreaWidth = rw;
+        viewportAreaHeight = rh;
         viewportAreaTotal = total;
+        // glViewport* stays in drawable space for GetIntegerv.
         glViewportX = 0;
         glViewportY = 0;
         glViewportW = width;
         glViewportH = height;
         scissorX = 0;
         scissorY = 0;
-        scissorWidth = width;
-        scissorHeight = height;
+        scissorWidth = rw;
+        scissorHeight = rh;
     }
 
-    // Only clear on first allocation. Resizing from SwapBuffers happens after
-    // the app has already drawn — wiping here would present black.
     if (firstAlloc) {
         std::memset(frameBufferColor, 0, static_cast<size_t>(total) * sizeof(PixelValue));
-        fillDepthOnes(frameBufferDepth, total);
+        if (wantDepth16) fillDepth16Far(frameBufferDepth16, total);
+        else fillDepthFloatOnes(frameBufferDepth, total);
     }
     return true;
 }
 
 bool ReCreateWindow() {
     if (X11DisplayGetContext()) {
-        return EnsureRenderBuffers(renderAreaWidth, renderAreaHeight);
+        const int w = presentWidth > 0 ? presentWidth : renderAreaWidth * pix::renderScale();
+        const int h = presentHeight > 0 ? presentHeight : renderAreaHeight * pix::renderScale();
+        return EnsureRenderBuffers(w, h);
     }
-    // fbdev is optional; soft-fail so X11-only setups still work.
     ensureFramebuffer();
-    return frameBufferColor != nullptr || EnsureRenderBuffers(renderAreaWidth, renderAreaHeight);
+    return frameBufferColor != nullptr ||
+           EnsureRenderBuffers(presentWidth > 0 ? presentWidth : DEFAULT_RENDER_AREA_WIDTH,
+                               presentHeight > 0 ? presentHeight : DEFAULT_RENDER_AREA_HEIGHT);
 }
 
 FbDevice* GetFramebufferDevice() {
@@ -187,6 +322,25 @@ FbDevice* GetFramebufferDevice() {
 void UpdateScreen() {
     if (!frameBufferColor) return;
 
+    const int sw = renderAreaWidth;
+    const int sh = renderAreaHeight;
+    int dw = presentWidth > 0 ? presentWidth : sw;
+    int dh = presentHeight > 0 ? presentHeight : sh;
+
+    const PixelValue* src = frameBufferColor;
+    int presentW = sw;
+    int presentH = sh;
+
+    if (dw != sw || dh != sh) {
+        PixelValue* scratch = ensurePresentScratch(dw, dh);
+        if (scratch) {
+            nearestUpscale(frameBufferColor, sw, sh, scratch, dw, dh);
+            src = scratch;
+            presentW = dw;
+            presentH = dh;
+        }
+    }
+
     X11DisplayContext* x11 = X11DisplayGetContext();
     const char* mode = presentModeOverride();
     const bool forceFbdev = mode && std::strcmp(mode, "fbdev") == 0;
@@ -194,21 +348,20 @@ void UpdateScreen() {
 
     bool presented = false;
     if (x11 && !forceFbdev) {
-        presented = X11DisplayPresent(frameBufferColor, renderAreaWidth, renderAreaHeight);
+        presented = X11DisplayPresent(src, presentW, presentH);
     }
 
     if ((!presented || forceFbdev) && !forceX11 && wantFbdevPresent()) {
         FbDevice* fb = GetFramebufferDevice();
         if (fb) {
-            presented = fb->present(frameBufferColor, renderAreaWidth, renderAreaHeight) || presented;
+            presented = fb->present(src, presentW, presentH) || presented;
         }
     }
 
-    // If X11 was preferred but failed, fall back to fbdev once.
     if (!presented && x11 && !forceX11) {
         FbDevice* fb = GetFramebufferDevice();
         if (fb) {
-            fb->present(frameBufferColor, renderAreaWidth, renderAreaHeight);
+            fb->present(src, presentW, presentH);
         }
     }
 }

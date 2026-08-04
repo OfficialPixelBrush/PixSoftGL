@@ -5,6 +5,7 @@
 #include "datatypes.h"
 #include "defines.h"
 #include <GL/gl.h>
+#include <cstdint>
 #include <vector>
 
 extern bool forwardToSystemGl;
@@ -77,10 +78,14 @@ extern Mat4x4* lastAccessedMatrix;
 // Vertex buffer
 extern Vertex vertices[MAX_VERTICES];
 
-// Render-surface size
+// Render-surface size (internal soft buffer — may be smaller than the drawable)
 extern int renderAreaWidth;
 extern int renderAreaHeight;
 extern int renderAreaTotal;
+
+// Drawable / present size (window or fbdev). Soft buffer is upscaled to this.
+extern int presentWidth;
+extern int presentHeight;
 
 // Viewport size
 extern int viewportOffsetX;
@@ -92,6 +97,8 @@ extern int viewportAreaTotal;
 // Screen framebuffer
 extern PixelValue* frameBufferColor;
 extern float* frameBufferDepth;
+// Optional 16-bit depth (PIXSOFTGL_DEPTH16 / FAST). Mutually exclusive with float*.
+extern uint16_t* frameBufferDepth16;
 
 // Display lists
 extern GLint activeDisplayListIndex;

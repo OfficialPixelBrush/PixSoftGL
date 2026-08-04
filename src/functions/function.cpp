@@ -3,6 +3,7 @@
 #include "framebuffer.h"
 #include "global.h"
 #include "maths.h"
+#include "pixConfig.h"
 #include <GL/gl.h>
 #include <algorithm>
 #include <cmath>
@@ -56,27 +57,35 @@ void Process_glTexCoord2f(GLfloat s, GLfloat t) {
 }
 
 void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
+    // App / GetIntegerv see drawable (present) coordinates.
     glViewportX = x;
     glViewportY = y;
     glViewportW = width;
     glViewportH = height;
 
-    // OpenGL viewport origin is bottom-left. Our color buffer is top-left, so
-    // convert to a top-left offset for projection/rasterization.
-    viewportAreaWidth = width;
-    viewportAreaHeight = height;
-    viewportAreaTotal = viewportAreaWidth * viewportAreaHeight;
-    viewportOffsetX = x;
-    viewportOffsetY = renderAreaHeight - (y + height);
-    if (viewportOffsetY < 0) viewportOffsetY = 0;
+    const int needW = std::max(presentWidth > 0 ? presentWidth : width, x + width);
+    const int needH = std::max(presentHeight > 0 ? presentHeight : height, y + height);
+    if (!frameBufferColor || needW > presentWidth || needH > presentHeight) {
+        EnsureRenderBuffers(needW, needH);
+    }
 
-    const int neededW = std::max(renderAreaWidth, x + width);
-    const int neededH = std::max(renderAreaHeight, y + height);
-    if (!frameBufferColor || neededW > renderAreaWidth || neededH > renderAreaHeight) {
-        EnsureRenderBuffers(neededW, neededH);
-        viewportOffsetY = renderAreaHeight - (y + height);
+    const int scale = pix::renderScale();
+    // Map drawable-space viewport into the (possibly smaller) soft buffer.
+    viewportAreaWidth = std::max(1, width / scale);
+    viewportAreaHeight = std::max(1, height / scale);
+    viewportOffsetX = x / scale;
+    {
+        const int drawableH = presentHeight > 0 ? presentHeight : (renderAreaHeight * scale);
+        const int appTop = drawableH - (y + height);
+        viewportOffsetY = appTop / scale;
         if (viewportOffsetY < 0) viewportOffsetY = 0;
     }
+    viewportAreaTotal = viewportAreaWidth * viewportAreaHeight;
+
+    scissorX = viewportOffsetX;
+    scissorY = viewportOffsetY;
+    scissorWidth = viewportAreaWidth;
+    scissorHeight = viewportAreaHeight;
 
     ReCreateWindow();
 }

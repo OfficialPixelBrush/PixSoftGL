@@ -1,5 +1,6 @@
 #include "maths.h"
 #include "global.h"
+#include "pixConfig.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -149,7 +150,7 @@ int ProjectAndClipTriangle(const Triangle& tri, Triangle outTris[2]) {
         in[i].col = v.col;
         in[i].uv = v.uv;
         // Eye-space length is only needed for fog — skip the extra model×v + sqrt.
-        in[i].eyeDist = fogActive ? EyeDistance(v.pos) : 0.0f;
+        in[i].eyeDist = pix::fogEnabled(fogActive) ? EyeDistance(v.pos) : 0.0f;
     }
 
     // Fast reject: all behind near plane.
