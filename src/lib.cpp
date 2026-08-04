@@ -296,10 +296,7 @@ extern "C" {
             real_gl(mask);
         }
 
-        // Render last frame
-        UpdateScreen();
-
-        // Prepare for next frame
+        // Presentation happens on glXSwapBuffers / glFlush / glFinish.
         ClearFramebuffers(mask);
         PrintInfo("\n");
     }

@@ -1,5 +1,7 @@
 #include "wm.h"
 
+#include "display/x11_display.h"
+
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <algorithm>
@@ -52,6 +54,21 @@ int selectVideoMode(FbDevice& fb) {
     return choice;
 }
 
+void PixSoftWM::publishWmProperty() {
+    pixsoftWmAtom = XInternAtom(dpy, PIXSOFTGL_WM_ATOM, False);
+    long value = 1;
+    XChangeProperty(
+        dpy,
+        root,
+        pixsoftWmAtom,
+        XA_CARDINAL,
+        32,
+        PropModeReplace,
+        reinterpret_cast<unsigned char*>(&value),
+        1);
+    XFlush(dpy);
+}
+
 bool PixSoftWM::init(FbDevice* fb, const char* displayName) {
     fbDevice = fb;
     dpy = XOpenDisplay(displayName);
@@ -70,10 +87,23 @@ bool PixSoftWM::init(FbDevice* fb, const char* displayName) {
     netWmState = XInternAtom(dpy, "_NET_WM_STATE", False);
     netWmStateFullscreen = XInternAtom(dpy, "_NET_WM_STATE_FULLSCREEN", False);
 
+    // Claim the WM selection so clients can recognize us as the window manager.
+    // SubstructureRedirect will fail if another WM is already running.
+    XSetErrorHandler([](Display*, XErrorEvent* ev) -> int {
+        if (ev->error_code == BadAccess) {
+            std::cerr << "PixSoftGL WM: another window manager is already running\n";
+        }
+        return 0;
+    });
+
     XSelectInput(
         dpy,
         root,
         SubstructureRedirectMask | SubstructureNotifyMask | KeyPressMask);
+    XSync(dpy, False);
+    XSetErrorHandler(nullptr);
+
+    publishWmProperty();
 
     running = true;
     g_wm = this;
@@ -82,12 +112,17 @@ bool PixSoftWM::init(FbDevice* fb, const char* displayName) {
 
     std::cout << "PixSoftGL WM running on " << DisplayString(dpy)
               << " (" << screenW << 'x' << screenH << ")\n";
+    std::cout << "Published " << PIXSOFTGL_WM_ATOM
+              << " for automatic client detection\n";
     return true;
 }
 
 void PixSoftWM::shutdown() {
     running = false;
     if (dpy) {
+        if (pixsoftWmAtom != None) {
+            XDeleteProperty(dpy, root, pixsoftWmAtom);
+        }
         XCloseDisplay(dpy);
         dpy = nullptr;
     }
@@ -100,10 +135,26 @@ void PixSoftWM::mapClientFullscreen(Window win) {
 
     XSetWindowAttributes attrs{};
     attrs.override_redirect = True;
-    XChangeWindowAttributes(dpy, win, CWOverrideRedirect, &attrs);
+    attrs.border_pixel = 0;
+    XChangeWindowAttributes(dpy, win, CWOverrideRedirect | CWBorderPixel, &attrs);
 
-    XMapWindow(dpy, win);
-    XRaiseWindow(dpy, win);
+    XMapRaised(dpy, win);
+    XMoveResizeWindow(dpy, win, 0, 0, screenW, screenH);
+
+    // Tell the client its new size (ConfigureNotify).
+    XEvent cfg{};
+    cfg.type = ConfigureNotify;
+    cfg.xconfigure.display = dpy;
+    cfg.xconfigure.event = win;
+    cfg.xconfigure.window = win;
+    cfg.xconfigure.x = 0;
+    cfg.xconfigure.y = 0;
+    cfg.xconfigure.width = screenW;
+    cfg.xconfigure.height = screenH;
+    cfg.xconfigure.border_width = 0;
+    cfg.xconfigure.above = None;
+    cfg.xconfigure.override_redirect = True;
+    XSendEvent(dpy, win, False, StructureNotifyMask, &cfg);
 
     if (netWmState != None && netWmStateFullscreen != None) {
         XEvent ev{};
@@ -118,7 +169,11 @@ void PixSoftWM::mapClientFullscreen(Window win) {
     }
 
     XSetInputFocus(dpy, win, RevertToPointerRoot, CurrentTime);
-    clients.push_back(win);
+    XFlush(dpy);
+
+    if (std::find(clients.begin(), clients.end(), win) == clients.end()) {
+        clients.push_back(win);
+    }
 }
 
 void PixSoftWM::unmanageClient(Window win) {
@@ -140,6 +195,8 @@ void PixSoftWM::handleEvent(XEvent& ev) {
         changes.width = screenW;
         changes.height = screenH;
         changes.border_width = 0;
+        changes.sibling = ev.xconfigurerequest.above;
+        changes.stack_mode = ev.xconfigurerequest.detail;
         XConfigureWindow(
             dpy,
             ev.xconfigurerequest.window,
@@ -148,6 +205,16 @@ void PixSoftWM::handleEvent(XEvent& ev) {
         break;
     }
 
+    case DestroyNotify: {
+        auto it = std::find(clients.begin(), clients.end(), ev.xdestroywindow.window);
+        if (it != clients.end()) clients.erase(it);
+        break;
+    }
+
+    case UnmapNotify:
+        // Leave unmanaged unmapped windows alone; MapRequest remaps them.
+        break;
+
     case ClientMessage:
         if (static_cast<Atom>(ev.xclient.data.l[0]) == wmDeleteWindow) {
             unmanageClient(ev.xclient.window);
@@ -155,7 +222,8 @@ void PixSoftWM::handleEvent(XEvent& ev) {
         break;
 
     case KeyPress:
-        if (ev.xkey.keycode == XKeysymToKeycode(dpy, XK_Escape)) {
+        if (ev.xkey.keycode == XKeysymToKeycode(dpy, XK_Escape) &&
+            (ev.xkey.state & ControlMask)) {
             running = false;
         }
         break;
@@ -181,6 +249,8 @@ bool PixSoftWM::launchClient(const std::string& command, const std::string& libP
         setenv("LD_PRELOAD", libPath.c_str(), 1);
         setenv("PIXSOFTGL_WM", "1", 1);
         setenv("DISPLAY", DisplayString(dpy), 1);
+        // Prefer X11 present into the fullscreen client window.
+        setenv("PIXSOFTGL_PRESENT", "x11", 0);
 
         execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
         std::cerr << "PixSoftGL: failed to exec client: " << std::strerror(errno) << '\n';

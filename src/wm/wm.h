@@ -14,11 +14,13 @@ public:
     bool isRunning() const { return running; }
     int screenWidth() const { return screenW; }
     int screenHeight() const { return screenH; }
+    Display* display() const { return dpy; }
 
     void run();
     bool launchClient(const std::string& command, const std::string& libPath);
 
 private:
+    void publishWmProperty();
     void handleEvent(XEvent& ev);
     void mapClientFullscreen(Window win);
     void unmanageClient(Window win);
@@ -34,6 +36,7 @@ private:
     Atom wmDeleteWindow = 0;
     Atom netWmState = 0;
     Atom netWmStateFullscreen = 0;
+    Atom pixsoftWmAtom = 0;
 
     std::vector<Window> clients;
 };

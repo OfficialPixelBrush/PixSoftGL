@@ -1,5 +1,6 @@
 #include "function.h"
 #include "render.h"
+#include "framebuffer.h"
 #include "global.h"
 #include "maths.h"
 #include <GL/gl.h>
@@ -57,20 +58,17 @@ void Process_glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
     viewportAreaWidth = width;
     viewportAreaHeight = height;
     viewportAreaTotal = viewportAreaWidth * viewportAreaHeight;
-    
-    // Create buffers
-    if (!frameBufferColor) {
-        renderAreaWidth = viewportAreaWidth;
-        renderAreaHeight = viewportAreaHeight;
-        renderAreaTotal = viewportAreaTotal;
-        frameBufferColor = (PixelValue*)malloc( renderAreaTotal * sizeof(PixelValue));
+
+    // Grow the drawable to fit the viewport when no X11/fb size is established yet.
+    const int neededW = viewportOffsetX + viewportAreaWidth;
+    const int neededH = viewportOffsetY + viewportAreaHeight;
+    if (!frameBufferColor || neededW > renderAreaWidth || neededH > renderAreaHeight) {
+        EnsureRenderBuffers(
+            neededW > renderAreaWidth ? neededW : renderAreaWidth,
+            neededH > renderAreaHeight ? neededH : renderAreaHeight);
     }
-    if (!frameBufferDepth) {
-        frameBufferDepth = (float*)malloc(renderAreaTotal * sizeof(float));
-    }
-    
+
     ReCreateWindow();
-    ClearFramebuffers(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Process_glBegin(GLenum mode) {

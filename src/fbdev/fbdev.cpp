@@ -277,6 +277,35 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
     }
 
     const int bytesPerPixel = (screenBpp + 7) / 8;
+
+    // Fast path: packed 32bpp with contiguous writes.
+    if (bytesPerPixel == 4 && copyW > 0) {
+        for (int y = 0; y < copyH; ++y) {
+            const int srcY = srcHeight - 1 - y;
+            const PixelValue* srcRow = pixels + srcY * srcWidth;
+            auto* row = reinterpret_cast<uint32_t*>(
+                dst + static_cast<size_t>(y) * lineLength_);
+            for (int x = 0; x < copyW; ++x) {
+                row[x] = mapPixel(srcRow[x], red_, green_, blue_, transp_);
+            }
+        }
+        return true;
+    }
+
+    if (bytesPerPixel == 2 && copyW > 0) {
+        for (int y = 0; y < copyH; ++y) {
+            const int srcY = srcHeight - 1 - y;
+            const PixelValue* srcRow = pixels + srcY * srcWidth;
+            auto* row = reinterpret_cast<uint16_t*>(
+                dst + static_cast<size_t>(y) * lineLength_);
+            for (int x = 0; x < copyW; ++x) {
+                row[x] = static_cast<uint16_t>(
+                    mapPixel(srcRow[x], red_, green_, blue_, transp_));
+            }
+        }
+        return true;
+    }
+
     for (int y = 0; y < copyH; ++y) {
         const int srcY = srcHeight - 1 - y;
         uint8_t* row = dst + static_cast<size_t>(y) * lineLength_;
@@ -284,9 +313,6 @@ bool FbDevice::present(const PixelValue* pixels, int srcWidth, int srcHeight) {
         for (int x = 0; x < copyW; ++x) {
             const PixelValue& p = pixels[x + srcY * srcWidth];
             const uint32_t packed = mapPixel(p, red_, green_, blue_, transp_);
-
-            // fbdev bitfields describe a native pixel value. Copy only the
-            // number of bytes occupied by the selected framebuffer format.
             std::memcpy(row + static_cast<size_t>(x) * bytesPerPixel,
                         &packed, static_cast<size_t>(bytesPerPixel));
         }

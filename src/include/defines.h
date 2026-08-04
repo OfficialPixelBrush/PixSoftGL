@@ -22,7 +22,7 @@
 
 #define RGBA_MODE false
 #define INDEX_MODE false
-#define DOUBLEBUFFER false
+#define DOUBLEBUFFER true
 #define STEREO false
 #define RED_BITS 8
 #define GREEN_BITS 8

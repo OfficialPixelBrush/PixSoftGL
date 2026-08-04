@@ -8,10 +8,11 @@ void PrintInfoHex(int s);
 void PrintInfo(int s);
 void PrintInfo(const std::string& s);
 
-// Open /dev/fb0 (or PIXSOFTGL_FBDEV) and use the Linux framebuffer
-// as the presentation target.
+// Ensure color/depth buffers match the given size (reallocates on change).
+bool EnsureRenderBuffers(int width, int height);
+
+// Open presentation targets (X11 window and/or Linux fbdev).
 bool ReCreateWindow();
 void UpdateScreen();
 
-// Exposed for cleanup/testing.
 FbDevice* GetFramebufferDevice();
